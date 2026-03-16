@@ -1,0 +1,269 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 550" width="900" height="550">
+  <defs>
+    <style>
+      text { font-family: 'Noto Sans KR', sans-serif; }
+    </style>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#1A73E8"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#9E9E9E"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#34A853"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="550" fill="#FAFAFA" rx="8"/>
+  <rect x="0" y="0" width="900" height="550" fill="none" stroke="#E0E0E0" stroke-width="1.5" rx="8"/>
+
+  <!-- Title -->
+  <rect x="0" y="0" width="900" height="44" fill="#1A73E8" rx="8"/>
+  <rect x="0" y="36" width="900" height="8" fill="#1A73E8"/>
+  <text x="450" y="27" text-anchor="middle" fill="white" font-size="16" font-weight="bold">STM32F411 EXTI 라인 매핑 구조</text>
+
+  <!-- ===== MAIN TABLE ===== -->
+  <!-- Column headers: GPIO Ports -->
+  <!-- Table starts at x=30, y=60 -->
+  <!-- Col widths: Pin(50), PA(80), PB(80), PC(80), PD(80), PE(80) = 450px total, then arrow space, then EXTI col -->
+
+  <!-- Header row background -->
+  <rect x="30" y="58" width="490" height="26" fill="#E8F0FE" rx="2"/>
+
+  <!-- Header texts -->
+  <text x="55" y="75" text-anchor="middle" fill="#1A73E8" font-size="11" font-weight="bold">핀 번호</text>
+  <text x="133" y="75" text-anchor="middle" fill="#1A73E8" font-size="11" font-weight="bold">PA</text>
+  <text x="213" y="75" text-anchor="middle" fill="#1A73E8" font-size="11" font-weight="bold">PB</text>
+  <text x="293" y="75" text-anchor="middle" fill="#1A73E8" font-size="11" font-weight="bold">PC</text>
+  <text x="373" y="75" text-anchor="middle" fill="#1A73E8" font-size="11" font-weight="bold">PD</text>
+  <text x="453" y="75" text-anchor="middle" fill="#1A73E8" font-size="11" font-weight="bold">PE</text>
+
+  <!-- EXTI header -->
+  <rect x="670" y="58" width="100" height="26" fill="#E8F0FE" rx="2"/>
+  <text x="720" y="75" text-anchor="middle" fill="#1A73E8" font-size="11" font-weight="bold">EXTI 라인</text>
+
+  <!-- Convergence label -->
+  <text x="590" y="75" text-anchor="middle" fill="#757575" font-size="9">MUX 선택</text>
+
+  <!-- Define row data: [pin_num, row_y, exti_highlight, pa_highlight, pc_highlight_text] -->
+  <!-- Rows for pins 0,1,2,3,4,5,6, ..., 13, 14, 15 -->
+  <!-- We show: 0,1,2,3,4,5,6, [gap], 13, 14, 15 -->
+
+  <!-- Row height = 22, starting y = 84 -->
+
+  <!-- Helper: draw a table row -->
+  <!-- Row 0 -->
+  <rect x="30" y="84" width="490" height="22" fill="white" stroke="#E8E8E8" stroke-width="0.5"/>
+  <rect x="30" y="84" width="50" height="22" fill="#F5F5F5" stroke="#E8E8E8" stroke-width="0.5"/>
+  <text x="55" y="99" text-anchor="middle" fill="#212121" font-size="10" font-weight="bold">0</text>
+  <text x="133" y="99" text-anchor="middle" fill="#212121" font-size="10">PA0</text>
+  <text x="213" y="99" text-anchor="middle" fill="#212121" font-size="10">PB0</text>
+  <text x="293" y="99" text-anchor="middle" fill="#212121" font-size="10">PC0</text>
+  <text x="373" y="99" text-anchor="middle" fill="#212121" font-size="10">PD0</text>
+  <text x="453" y="99" text-anchor="middle" fill="#212121" font-size="10">PE0</text>
+  <!-- Arrow to EXTI -->
+  <line x1="522" y1="95" x2="668" y2="95" stroke="#9E9E9E" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arrowGray)"/>
+  <!-- EXTI box -->
+  <rect x="670" y="84" width="100" height="22" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="720" y="99" text-anchor="middle" fill="#757575" font-size="10">EXTI 0</text>
+
+  <!-- Row 1 -->
+  <rect x="30" y="106" width="490" height="22" fill="#FAFAFA" stroke="#E8E8E8" stroke-width="0.5"/>
+  <rect x="30" y="106" width="50" height="22" fill="#F5F5F5" stroke="#E8E8E8" stroke-width="0.5"/>
+  <text x="55" y="121" text-anchor="middle" fill="#212121" font-size="10" font-weight="bold">1</text>
+  <text x="133" y="121" text-anchor="middle" fill="#212121" font-size="10">PA1</text>
+  <text x="213" y="121" text-anchor="middle" fill="#212121" font-size="10">PB1</text>
+  <text x="293" y="121" text-anchor="middle" fill="#212121" font-size="10">PC1</text>
+  <text x="373" y="121" text-anchor="middle" fill="#212121" font-size="10">PD1</text>
+  <text x="453" y="121" text-anchor="middle" fill="#212121" font-size="10">PE1</text>
+  <line x1="522" y1="117" x2="668" y2="117" stroke="#9E9E9E" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arrowGray)"/>
+  <rect x="670" y="106" width="100" height="22" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="720" y="121" text-anchor="middle" fill="#757575" font-size="10">EXTI 1</text>
+
+  <!-- Row 2 -->
+  <rect x="30" y="128" width="490" height="22" fill="white" stroke="#E8E8E8" stroke-width="0.5"/>
+  <rect x="30" y="128" width="50" height="22" fill="#F5F5F5" stroke="#E8E8E8" stroke-width="0.5"/>
+  <text x="55" y="143" text-anchor="middle" fill="#212121" font-size="10" font-weight="bold">2</text>
+  <text x="133" y="143" text-anchor="middle" fill="#212121" font-size="10">PA2</text>
+  <text x="213" y="143" text-anchor="middle" fill="#212121" font-size="10">PB2</text>
+  <text x="293" y="143" text-anchor="middle" fill="#212121" font-size="10">PC2</text>
+  <text x="373" y="143" text-anchor="middle" fill="#212121" font-size="10">PD2</text>
+  <text x="453" y="143" text-anchor="middle" fill="#212121" font-size="10">PE2</text>
+  <line x1="522" y1="139" x2="668" y2="139" stroke="#9E9E9E" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arrowGray)"/>
+  <rect x="670" y="128" width="100" height="22" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="720" y="143" text-anchor="middle" fill="#757575" font-size="10">EXTI 2</text>
+
+  <!-- Row 3 -->
+  <rect x="30" y="150" width="490" height="22" fill="#FAFAFA" stroke="#E8E8E8" stroke-width="0.5"/>
+  <rect x="30" y="150" width="50" height="22" fill="#F5F5F5" stroke="#E8E8E8" stroke-width="0.5"/>
+  <text x="55" y="165" text-anchor="middle" fill="#212121" font-size="10" font-weight="bold">3</text>
+  <text x="133" y="165" text-anchor="middle" fill="#212121" font-size="10">PA3</text>
+  <text x="213" y="165" text-anchor="middle" fill="#212121" font-size="10">PB3</text>
+  <text x="293" y="165" text-anchor="middle" fill="#212121" font-size="10">PC3</text>
+  <text x="373" y="165" text-anchor="middle" fill="#212121" font-size="10">PD3</text>
+  <text x="453" y="165" text-anchor="middle" fill="#212121" font-size="10">PE3</text>
+  <line x1="522" y1="161" x2="668" y2="161" stroke="#9E9E9E" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arrowGray)"/>
+  <rect x="670" y="150" width="100" height="22" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="720" y="165" text-anchor="middle" fill="#757575" font-size="10">EXTI 3</text>
+
+  <!-- Row 4 -->
+  <rect x="30" y="172" width="490" height="22" fill="white" stroke="#E8E8E8" stroke-width="0.5"/>
+  <rect x="30" y="172" width="50" height="22" fill="#F5F5F5" stroke="#E8E8E8" stroke-width="0.5"/>
+  <text x="55" y="187" text-anchor="middle" fill="#212121" font-size="10" font-weight="bold">4</text>
+  <text x="133" y="187" text-anchor="middle" fill="#212121" font-size="10">PA4</text>
+  <text x="213" y="187" text-anchor="middle" fill="#212121" font-size="10">PB4</text>
+  <text x="293" y="187" text-anchor="middle" fill="#212121" font-size="10">PC4</text>
+  <text x="373" y="187" text-anchor="middle" fill="#212121" font-size="10">PD4</text>
+  <text x="453" y="187" text-anchor="middle" fill="#212121" font-size="10">PE4</text>
+  <line x1="522" y1="183" x2="668" y2="183" stroke="#9E9E9E" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arrowGray)"/>
+  <rect x="670" y="172" width="100" height="22" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="720" y="187" text-anchor="middle" fill="#757575" font-size="10">EXTI 4</text>
+
+  <!-- Row 5: PA5 highlighted (green - LED output, EXTI not needed) -->
+  <rect x="30" y="194" width="490" height="22" fill="#FAFAFA" stroke="#E8E8E8" stroke-width="0.5"/>
+  <rect x="30" y="194" width="50" height="22" fill="#F5F5F5" stroke="#E8E8E8" stroke-width="0.5"/>
+  <text x="55" y="209" text-anchor="middle" fill="#212121" font-size="10" font-weight="bold">5</text>
+  <!-- PA5 highlighted cell -->
+  <rect x="93" y="196" width="78" height="18" fill="#34A853" rx="2"/>
+  <text x="132" y="209" text-anchor="middle" fill="white" font-size="9" font-weight="bold">PA5 ← LD2</text>
+  <text x="213" y="209" text-anchor="middle" fill="#212121" font-size="10">PB5</text>
+  <text x="293" y="209" text-anchor="middle" fill="#212121" font-size="10">PC5</text>
+  <text x="373" y="209" text-anchor="middle" fill="#212121" font-size="10">PD5</text>
+  <text x="453" y="209" text-anchor="middle" fill="#212121" font-size="10">PE5</text>
+  <!-- Dashed arrow (EXTI not used) -->
+  <line x1="522" y1="205" x2="668" y2="205" stroke="#34A853" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowGreen)"/>
+  <rect x="670" y="194" width="100" height="22" fill="#F1F8E9" stroke="#34A853" stroke-width="1"/>
+  <text x="720" y="209" text-anchor="middle" fill="#34A853" font-size="10">EXTI 5</text>
+  <!-- Note for PA5 -->
+  <text x="790" y="207" fill="#34A853" font-size="8">(출력 핀,</text>
+  <text x="790" y="217" fill="#34A853" font-size="8">EXTI 불필요)</text>
+
+  <!-- Row 6 -->
+  <rect x="30" y="216" width="490" height="22" fill="white" stroke="#E8E8E8" stroke-width="0.5"/>
+  <rect x="30" y="216" width="50" height="22" fill="#F5F5F5" stroke="#E8E8E8" stroke-width="0.5"/>
+  <text x="55" y="231" text-anchor="middle" fill="#212121" font-size="10" font-weight="bold">6</text>
+  <text x="133" y="231" text-anchor="middle" fill="#212121" font-size="10">PA6</text>
+  <text x="213" y="231" text-anchor="middle" fill="#212121" font-size="10">PB6</text>
+  <text x="293" y="231" text-anchor="middle" fill="#212121" font-size="10">PC6</text>
+  <text x="373" y="231" text-anchor="middle" fill="#212121" font-size="10">PD6</text>
+  <text x="453" y="231" text-anchor="middle" fill="#212121" font-size="10">PE6</text>
+  <line x1="522" y1="227" x2="668" y2="227" stroke="#9E9E9E" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arrowGray)"/>
+  <rect x="670" y="216" width="100" height="22" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="720" y="231" text-anchor="middle" fill="#757575" font-size="10">EXTI 6</text>
+
+  <!-- Gap row (... indicates rows 7-12 omitted) -->
+  <rect x="30" y="238" width="490" height="18" fill="#F0F0F0" stroke="#E8E8E8" stroke-width="0.5"/>
+  <text x="55" y="250" text-anchor="middle" fill="#AAAAAA" font-size="10">...</text>
+  <text x="133" y="251" text-anchor="middle" fill="#AAAAAA" font-size="9">...</text>
+  <text x="213" y="251" text-anchor="middle" fill="#AAAAAA" font-size="9">...</text>
+  <text x="293" y="251" text-anchor="middle" fill="#AAAAAA" font-size="9">...</text>
+  <text x="373" y="251" text-anchor="middle" fill="#AAAAAA" font-size="9">...</text>
+  <text x="453" y="251" text-anchor="middle" fill="#AAAAAA" font-size="9">...</text>
+  <rect x="670" y="238" width="100" height="18" fill="#F0F0F0" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="720" y="251" text-anchor="middle" fill="#AAAAAA" font-size="9">...</text>
+
+  <!-- Row 13: PC13 highlighted (blue) -->
+  <rect x="30" y="256" width="490" height="26" fill="#E3F2FD" stroke="#1A73E8" stroke-width="1"/>
+  <rect x="30" y="256" width="50" height="26" fill="#BBDEFB" stroke="#1A73E8" stroke-width="1"/>
+  <text x="55" y="273" text-anchor="middle" fill="#1A73E8" font-size="11" font-weight="bold">13</text>
+  <text x="133" y="273" text-anchor="middle" fill="#212121" font-size="10">PA13</text>
+  <text x="213" y="273" text-anchor="middle" fill="#212121" font-size="10">PB13</text>
+  <!-- PC13 highlighted cell -->
+  <rect x="253" y="258" width="78" height="22" fill="#1A73E8" rx="2"/>
+  <text x="292" y="269" text-anchor="middle" fill="white" font-size="8" font-weight="bold">PC13</text>
+  <text x="292" y="279" text-anchor="middle" fill="white" font-size="7">← B1 버튼</text>
+  <text x="373" y="273" text-anchor="middle" fill="#212121" font-size="10">PD13</text>
+  <text x="453" y="273" text-anchor="middle" fill="#212121" font-size="10">PE13</text>
+  <!-- Bold arrow to EXTI13 -->
+  <line x1="522" y1="269" x2="668" y2="269" stroke="#1A73E8" stroke-width="2.5" marker-end="url(#arrowBlue)"/>
+  <!-- EXTI 13 box highlighted -->
+  <rect x="670" y="256" width="100" height="26" fill="#1A73E8" rx="2" stroke="#1565C0" stroke-width="2"/>
+  <text x="720" y="273" text-anchor="middle" fill="white" font-size="11" font-weight="bold">EXTI 13</text>
+
+  <!-- Row 14 -->
+  <rect x="30" y="282" width="490" height="22" fill="white" stroke="#E8E8E8" stroke-width="0.5"/>
+  <rect x="30" y="282" width="50" height="22" fill="#F5F5F5" stroke="#E8E8E8" stroke-width="0.5"/>
+  <text x="55" y="297" text-anchor="middle" fill="#212121" font-size="10" font-weight="bold">14</text>
+  <text x="133" y="297" text-anchor="middle" fill="#212121" font-size="10">PA14</text>
+  <text x="213" y="297" text-anchor="middle" fill="#212121" font-size="10">PB14</text>
+  <text x="293" y="297" text-anchor="middle" fill="#212121" font-size="10">PC14</text>
+  <text x="373" y="297" text-anchor="middle" fill="#212121" font-size="10">PD14</text>
+  <text x="453" y="297" text-anchor="middle" fill="#212121" font-size="10">PE14</text>
+  <line x1="522" y1="293" x2="668" y2="293" stroke="#9E9E9E" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arrowGray)"/>
+  <rect x="670" y="282" width="100" height="22" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="720" y="297" text-anchor="middle" fill="#757575" font-size="10">EXTI 14</text>
+
+  <!-- Row 15 -->
+  <rect x="30" y="304" width="490" height="22" fill="#FAFAFA" stroke="#E8E8E8" stroke-width="0.5"/>
+  <rect x="30" y="304" width="50" height="22" fill="#F5F5F5" stroke="#E8E8E8" stroke-width="0.5"/>
+  <text x="55" y="319" text-anchor="middle" fill="#212121" font-size="10" font-weight="bold">15</text>
+  <text x="133" y="319" text-anchor="middle" fill="#212121" font-size="10">PA15</text>
+  <text x="213" y="319" text-anchor="middle" fill="#212121" font-size="10">PB15</text>
+  <text x="293" y="319" text-anchor="middle" fill="#212121" font-size="10">PC15</text>
+  <text x="373" y="319" text-anchor="middle" fill="#212121" font-size="10">PD15</text>
+  <text x="453" y="319" text-anchor="middle" fill="#212121" font-size="10">PE15</text>
+  <line x1="522" y1="315" x2="668" y2="315" stroke="#9E9E9E" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arrowGray)"/>
+  <rect x="670" y="304" width="100" height="22" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="720" y="319" text-anchor="middle" fill="#757575" font-size="10">EXTI 15</text>
+
+  <!-- Key rule label in EXTI col -->
+  <text x="720" y="340" text-anchor="middle" fill="#757575" font-size="8">각 라인: 동시에</text>
+  <text x="720" y="351" text-anchor="middle" fill="#757575" font-size="8">1개 포트만 사용</text>
+
+  <!-- ===== Warning Box ===== -->
+  <rect x="30" y="360" width="540" height="75" fill="#FFEBEE" rx="6" stroke="#EA4335" stroke-width="2"/>
+  <rect x="30" y="360" width="540" height="24" fill="#EA4335" rx="6"/>
+  <rect x="30" y="372" width="540" height="12" fill="#EA4335"/>
+  <text x="45" y="376" fill="white" font-size="12" font-weight="bold">⚠ 중요: EXTI 라인 공유 제약</text>
+  <text x="45" y="400" fill="#B71C1C" font-size="11" font-weight="bold">같은 번호의 핀(PA3, PB3, PC3...)은 동시에 EXTI 사용 불가</text>
+  <text x="45" y="418" fill="#C62828" font-size="11">예) PC13 = EXTI13 사용 중 → PA13, PB13은 EXTI 사용 불가</text>
+  <text x="45" y="430" fill="#757575" font-size="9">SYSCFG_EXTICRx 레지스터에 하나의 포트 번호만 선택 가능하기 때문입니다.</text>
+
+  <!-- ===== SYSCFG Info Box ===== -->
+  <rect x="580" y="360" width="295" height="75" fill="#E8F0FE" rx="6" stroke="#1A73E8" stroke-width="1.5"/>
+  <rect x="580" y="360" width="295" height="24" fill="#1A73E8" rx="6"/>
+  <rect x="580" y="372" width="295" height="12" fill="#1A73E8"/>
+  <text x="596" y="376" fill="white" font-size="11" font-weight="bold">SYSCFG 자동 설정</text>
+  <text x="596" y="400" fill="#1565C0" font-size="10" font-weight="bold">SYSCFG_EXTICR 레지스터로</text>
+  <text x="596" y="414" fill="#1565C0" font-size="10">어느 포트를 EXTI에 연결할지 선택</text>
+  <text x="596" y="426" fill="#1A73E8" font-size="10" font-weight="bold">→ CubeMX가 자동 설정</text>
+
+  <!-- ===== Architecture diagram (right side, mid-section) ===== -->
+  <!-- MUX Explanation -->
+  <rect x="785" y="84" width="100" height="248" fill="#FFF8E1" rx="6" stroke="#FBBC04" stroke-width="1.5"/>
+  <text x="835" y="100" text-anchor="middle" fill="#F57F17" font-size="10" font-weight="bold">SYSCFG</text>
+  <text x="835" y="112" text-anchor="middle" fill="#F57F17" font-size="10" font-weight="bold">MUX</text>
+  <!-- MUX symbol -->
+  <polygon points="803,120 867,135 867,317 803,332" fill="#FFF3CD" stroke="#FBBC04" stroke-width="1.5"/>
+  <text x="835" y="200" text-anchor="middle" fill="#E65100" font-size="9" font-weight="bold">EXTICR</text>
+  <text x="835" y="214" text-anchor="middle" fill="#E65100" font-size="8">레지스터</text>
+  <text x="835" y="228" text-anchor="middle" fill="#E65100" font-size="8">포트 선택</text>
+  <!-- Arrow from MUX to EXTI lines -->
+  <line x1="867" y1="226" x2="880" y2="226" stroke="#FBBC04" stroke-width="1.5"/>
+
+  <!-- EXTI 13 selected indicator on MUX -->
+  <rect x="808" y="254" width="54" height="16" fill="#1A73E8" rx="2"/>
+  <text x="835" y="265" text-anchor="middle" fill="white" font-size="8">PC 선택됨</text>
+
+  <!-- Legend box -->
+  <rect x="580" y="445" width="295" height="78" fill="white" rx="4" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="595" y="462" fill="#212121" font-size="10" font-weight="bold">범례</text>
+  <rect x="595" y="470" width="14" height="10" fill="#1A73E8" rx="1"/>
+  <text x="616" y="479" fill="#212121" font-size="9">PC13 (B1 버튼 — EXTI13 사용 중)</text>
+  <rect x="595" y="486" width="14" height="10" fill="#34A853" rx="1"/>
+  <text x="616" y="495" fill="#212121" font-size="9">PA5 (LD2 LED — 출력 핀, EXTI 불필요)</text>
+  <line x1="595" y1="508" x2="615" y2="508" stroke="#9E9E9E" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="620" y="511" fill="#212121" font-size="9">선택 가능한 포트 연결 (비활성)</text>
+  <line x1="595" y1="520" x2="615" y2="520" stroke="#1A73E8" stroke-width="2.5"/>
+  <text x="620" y="523" fill="#212121" font-size="9">선택된 EXTI 연결 (활성)</text>
+
+  <!-- Bottom note -->
+  <rect x="30" y="445" width="540" height="78" fill="white" rx="4" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="45" y="462" fill="#212121" font-size="10" font-weight="bold">핵심 원리 요약</text>
+  <text x="45" y="478" fill="#212121" font-size="10">• EXTI 0~15 라인은 각각 대응하는 핀 번호(0~15)의 GPIO 핀과 연결됩니다.</text>
+  <text x="45" y="494" fill="#212121" font-size="10">• 각 EXTI 라인에는 5개 포트(PA~PE) 중 <tspan font-weight="bold">하나만</tspan> 연결 가능합니다.</text>
+  <text x="45" y="510" fill="#212121" font-size="10">• SYSCFG_EXTICR 레지스터(2비트)로 포트를 선택하며, CubeMX가 자동 처리합니다.</text>
+  <text x="45" y="526" fill="#757575" font-size="9">예) EXTI13: PA13(00), PB13(01), PC13(10←B1선택), PD13(11) 중 하나 선택</text>
+
+</svg>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" font-family='"Noto Sans KR", "Malgun Gothic", sans-serif'>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333333"/>
+    </marker>
+  </defs>
+
+  <!-- 배경 -->
+  <rect width="800" height="500" fill="#FFFFFF"/>
+
+  <!-- 제목 -->
+  <text x="400" y="32" text-anchor="middle" font-size="18" font-weight="bold" fill="#333333">그림 02-2. STM32CubeIDE SWV 설정 순서</text>
+
+  <!-- Step 1 박스 -->
+  <rect x="50" y="55" width="480" height="76" rx="6" fill="#F8F9FA" stroke="#1A73E8" stroke-width="2"/>
+  <rect x="50" y="55" width="200" height="76" rx="6" fill="#E8F0FE" stroke="#1A73E8" stroke-width="2"/>
+  <text x="150" y="83" text-anchor="middle" font-size="14" font-weight="bold" fill="#1A73E8">① CubeMX 설정</text>
+  <text x="150" y="103" text-anchor="middle" font-size="13" fill="#333333">System Core → SYS</text>
+  <text x="290" y="83" text-anchor="start" font-size="13" fill="#333333">Debug 모드 선택:</text>
+  <text x="290" y="103" text-anchor="start" font-size="13" font-weight="bold" fill="#333333">Serial Wire (SWD)</text>
+  <text x="290" y="120" text-anchor="start" font-size="12" fill="#666666">SWDIO + SWDCLK 2핀 활성화</text>
+
+  <!-- 화살표 1→2 -->
+  <line x1="290" y1="131" x2="290" y2="153" stroke="#333333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Step 2 박스 -->
+  <rect x="50" y="155" width="480" height="76" rx="6" fill="#F8F9FA" stroke="#34A853" stroke-width="2"/>
+  <rect x="50" y="155" width="200" height="76" rx="6" fill="#E6F4EA" stroke="#34A853" stroke-width="2"/>
+  <text x="150" y="183" text-anchor="middle" font-size="14" font-weight="bold" fill="#34A853">② Run/Debug Config</text>
+  <text x="150" y="203" text-anchor="middle" font-size="13" fill="#333333">디버그 설정 열기</text>
+  <text x="290" y="183" text-anchor="start" font-size="13" fill="#333333">Debugger 탭 →</text>
+  <text x="290" y="203" text-anchor="start" font-size="13" font-weight="bold" fill="#333333">Serial Wire Viewer (SWV)</text>
+  <text x="290" y="220" text-anchor="start" font-size="12" fill="#666666">Enable 체크박스 ON</text>
+
+  <!-- 화살표 2→3 -->
+  <line x1="290" y1="231" x2="290" y2="253" stroke="#333333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Step 3 박스 (주황 강조) -->
+  <rect x="50" y="255" width="480" height="80" rx="6" fill="#FFF3E0" stroke="#FF6D00" stroke-width="2.5"/>
+  <rect x="50" y="255" width="200" height="80" rx="6" fill="#FFE0B2" stroke="#FF6D00" stroke-width="2.5"/>
+  <text x="150" y="283" text-anchor="middle" font-size="14" font-weight="bold" fill="#FF6D00">③ Core Clock 설정</text>
+  <text x="150" y="305" text-anchor="middle" font-size="12" fill="#BF360C">⚠️ 가장 중요한 단계</text>
+  <text x="290" y="278" text-anchor="start" font-size="13" font-weight="bold" fill="#BF360C">SystemCoreClock과 반드시 일치!</text>
+  <text x="290" y="298" text-anchor="start" font-size="13" fill="#333333">NUCLEO-F411RE: </text>
+  <text x="440" y="298" text-anchor="start" font-size="13" font-weight="bold" fill="#FF6D00">100 MHz</text>
+  <text x="290" y="318" text-anchor="start" font-size="12" fill="#666666">불일치 시 → SWV 콘솔에서 글자 깨짐 발생</text>
+
+  <!-- 화살표 3→4 -->
+  <line x1="290" y1="335" x2="290" y2="357" stroke="#333333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Step 4 박스 -->
+  <rect x="50" y="359" width="480" height="80" rx="6" fill="#F8F9FA" stroke="#9E9E9E" stroke-width="2"/>
+  <rect x="50" y="359" width="200" height="80" rx="6" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="2"/>
+  <text x="150" y="387" text-anchor="middle" font-size="14" font-weight="bold" fill="#555555">④ ITM Data Console</text>
+  <text x="150" y="407" text-anchor="middle" font-size="12" fill="#666666">뷰 열기</text>
+  <text x="290" y="382" text-anchor="start" font-size="13" fill="#333333">Window → Show View →</text>
+  <text x="290" y="400" text-anchor="start" font-size="13" font-weight="bold" fill="#333333">SWV → ITM Data Console</text>
+  <text x="290" y="420" text-anchor="start" font-size="12" fill="#666666">채널 0 체크 → Start Trace 버튼 클릭</text>
+
+  <!-- 경고 박스 (오른쪽) -->
+  <rect x="545" y="55" width="240" height="260" rx="6" fill="#FEECEC" stroke="#EA4335" stroke-width="2"/>
+  <rect x="545" y="55" width="240" height="38" rx="6" fill="#EA4335"/>
+  <text x="665" y="72" text-anchor="middle" font-size="14" font-weight="bold" fill="#FFFFFF">자주 발생하는 오류</text>
+  <text x="665" y="88" text-anchor="middle" font-size="12" fill="#FFFFFF">흔한 실수 TOP 3</text>
+
+  <text x="558" y="115" font-size="12" font-weight="bold" fill="#C62828">① Core Clock 불일치</text>
+  <text x="558" y="133" font-size="12" fill="#333333">설정값 ≠ 실제 클럭</text>
+  <text x="558" y="150" font-size="12" fill="#666666">→ SWV 콘솔 글자 깨짐</text>
+
+  <line x1="558" y1="160" x2="775" y2="160" stroke="#EA4335" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <text x="558" y="180" font-size="12" font-weight="bold" fill="#C62828">② SB12 점퍼 미연결</text>
+  <text x="558" y="198" font-size="12" fill="#333333">SWO 핀이 ST-LINK와 미연결</text>
+  <text x="558" y="215" font-size="12" fill="#666666">→ 콘솔 무반응</text>
+
+  <line x1="558" y1="225" x2="775" y2="225" stroke="#EA4335" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <text x="558" y="245" font-size="12" font-weight="bold" fill="#C62828">③ printf 버퍼링</text>
+  <text x="558" y="263" font-size="12" fill="#333333">기본 stdout은 줄버퍼링</text>
+  <rect x="558" y="271" width="212" height="20" rx="3" fill="#2D2D2D"/>
+  <text x="664" y="285" text-anchor="middle" font-size="11" font-family="monospace" fill="#F8F9FA">setvbuf(stdout, NULL, _IONBF, 0);</text>
+  <text x="558" y="307" font-size="12" fill="#666666">→ 위 코드로 버퍼링 해제</text>
+
+  <!-- 하단 완료 메시지 -->
+  <rect x="50" y="455" width="480" height="32" rx="4" fill="#E6F4EA" stroke="#34A853" stroke-width="1.5"/>
+  <text x="290" y="476" text-anchor="middle" font-size="13" fill="#1B5E20" font-weight="bold">✓ 설정 완료 → 디버그 시작 후 printf() 출력 확인</text>
+</svg>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch[NN]. [챕터 제목] — STM32 고급 실무교육</title>
+  <link rel="stylesheet" href="../../templates/book_style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+
+<!-- ===== 챕터 헤더 ===== -->
+<header class="chapter-header">
+  <div class="chapter-meta">Part [N] · Chapter [NN] · 프로젝트 <span class="version">v[X.X]</span></div>
+  <h1>Ch[NN]. [챕터 제목]</h1>
+  <p class="chapter-summary">[한 줄 챕터 요약 — 이 챕터에서 무엇을 만드는가]</p>
+  <div class="chapter-badge">누적 기능: [이 챕터에서 프로젝트에 추가되는 기능]</div>
+</header>
+
+<!-- ===== 아키텍처 위치 (Ch04 이상 필수) ===== -->
+<section class="architecture-position">
+  <h2>이 챕터의 아키텍처 위치</h2>
+  <p>전체 시스템에서 이 챕터의 컴포넌트가 어느 레이어에 위치하는지 확인합니다.</p>
+  <figure>
+    <img src="../../figures/ch[NN]_sec00_architecture.svg" alt="레이어 아키텍처 위치도">
+    <figcaption>그림 [NN]-1. [컴포넌트명]의 레이어 위치 (강조: [레이어명])</figcaption>
+  </figure>
+
+  <h3>인터페이스 설계</h3>
+  <p>이 챕터의 Driver/Service가 상위 레이어에 노출하는 API입니다.</p>
+  <pre><code class="language-c">/* [파일명].h — 공개 인터페이스 */
+
+/**
+ * @brief [함수 설명]
+ * @param [파라미터 설명]
+ * @return [반환값 설명]
+ */
+[반환형] [함수명]([파라미터]);
+  </code></pre>
+
+  <h3>FSM 설계</h3>  <!-- 해당하는 경우만 포함 -->
+  <figure>
+    <img src="../../figures/ch[NN]_sec00_fsm.svg" alt="FSM 상태 전이 다이어그램">
+    <figcaption>그림 [NN]-2. [컴포넌트명] FSM — 상태 전이 다이어그램</figcaption>
+  </figure>
+
+  <h3>시퀀스 다이어그램</h3>  <!-- 해당하는 경우만 포함 -->
+  <figure>
+    <img src="../../figures/ch[NN]_sec00_sequence.svg" alt="시퀀스 다이어그램">
+    <figcaption>그림 [NN]-3. [동작명] 시퀀스</figcaption>
+  </figure>
+</section>
+
+<!-- ===== 학습 목표 ===== -->
+<section class="learning-objectives">
+  <h2>학습 목표</h2>
+  <p>이 챕터를 완료하면 다음을 할 수 있습니다.</p>
+  <ul>
+    <li>[기억/이해] ~의 개념과 동작 원리를 설명할 수 있다.</li>
+    <li>[적용] ~를 STM32 HAL로 구현하고 동작을 확인할 수 있다.</li>
+    <li>[분석] ~에서 발생하는 문제를 로그와 디버거로 진단할 수 있다.</li>
+  </ul>
+  <div class="project-milestone">
+    <strong>프로젝트 v[X.X]</strong>: 이 챕터 완료 후 [누적 기능 설명]이 동작합니다.
+  </div>
+</section>
+
+<!-- ===== 본문 절 (반복) ===== -->
+<section id="sec-01">
+  <h2>[절 번호]. [절 제목]</h2>
+
+  <!-- 도입: 왜 이 내용이 필요한가 -->
+  <p>[도입 문단 — 이 절에서 다룰 내용의 필요성과 맥락]</p>
+
+  <!-- 비유: 새 개념을 친숙한 것으로 설명 -->
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    [실생활 비유 설명]
+    <br><small>※ 이 비유의 한계: [비유가 정확하지 않은 부분 명시]</small>
+  </div>
+
+  <!-- 개념 설명 -->
+  <p>[핵심 개념 설명]</p>
+
+  <!-- 다이어그램 -->
+  <figure>
+    <img src="../../figures/ch[NN]_sec01_[설명].svg" alt="[다이어그램 설명]">
+    <figcaption>그림 [NN]-[N]. [다이어그램 제목]</figcaption>
+  </figure>
+
+  <!-- 코드 예제 -->
+  <pre><code class="language-c">/* [파일명].c — [코드 설명] */
+
+/* 전역 변수 */
+
+/* 함수 구현 */
+void example_function(void)
+{
+    LOG_D("example_function 진입");
+
+    /* 동작 코드 */
+
+    LOG_I("example_function 완료");
+}
+  </code></pre>
+
+  <!-- 실무 팁 -->
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    [현장에서 유용한 실무 조언]
+  </aside>
+
+  <!-- 수강생 단골 질문 -->
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> [자주 나오는 질문]<br>
+    <strong>A.</strong> [답변]
+  </aside>
+
+  <!-- 면접 포인트 -->
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    [면접에서 자주 나오는 질문과 핵심 답변 키워드]
+  </aside>
+
+  <!-- 스스로 점검 -->
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>[확인 질문 1]</li>
+      <li>[확인 질문 2]</li>
+    </ul>
+  </aside>
+
+  <!-- 강사 꿀팁 -->
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    [강의 현장에서 활용할 수 있는 설명 방법이나 주의사항]
+  </aside>
+
+</section>
+
+<!-- ===== 실습 ===== -->
+<section id="lab">
+  <h2>실습: [실습 제목]</h2>
+  <p><strong>목표</strong>: [실습 목표]</p>
+  <p><strong>환경</strong>: STM32CubeIDE, NUCLEO-F411RE, [필요 하드웨어]</p>
+
+  <h3>Step 1. CubeMX 설정</h3>
+  <p>[설정 방법]</p>
+
+  <h3>Step 2. 코드 작성</h3>
+  <pre><code class="language-c">/* 실습 코드 */
+  </code></pre>
+
+  <h3>Step 3. 동작 확인</h3>
+  <p><strong>예상 결과</strong>: [정상 동작 시 관찰할 수 있는 것]</p>
+  <p><strong>로그 출력 예시</strong>:</p>
+  <pre><code>[INFO ] 시스템 초기화 완료
+[DEBUG] [값] = [예상값]
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실습이 안 될 때</strong><br>
+    [흔한 실수와 해결 방법 — "이것은 흔한 실수입니다"]
+  </aside>
+</section>
+
+<!-- ===== 핵심 정리 ===== -->
+<section class="chapter-summary-section">
+  <h2>핵심 정리</h2>
+  <ul>
+    <li>[핵심 내용 1]</li>
+    <li>[핵심 내용 2]</li>
+    <li>[핵심 내용 3]</li>
+  </ul>
+
+  <h3>아키텍처 업데이트</h3>
+  <p>이 챕터 완료 후 전체 아키텍처에 <code>[컴포넌트명]</code>이 추가되었습니다.</p>
+  <figure>
+    <img src="../../figures/ch[NN]_sec_final_architecture.svg" alt="업데이트된 아키텍처">
+    <figcaption>그림 [NN]-최종. v[X.X] 아키텍처 현황</figcaption>
+  </figure>
+</section>
+
+<!-- ===== 연습문제 ===== -->
+<section class="exercises">
+  <h2>연습문제</h2>
+
+  <div class="exercise">
+    <span class="level">기억</span>
+    <strong>1.</strong> [개념 확인 문제]
+  </div>
+
+  <div class="exercise">
+    <span class="level">이해</span>
+    <strong>2.</strong> [원리 설명 문제]
+  </div>
+
+  <div class="exercise">
+    <span class="level">적용</span>
+    <strong>3.</strong> [코드 작성 문제]
+  </div>
+
+  <div class="exercise">
+    <span class="level">분석</span>
+    <strong>4.</strong> [문제 진단 문제]
+  </div>
+</section>
+
+<!-- ===== 다음 챕터 예고 ===== -->
+<section class="next-chapter">
+  <h2>다음 챕터 예고</h2>
+  <p>
+    현재 프로젝트는 <strong>v[X.X]</strong> 상태로,
+    [현재 동작하는 기능 요약]까지 구현되었습니다.
+  </p>
+  <p>
+    다음 <strong>Ch[NN+1]. [다음 챕터 제목]</strong>에서는
+    [다음 챕터에서 추가할 기능]을 구현하여 프로젝트를 <strong>v[X.X+1]</strong>로 업그레이드합니다.
+  </p>
+</section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+</body>
+</html>

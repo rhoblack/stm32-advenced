@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch02. 로그 시스템 구축 — STM32 고급 실무교육</title>
+  <link rel="stylesheet" href="../../templates/book_style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+
+<!-- ===== 챕터 헤더 ===== -->
+<header class="chapter-header">
+  <div class="chapter-meta">Part 0 · Chapter 02 · 프로젝트 <span class="version">v0.2</span></div>
+  <h1>Ch02. 로그 시스템 구축</h1>
+  <p class="chapter-summary">SWO/ITM과 SEGGER RTT로 MCU 내부를 실시간 관찰하고, 4단계 로그 레벨 매크로로 표준 디버그 인프라를 구축한다</p>
+  <div class="chapter-badge">누적 기능: LOG_E/W/I/D 매크로 + SWO/RTT 출력 인프라 확립</div>
+</header>
+
+<!-- ===== 학습 목표 ===== -->
+<section class="learning-objectives">
+  <h2>학습 목표</h2>
+  <p>이 챕터를 완료하면 다음을 할 수 있습니다.</p>
+  <ul>
+    <li>[이해] SWO/ITM과 SEGGER RTT의 동작 원리를 설명하고, 두 방식의 기술적 차이를 비교할 수 있다.</li>
+    <li>[적용] STM32CubeIDE에서 SWO/ITM printf 리다이렉트를 구성하고 로그 출력을 확인할 수 있다.</li>
+    <li>[적용 + 분석] ERROR/WARN/INFO/DEBUG 4단계 로그 레벨 구조를 설계하고, <code>LOG_E/W/I/D</code> 매크로를 구현할 수 있다.</li>
+    <li>[분석 + 평가] 컴파일 타임 레벨 필터링 메커니즘을 분석하여, 빌드 목적(Debug/Release)에 따른 필터 레벨을 선택하고 근거를 설명할 수 있다.</li>
+    <li>[평가 + 창조] 구축한 로그 시스템을 실제 프로젝트에 통합하고, 로그 출력으로 버그 위치를 추론할 수 있다.</li>
+  </ul>
+  <div class="project-milestone">
+    <strong>프로젝트 v0.2</strong>: 이 챕터 완료 후 LOG_E/W/I/D 매크로와 SWO/RTT 출력 인프라가 동작합니다. 이후 모든 챕터의 코드는 이 로그 시스템을 공통 인프라로 사용합니다.
+  </div>
+</section>
+
+<!-- ===== §2.1 ===== -->
+<section id="sec-01">
+  <h2>§2.1 디버깅의 눈을 열다 — SWO/ITM과 printf 리다이렉트</h2>
+
+  <p>
+    Ch01에서 우리는 버튼 인터럽트와 LED 제어 코드를 완성했습니다.
+    그런데 잠깐, 코드가 "제대로" 동작하는지 어떻게 확신했나요?
+    LED가 켜지면 성공이라고 했지만, 인터럽트는 정말 한 번만 발생했을까요?
+    디바운싱 처리는 의도대로 50ms를 잘 걸러냈을까요?
+    MCU 내부에서 무슨 일이 벌어지는지, 지금 우리에게는 "눈"이 없습니다.
+  </p>
+  <p>
+    실무에서 개발자들은 이 문제를 오래전부터 알고 있었습니다.
+    그래서 ARM Cortex-M 아키텍처에는 처음부터 디버그 출력 전용 하드웨어 경로가 설계되어 있습니다.
+    바로 <strong>SWO(Serial Wire Output, 직렬 와이어 출력)</strong>와 <strong>ITM(Instrumentation Trace Macrocell, 계측 트레이스 매크로셀)</strong>입니다.
+    이 절에서는 이 하드웨어 경로를 활용해 <code>printf()</code>를 STM32 콘솔로 리다이렉트하는 방법을 완전히 이해하고 구현합니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기 — 공항 관제탑과 블랙박스</strong><br>
+    비행기가 이륙하면 두 가지 통신 채널이 동시에 작동합니다.
+    <strong>관제탑 교신(SWD)</strong>은 조종사와 관제탑이 명령을 주고받는 양방향 채널입니다.
+    디버거가 브레이크포인트를 걸고 레지스터를 읽는 것이 바로 이 역할입니다.
+    반면 <strong>블랙박스(SWO)</strong>는 비행 내내 고도, 속도, 엔진 상태를 묵묵히 기록하는 단방향 채널입니다.
+    MCU가 실행 중에 내부 상태를 흘려보내는 것이 SWO입니다.
+    관제탑과 교신하면서도 블랙박스는 멈추지 않듯, SWD로 디버깅하면서 SWO로 로그를 동시에 볼 수 있습니다.
+    <br><small>※ 이 비유의 한계: 실제 SWO는 비행 중 지상에서 실시간 읽기가 가능합니다. 블랙박스와 달리 사고 후 복기가 목적이 아닙니다.</small>
+  </div>
+
+  <h3>SWO/ITM 하드웨어 경로 이해</h3>
+  <p>
+    ARM Cortex-M4 코어 내부에는 <strong>ITM</strong>이 내장되어 있습니다.
+    ITM은 32개의 "자극 포트(stimulus port)"를 가지며, 그 중 포트 0번이 <code>printf</code> 텍스트 출력에 사용됩니다.
+    코드에서 <code>ITM_SendChar()</code>를 호출하면 문자 데이터가 ITM 포트 0으로 들어가고,
+    이것이 <strong>TPIU(Trace Port Interface Unit, 트레이스 포트 인터페이스 유닛)</strong>를 통해 직렬화되어
+    <strong>SWO 핀</strong>으로 내보내집니다.
+    NUCLEO-F411RE에서 SWO 핀은 <strong>PB3</strong>입니다.
+    이 핀이 보드 내장 ST-LINK 칩에 연결되어 USB를 통해 PC의 CubeIDE SWV(Serial Wire Viewer) 콘솔로 도달합니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch02_sec01_swo_signal_path.svg" alt="SWO 신호 경로: CPU Core → ITM → TPIU → SWO 핀 → ST-LINK → USB → CubeIDE SWV">
+    <figcaption>그림 02-1. SWO 신호 경로 — CPU 코어에서 CubeIDE 콘솔까지의 물리적 경로</figcaption>
+  </figure>
+
+  <p>
+    실생활 예시로는 자동차의 <strong>OBD-II(On-Board Diagnostics) 포트</strong>를 떠올리면 됩니다.
+    운전 중에는 ECU가 엔진 상태를 계속 모니터링하지만, 정비소에서 OBD-II 스캐너를 연결해야 비로소
+    그 데이터를 "볼 수" 있습니다. SWO도 마찬가지입니다. MCU는 항상 ITM으로 데이터를 내보내려 하지만,
+    ST-LINK라는 "스캐너"가 연결되어야 우리 눈에 보입니다.
+  </p>
+
+  <h3>NUCLEO-F411RE SWO 핀 확인 — SB12 점퍼</h3>
+  <p>
+    NUCLEO-F411RE에서 SWO를 사용하려면 먼저 하드웨어 점퍼를 확인해야 합니다.
+    보드 상단 뒷면의 <strong>SB12 솔더 브리지(solder bridge)</strong>가 연결되어 있어야 PB3 SWO 신호가
+    ST-LINK 칩으로 전달됩니다. 새 보드는 기본 연결 상태이지만, 혹시 SWO 출력이 전혀 안 나온다면
+    이 점퍼를 먼저 확인하세요.
+  </p>
+
+  <aside class="tip">
+    💡 <strong>NUCLEO SWO 핀 위치 확인법</strong><br>
+    NUCLEO-F411RE 보드의 CN4 커넥터(ST-LINK 쪽)를 보면 SWO 라벨이 있는 핀이 있습니다.
+    CubeMX에서 PB3를 SYS_SWO로 설정하면 해당 핀이 SWO 기능으로 고정됩니다.
+    PB3는 보드에서 SWO 전용으로 사용하므로 다른 GPIO 용도로 쓰지 마세요.
+  </aside>
+
+  <h3>CubeIDE SWV 설정 — Core Clock 일치가 핵심</h3>
+  <p>
+    SWO는 특정 보드레이트(baud rate)로 데이터를 전송합니다.
+    이 보드레이트는 <strong>Core Clock 주파수</strong>를 기반으로 계산됩니다.
+    만약 CubeIDE SWV 설정의 Core Clock 값이 실제 MCU 동작 클럭과 다르면,
+    수신 측에서 비트를 잘못 복원해 출력이 깨지거나 아무것도 나오지 않습니다.
+    NUCLEO-F411RE를 HSE 기반으로 100MHz 설정했다면, SWV 설정에도 반드시 <strong>100MHz</strong>를 입력해야 합니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch02_sec01_swv_cubemx_settings.svg" alt="CubeIDE SWV 설정 화면: Core Clock 100MHz 입력, SWV 활성화 순서">
+    <figcaption>그림 02-2. CubeIDE SWV 설정 단계 — Core Clock 100MHz 일치가 필수</figcaption>
+  </figure>
+
+  <p>SWV 설정 순서는 다음과 같습니다.</p>
+  <ol>
+    <li>CubeIDE 상단 메뉴 → <strong>Run → Debug Configurations</strong> 열기</li>
+    <li>현재 프로젝트의 Debug 설정 선택 → <strong>Debugger</strong> 탭 클릭</li>
+    <li><strong>Enable Serial Wire Viewer (SWV)</strong> 체크박스 활성화</li>
+    <li><strong>Core Clock</strong> 필드에 <code>100</code> 입력 (MHz 단위)</li>
+    <li>디버그 실행 후 <strong>Window → Show View → SWV → SWV ITM Data Console</strong> 열기</li>
+    <li>콘솔 상단 설정 아이콘 클릭 → Port 0 활성화 → <strong>Start Trace</strong> 버튼 클릭</li>
+  </ol>
+
+  <h3>_write() 오버라이드 — printf를 ITM으로 연결하기</h3>
+  <p>
+    ARM GCC의 <code>printf()</code>는 최종적으로 <code>_write()</code>라는 시스템 콜을 호출합니다.
+    Newlib C 라이브러리가 제공하는 <code>_write()</code> 기본 구현은 아무것도 하지 않습니다(또는 UART로 연결).
+    우리가 이 함수를 "오버라이드(재정의)"하면, 모든 <code>printf()</code> 출력이 우리가 원하는 곳으로 흘러갑니다.
+    바로 ITM 채널 0으로 한 글자씩 내보내는 것입니다.
+  </p>
+  <p>
+    콜 체인을 정리하면: <code>printf()</code> → <code>vfprintf()</code> → <code>fwrite()</code> → <strong><code>_write()</code></strong> → <code>ITM_SendChar()</code> → SWO 핀
+  </p>
+
+  <pre><code class="language-c">/* syscalls.c (또는 main.c 하단) — _write() 오버라이드 */
+
+#include "stm32f4xx_hal.h"
+#include &lt;stdint.h&gt;
+
+/**
+ * @brief printf → SWO/ITM 리다이렉트
+ *        Newlib의 _write() 시스템 콜을 오버라이드한다.
+ *        ITM 채널 0이 활성화되어 있을 때만 문자를 출력한다.
+ *
+ * @param fd   파일 디스크립터 (stdout=1, 여기서는 무시)
+ * @param ptr  출력할 문자 버퍼 포인터
+ * @param len  출력할 바이트 수
+ * @return     실제 출력한 바이트 수
+ */
+int _write(int fd, char *ptr, int len)
+{
+    (void)fd;  /* 파일 디스크립터 미사용 경고 억제 */
+
+    /* ITM 디버그 채널 0으로 한 글자씩 출력 */
+    for (int i = 0; i &lt; len; i++) {
+        ITM_SendChar((uint32_t)ptr[i]);
+    }
+
+    return len;
+}
+  </code></pre>
+
+  <p>
+    <code>printf</code>는 기본적으로 버퍼링이 활성화되어 있어 버퍼가 가득 차거나 프로그램이 종료될 때만 출력됩니다.
+    MCU 펌웨어는 일반적으로 종료되지 않으므로 버퍼가 비워지지 않아 마지막 로그가 유실될 수 있습니다.
+    <code>setvbuf()</code>로 버퍼링을 비활성화(unbuffered 모드, <code>_IONBF</code>)하면
+    <code>printf</code> 호출 즉시 <code>_write()</code>가 불려 ITM으로 출력됩니다.
+  </p>
+
+  <pre><code class="language-c">/* main.c — setvbuf로 버퍼링 비활성화 (즉시 출력 보장) */
+
+#include &lt;stdio.h&gt;
+
+int main(void)
+{
+    HAL_Init();
+    SystemClock_Config();  /* HSE 기반 100MHz 설정 */
+
+    /* stdout 버퍼링 비활성화 — printf 호출 즉시 ITM으로 출력 */
+    setvbuf(stdout, NULL, _IONBF, 0);
+
+    printf("=== STM32 SWO 출력 테스트 ===\r\n");
+    printf("Core Clock: %lu Hz\r\n", SystemCoreClock);
+
+    while (1) {
+        HAL_Delay(1000);
+        printf("[%6lu] 시스템 실행 중...\r\n", HAL_GetTick());
+    }
+}
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>ISR 내부에서 ITM_SendChar() 호출 주의</strong><br>
+    <code>ITM_SendChar()</code>의 busy-wait(바쁜 대기)는 <strong>ITM이 활성화된 상태(디버거 연결)에서 FIFO가 가득 찬 경우에만</strong> 발생합니다.
+    디버거 미연결(배포 펌웨어) 상태에서는 <code>ITM_SendChar()</code>가 즉시 반환됩니다.
+    따라서 배포 빌드에서 <code>_write()</code>를 제거하지 않아도 hang이 발생하지 않습니다.
+    단, 디버거가 연결된 개발 환경에서 ISR 내에서 LOG 매크로를 과도하게 사용하면 FIFO가 가득 차
+    인터럽트 레이턴시가 늘어날 수 있습니다.
+    실무에서는 ISR 내부에서는 플래그만 세우고, 메인 루프에서 로그를 출력하는 패턴을 권장합니다.
+    꼭 필요하다면 <code>LOG_D</code> 대신 <code>LOG_I</code> 수준으로만 사용하세요.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> <code>_write()</code>를 오버라이드하면 기존 UART 출력과 충돌하지 않나요?<br>
+    <strong>A.</strong> 충돌하지 않습니다. <code>_write()</code>는 약한 심볼(weak symbol)로 정의되어 있어,
+    우리가 같은 이름의 함수를 정의하면 링커가 자동으로 우리 버전을 우선 사용합니다.
+    단, UART와 SWO를 동시에 사용하고 싶다면 <code>_write()</code> 내부에서 두 채널 모두에 출력하는 코드를 작성하면 됩니다.
+    Ch04에서는 백엔드를 런타임에 선택하는 구조로 발전시킵니다.
+  </aside>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁 — _write() 콜 체인 칠판 작도</strong><br>
+    수강생들이 가장 많이 막히는 부분이 "어떻게 printf가 ITM으로 연결되나"입니다.
+    수업 시작 전에 칠판에 <code>printf → vfprintf → fwrite → _write → ITM_SendChar</code> 콜 체인을
+    화살표로 그려두고, 우리가 어느 지점을 "가로채는지" 시각화해 주세요.
+    "인터셉터 패턴"이라는 단어를 함께 언급하면 소프트웨어 아키텍처 맥락에서도 자연스럽게 연결됩니다.
+  </aside>
+</section>
+
+<!-- ===== §2.2 ===== -->
+<section id="sec-02">
+  <h2>§2.2 느린 SWO의 대안 — SEGGER RTT 활용</h2>
+
+  <p>
+    SWO/ITM은 강력하지만 제약이 있습니다.
+    SWO 클럭은 Core Clock에서 분주(分周)되어 실제 전송 속도가 제한됩니다.
+    고속으로 반복되는 이벤트를 로그로 남기면 ITM FIFO가 넘쳐 출력이 손실됩니다.
+    또한 SWO는 Cortex-M0/M0+ 코어에는 없습니다(ETM 트레이스도 마찬가지).
+    이러한 한계를 극복하는 방법이 <strong>SEGGER RTT(Real-Time Transfer, 실시간 전송)</strong>입니다.
+  </p>
+  <p>
+    RTT는 2014년 SEGGER가 개발한 독창적인 방식입니다.
+    핵심 아이디어는 단순합니다. "별도 핀이 필요 없다."
+    MCU RAM의 특정 영역에 링 버퍼(ring buffer)를 만들고, 디버거가 JTAG/SWD를 통해 해당 메모리를
+    직접 읽어가는 방식입니다. MCU 입장에서는 그냥 메모리에 쓰는 것이 전부이므로 CPU 부담이 극히 적습니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기 — 공유 화이트보드</strong><br>
+    두 사람이 같은 방에 있고, 한 사람(MCU)이 화이트보드에 메모를 계속 씁니다.
+    다른 사람(디버거)은 화이트보드를 보며 메모를 읽어 지웁니다.
+    말(전용 핀)을 하지 않아도 되고, 두 사람이 동시에 화이트보드를 활용하는 것이 RTT 방식입니다.
+    공항 수하물 벨트처럼, 짐(로그 데이터)이 올라오면 반대편에서 빼가는 순환 구조입니다.
+    <br><small>※ 이 비유의 한계: 실제로는 MCU와 디버거가 동시에 같은 메모리에 접근합니다. 진짜 경쟁 조건(race condition)을 방지하기 위해 RTT 라이브러리가 임계 구역(critical section)을 관리합니다.</small>
+  </div>
+
+  <h3>RTT 메모리 링 버퍼 구조</h3>
+  <p>
+    SEGGER RTT 라이브러리를 프로젝트에 추가하면 <code>_SEGGER_RTT</code>라는 전역 구조체가
+    MCU RAM에 배치됩니다. 이 구조체는 "업(Up)" 버퍼(MCU → 호스트)와 "다운(Down)" 버퍼(호스트 → MCU)를
+    각각 링 버퍼 형태로 가집니다. 기본 업 버퍼 0번이 텍스트 로그 출력에 사용됩니다.
+  </p>
+  <p>
+    디버거(J-Link 또는 ST-LINK)는 SWD 인터페이스를 통해 MCU가 실행 중인 상태에서도 이 메모리 영역을
+    폴링(polling, 주기적 읽기)합니다. MCU는 로그 데이터를 버퍼에 써두기만 하면 되므로,
+    SWO처럼 ITM FIFO가 빌 때까지 기다릴 필요가 없습니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch02_sec02_rtt_memory_layout.svg" alt="RTT 메모리 구조: MCU RAM 내 _SEGGER_RTT 구조체, Up/Down 링 버퍼, J-Link 폴링">
+    <figcaption>그림 02-3. RTT 메모리 레이아웃 — MCU RAM에 배치된 링 버퍼와 디버거 폴링 방향</figcaption>
+  </figure>
+
+  <h3>NUCLEO-F411RE에서 RTT Viewer 연결</h3>
+  <p>
+    NUCLEO-F411RE의 내장 ST-LINK v2도 RTT를 지원합니다.
+    SEGGER RTT Viewer를 실행하면 연결 설정 창이 나옵니다.
+    이때 <strong>Connection: USB, J-Link</strong> 대신 <strong>ST-LINK</strong>를 선택하고
+    Target Device는 <code>STM32F411RE</code>로 설정합니다.
+    RTT Control Block을 자동 탐색(<strong>Search Range</strong>) 모드로 설정하면 됩니다.
+  </p>
+
+  <h3>SEGGER RTT 라이브러리 설치</h3>
+  <ol>
+    <li><strong>다운로드</strong>: <a href="#" title="SEGGER 공식 사이트">SEGGER 공식 사이트(segger.com)</a>에서 J-Link Software Package 또는 RTT 소스 파일을 다운로드합니다.</li>
+    <li><strong>파일 복사</strong>: 다운로드한 패키지에서 다음 3개 파일을 프로젝트 <code>Core/Src</code> 또는 <code>Middlewares/SEGGER_RTT/</code> 폴더에 복사합니다:
+      <ul>
+        <li><code>SEGGER_RTT.c</code></li>
+        <li><code>SEGGER_RTT.h</code></li>
+        <li><code>SEGGER_RTT_Conf.h</code></li>
+      </ul>
+    </li>
+    <li><strong>Include 경로 추가</strong>: STM32CubeIDE → Project Properties → C/C++ Build → Settings → Include Paths에 RTT 폴더 경로 추가</li>
+    <li><strong>빌드 확인</strong>: <code>#include "SEGGER_RTT.h"</code> 추가 후 빌드 오류 없으면 준비 완료</li>
+  </ol>
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    SEGGER RTT 소스 파일은 J-Link Software Package(무료) 설치 후 <code>C:\Program Files\SEGGER\JLink\Samples\RTT\</code>에서 찾을 수 있습니다. 또는 <a href="#" title="SEGGER GitHub">SEGGER GitHub</a>에서 직접 다운로드 가능합니다.
+  </aside>
+
+  <h3>RTT 기초 사용법</h3>
+  <p>
+    SEGGER RTT 라이브러리 파일(<code>SEGGER_RTT.c</code>, <code>SEGGER_RTT.h</code>, <code>SEGGER_RTT_Conf.h</code>)을
+    프로젝트에 추가하고 다음과 같이 사용합니다.
+  </p>
+
+  <pre><code class="language-c">/* rtt_test.c — SEGGER RTT 기초 사용 예제 */
+
+#include "SEGGER_RTT.h"
+#include "stm32f4xx_hal.h"
+
+void rtt_example_init(void)
+{
+    /* RTT 초기화 (내부적으로 버퍼 구조체 초기화) */
+    SEGGER_RTT_Init();
+
+    /* 채널 0으로 문자열 출력 */
+    SEGGER_RTT_WriteString(0, "=== RTT 출력 시작 ===\r\n");
+}
+
+void rtt_example_loop(void)
+{
+    static uint32_t count = 0;
+
+    /* printf 스타일 포맷 출력 */
+    SEGGER_RTT_printf(0, "[%6u] 루프 카운트: %lu\r\n",
+                      (unsigned)HAL_GetTick(), count++);
+
+    HAL_Delay(500);
+}
+  </code></pre>
+
+  <figure>
+    <img src="../../figures/ch02_sec02_swo_vs_rtt_compare.svg" alt="SWO vs RTT 비교 표: 핀 필요 여부, 대역폭, CPU 오버헤드, 설정 복잡도">
+    <figcaption>그림 02-4. SWO vs RTT 비교 — 두 방식의 트레이드오프와 선택 기준</figcaption>
+  </figure>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> SWO와 RTT 중 어떤 걸 써야 하나요?<br>
+    <strong>A.</strong> 이 챕터에서는 SWO를 주 백엔드로, RTT를 개념 이해 + 대안으로 다룹니다.
+    실무 선택 기준은 이렇습니다.
+    <strong>SWO가 유리한 경우:</strong> 설정이 간단하고 별도 라이브러리 불필요, CubeIDE 통합 우수, ITM 채널 다중화 필요 시.
+    <strong>RTT가 유리한 경우:</strong> 고속 로그(수십 kHz 이벤트), Cortex-M0 같이 ITM 없는 코어, 블로킹 없는 non-stop 실행 필요 시.
+    우리가 만드는 <code>logger.c</code>는 백엔드를 교체할 수 있도록 설계합니다.
+    Ch04에서 UART DMA 백엔드, Ch06에서 RTT 고급 활용을 다룹니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트 — ARM Cortex-M 디버그 인터페이스</strong><br>
+    면접에서 "SWD와 SWO의 차이"를 물어보면 이렇게 답하세요:<br>
+    "SWD(Serial Wire Debug)는 양방향 디버그/프로그래밍 인터페이스로 2핀(SWDIO, SWDCLK)을 사용합니다.
+    SWO(Serial Wire Output)는 단방향 트레이스 출력 전용 핀으로 ITM/ETM 데이터를 흘려보냅니다.
+    SEGGER RTT는 SWD를 메모리 접근 채널로 재활용해 별도 핀 없이 고속 트레이스를 구현한 방식입니다."
+    핵심 키워드: ITM 채널 구조, 단방향 vs 양방향, 트레이스 오버헤드 비교.
+  </aside>
+</section>
+
+<!-- ===== §2.3 ===== -->
+<section id="sec-03">
+  <h2>§2.3 로그에도 등급이 있다 — 로그 레벨 설계</h2>
+
+  <p>
+    SWO 또는 RTT로 로그 출력 채널은 열었습니다. 그런데 아무 생각 없이 코드 곳곳에
+    <code>printf()</code>를 심으면 어떤 일이 벌어질까요?
+    수백 줄의 로그가 쏟아지고, 정작 중요한 에러 메시지를 놓치게 됩니다.
+    스마트폰에서 모든 앱 알림을 켜놓으면 정작 중요한 전화가 와도 인지 못하는 것과 같습니다.
+  </p>
+  <p>
+    실무 개발자들은 이 문제를 <strong>로그 레벨(log level)</strong>로 해결합니다.
+    모든 로그 메시지에 "중요도 등급"을 부여하고, 설정에 따라 낮은 등급의 메시지는 출력하지 않는 것입니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기 — 병원 응급실 트리아지</strong><br>
+    응급실에는 트리아지(triage, 환자 중증도 분류) 시스템이 있습니다.
+    도착하는 환자를 즉시 수술 필요(빨강), 빠른 처치 필요(주황), 일반 진료(초록), 검진 수준(회색)으로 분류합니다.
+    로그 레벨도 같습니다.
+    <strong>ERROR(빨강)</strong> — 즉시 처리하지 않으면 시스템이 멈추는 심각한 오류.
+    <strong>WARN(주황)</strong> — 지금 당장은 아니지만 주의가 필요한 경고.
+    <strong>INFO(초록)</strong> — 정상적인 동작을 추적하는 일반 정보.
+    <strong>DEBUG(회색)</strong> — 개발 중 상세 추적을 위한 진단 정보.
+    <br><small>※ 이 비유의 한계: 의료 트리아지는 사람이 판단하지만, 로그 레벨은 개발자가 코드 작성 시 결정합니다. 자동으로 중요도를 판단하지 않습니다.</small>
+  </div>
+
+  <h3>4단계 로그 레벨의 실무 기준</h3>
+
+  <figure>
+    <img src="../../figures/ch02_sec03_log_level_hierarchy.svg" alt="로그 레벨 피라미드: ERROR(빨강)→WARN(주황)→INFO(초록)→DEBUG(회색), LOG_LEVEL=2 설정 시 차단 시각화">
+    <figcaption>그림 02-5. 로그 레벨 계층 — 피라미드 위로 갈수록 중요도 높음, LOG_LEVEL=2 설정 시 INFO/DEBUG는 출력 안 됨</figcaption>
+  </figure>
+
+  <p>각 레벨의 실무 사용 기준입니다.</p>
+  <ul>
+    <li><strong>ERROR (레벨 1)</strong>: 시스템이 정상 기능을 수행할 수 없는 상태. 메모리 부족, 하드웨어 초기화 실패, 치명적 데이터 손상. "절대 발생해서는 안 되는 상황"에 사용합니다.</li>
+    <li><strong>WARN (레벨 2)</strong>: 예상하지 못한 상황이지만 복구 가능. 재시도 발생, 타임아웃 경고, 버퍼 임계치 초과. "발생했지만 계속 실행은 가능"한 상황입니다.</li>
+    <li><strong>INFO (레벨 3)</strong>: 정상 동작의 주요 이벤트. 시스템 시작/종료, 상태 전이, 중요한 사용자 이벤트. "무슨 일이 일어났는지" 추적에 사용합니다.</li>
+    <li><strong>DEBUG (레벨 4)</strong>: 개발/진단용 상세 정보. 변수 값, 함수 진입/반환, 루프 카운터. 배포 버전에서는 모두 꺼야 합니다.</li>
+  </ul>
+
+  <h3>로그 포맷 설계 — 구조화된 출력의 힘</h3>
+  <p>
+    좋은 로그는 보자마자 "언제, 어디서, 무슨 일이 발생했는지"를 알 수 있어야 합니다.
+    우리가 설계할 포맷은 다음 4개 필드를 포함합니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch02_sec03_log_format_anatomy.svg" alt="로그 출력 한 줄 해부: [1234][ERROR][main.c:45][main] 메시지 → 각 필드 화살표 설명">
+    <figcaption>그림 02-6. 로그 포맷 해부 — 4개 필드의 출처와 역할</figcaption>
+  </figure>
+
+  <pre><code class="language-c">/* 로그 출력 형식 예시 (%.12s: 함수명 최대 12자 절단, 패딩 없음) */
+/* [타임스탬프ms][레벨 ][파일명:라인][함수명(최대12자)] 메시지 */
+/*  ↓             ↓       ↓             ↓ */
+[  1234][ERROR][main.c:45][main] 센서 초기화 실패: 반환값 = -1
+[  1235][WARN ][sensor.c:88][sensor_read] 응답 타임아웃, 재시도 1/3
+[  2000][INFO ][main.c:62][main] 시스템 정상 시작 완료
+[  2001][DEBUG][gpio.c:33][gpio_init] GPIOB 클럭 활성화
+  </code></pre>
+
+  <p>
+    <strong>타임스탬프</strong>는 <code>HAL_GetTick()</code>이 반환하는 밀리초 단위 카운터를 사용합니다.
+    <code>HAL_GetTick()</code>은 SysTick 인터럽트(1ms 주기)로 증가하는 전역 변수를 읽으므로
+    추가 하드웨어 설정 없이 바로 사용할 수 있습니다.
+    단, <code>uint32_t</code> 범위이므로 약 49.7일 후에 오버플로되어 0으로 초기화됩니다.
+  </p>
+
+  <aside class="tip">
+    💡 <strong>실무 로그 레벨 운용 기준</strong><br>
+    개발 단계에서는 <code>LOG_LEVEL=LOG_LEVEL_DEBUG(4)</code>로 설정합니다.
+    QA/테스트 단계에서는 <code>LOG_LEVEL=LOG_LEVEL_INFO(3)</code>으로 낮춥니다.
+    최종 배포 펌웨어에서는 <code>LOG_LEVEL=LOG_LEVEL_WARN(2)</code> 또는
+    <code>LOG_LEVEL=LOG_LEVEL_ERROR(1)</code>만 남깁니다.
+    일부 제품은 필드에서 문제 발생 시 원격으로 <code>LOG_LEVEL</code>을 높여
+    상세 로그를 수집하는 메커니즘을 갖추기도 합니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>지금 작성 중인 코드에서 가장 최근에 발생한 버그를 떠올려 보세요. 어느 레벨의 로그로 잡을 수 있었을까요?</li>
+      <li>ERROR와 WARN의 차이를 한 문장으로 설명할 수 있나요? "복구 가능 여부"를 기준으로 생각해 보세요.</li>
+      <li>DEBUG 레벨을 배포 펌웨어에 남기면 어떤 문제가 생길까요? (힌트: 플래시 크기, 실행 속도, 정보 노출)</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== §2.4 ===== -->
+<section id="sec-04">
+  <h2>§2.4 LOG_E/W/I/D 매크로 설계 — C 전처리기의 실무 활용</h2>
+
+  <p>
+    이제 §2.3에서 설계한 로그 레벨 개념을 실제 코드로 구현할 차례입니다.
+    목표는 단순합니다. <code>LOG_E("에러 발생: 코드 %d", code);</code>라는 한 줄을 쓰면
+    타임스탬프, 파일명, 라인 번호, 함수명이 자동으로 붙어서 출력되는 것입니다.
+    이를 가능하게 하는 도구가 <strong>C 전처리기(preprocessor)</strong>의 가변 인자 매크로(variadic macro)입니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기 — 스탬프(도장)</strong><br>
+    카페 POS기에서 영수증을 출력할 때를 생각해보세요.
+    직원은 "아메리카노 한 잔"만 입력하지만, 영수증에는 매장명, 날짜/시각, 영수증 번호, 메뉴명, 가격이 자동으로 찍힙니다.
+    <code>LOG_E("초기화 실패")</code>도 같습니다. 개발자가 메시지만 쓰면,
+    전처리기가 타임스탬프, 파일명, 라인, 함수명이라는 "고정 정보"를 자동으로 새겨주는 도장입니다.
+    <br><small>※ 이 비유의 한계: POS기는 런타임에 정보를 수집하지만, <code>__FILE__</code>과 <code>__LINE__</code>은 컴파일 타임에 결정됩니다.</small>
+  </div>
+
+  <h3>핵심 재료 1 — 내장 매크로 __FILE__, __LINE__, __func__</h3>
+  <p>
+    C 컴파일러는 컴파일 타임에 자동으로 값이 채워지는 특수 매크로를 제공합니다.
+  </p>
+  <ul>
+    <li><code>__FILE__</code>: 현재 소스 파일의 경로 문자열. 예: <code>"/home/user/project/src/main.c"</code></li>
+    <li><code>__LINE__</code>: 현재 줄 번호를 나타내는 정수. 예: <code>45</code></li>
+    <li><code>__func__</code>: 현재 함수 이름 문자열. 예: <code>"HAL_GPIO_EXTI_Callback"</code> (C99 표준)</li>
+  </ul>
+
+  <pre><code class="language-c">/* 내장 매크로 동작 확인 예제 */
+
+void test_builtin_macros(void)
+{
+    /* 이 printf는 컴파일 시점에 다음으로 치환됨: */
+    /* printf("파일: /path/to/main.c, 줄: 10, 함수: test_builtin_macros\r\n"); */
+    printf("파일: %s, 줄: %d, 함수: %s\r\n",
+           __FILE__, __LINE__, __func__);
+}
+  </code></pre>
+
+  <h3>핵심 재료 2 — 가변 인자 매크로 ##__VA_ARGS__</h3>
+  <p>
+    <code>printf</code>처럼 인자 개수가 고정되지 않은 매크로를 만들려면
+    <strong>가변 인자 매크로(variadic macro)</strong> 문법을 사용합니다.
+    <code>...</code>는 0개 이상의 추가 인자를 받겠다는 선언이고,
+    <code>__VA_ARGS__</code>는 그 인자들이 전개되는 위치를 지정합니다.
+  </p>
+  <p>
+    STM32CubeIDE(GCC 기반)에서는 <code>##__VA_ARGS__</code>가 완전히 지원됩니다.
+    GCC에서 사용하는 <code>##__VA_ARGS__</code>의 <code>##</code>는 중요한 역할을 합니다.
+    인자가 0개일 때 앞의 쉼표(<code>,</code>)를 자동으로 제거해주어,
+    <code>LOG_E("메시지")</code>처럼 추가 인자 없는 호출도 정상 컴파일됩니다.
+    이 교재의 CubeIDE 환경에서는 신경 쓰지 않아도 됩니다.
+    (참고: C 표준(C11 이전)에는 없는 GCC 확장이므로 IAR이나 MSVC 같은 다른 컴파일러 환경에서는
+    <code>__VA_OPT__(,)</code>를 사용합니다.)
+  </p>
+
+  <pre><code class="language-c">/* 가변 인자 매크로 문법 이해 */
+
+/* 기본 형태 — 인자가 1개 이상일 때만 동작 (C99 표준) */
+#define DEBUG_C99(fmt, ...) printf(fmt, __VA_ARGS__)
+
+/* GCC 확장 — 인자 0개도 허용 (## 가 쉼표를 제거) */
+#define DEBUG_GCC(fmt, ...) printf(fmt, ##__VA_ARGS__)
+
+/* 사용 예 */
+/* DEBUG_C99("메시지")      → 컴파일 에러 (쉼표 뒤 인자 없음) */
+/* DEBUG_GCC("메시지")      → 정상 컴파일  */
+/* DEBUG_GCC("값=%d", val)  → 정상 컴파일  */
+  </code></pre>
+
+  <h3>단계별 매크로 빌드업 — 3단계로 완성하기</h3>
+  <p>한 번에 완성 매크로를 보여주는 것보다, 3단계로 점진적으로 빌드업하면서 각 요소를 이해합니다.</p>
+
+  <h4>1단계 — 가장 기본적인 형태</h4>
+  <pre><code class="language-c">/* 단계 1: 레벨 태그만 붙이기 */
+
+#define LOG_E(fmt, ...)  printf("[ERROR] " fmt "\r\n", ##__VA_ARGS__)
+#define LOG_W(fmt, ...)  printf("[WARN ] " fmt "\r\n", ##__VA_ARGS__)
+#define LOG_I(fmt, ...)  printf("[INFO ] " fmt "\r\n", ##__VA_ARGS__)
+#define LOG_D(fmt, ...)  printf("[DEBUG] " fmt "\r\n", ##__VA_ARGS__)
+
+/* 사용 예 */
+LOG_E("센서 응답 없음");
+/* 출력: [ERROR] 센서 응답 없음  */
+
+LOG_D("버튼 상태: %d", button_state);
+/* 출력: [DEBUG] 버튼 상태: 1 */
+  </code></pre>
+
+  <h4>2단계 — 컨텍스트 정보(파일명, 라인, 함수명) 추가</h4>
+  <pre><code class="language-c">/* 단계 2: 위치 정보 자동 삽입 */
+
+/* __FILE__ 경로가 너무 길면 파일명만 추출: strrchr 사용 */
+/* 실제 구현은 logger.c의 basename() 함수로 처리 */
+
+#define LOG_E(fmt, ...)  \
+    printf("[ERROR][%s:%d][%s] " fmt "\r\n", \
+           __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+
+/* 사용 예 */
+/* LOG_E("초기화 실패: %d", ret); */
+/* 출력: [ERROR][main.c:45][main] 초기화 실패: -1 */
+  </code></pre>
+
+  <h4>3단계 — 타임스탬프 추가 (완성 형태)</h4>
+  <pre><code class="language-c">/* 단계 3: HAL_GetTick() 타임스탬프 포함 완성 버전 */
+
+#define LOG_E(fmt, ...)  \
+    printf("[%6lu][ERROR][%s:%d][%.12s] " fmt "\r\n", \
+           HAL_GetTick(), __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+
+/* %.12s: 함수명을 최대 12자로 절단 — 12자 초과 시 잘립니다 */
+/* 사용 예 */
+/* LOG_E("초기화 실패: %d", ret); */
+/* 출력: [  1234][ERROR][main.c:45][main        ] 초기화 실패: -1 */
+/* 함수명이 22자인 경우: [  1234][ERROR][main.c:45][HAL_GPIO_EXT] 로 절단됨 */
+  </code></pre>
+
+  <figure>
+    <img src="../../figures/ch02_sec04_macro_expansion.svg" alt="C 전처리기 매크로 전개: LOG_D('val=%d', x) → 전처리기 → 컴파일러 → 바이너리 포함/제거 분기">
+    <figcaption>그림 02-7. 매크로 전개 과정 — LOG_D() 호출이 전처리기를 통해 실제 코드로 치환되는 과정</figcaption>
+  </figure>
+
+  <h3>완성 매크로 코드 — log_macro.h</h3>
+  <p>
+    단계별 빌드업을 이해했다면, 실제 프로젝트에서 사용할 완성 버전을 살펴봅니다.
+    완성 버전은 매크로가 직접 <code>printf()</code>를 호출하는 대신,
+    <code>log_print()</code>라는 내부 함수를 호출하는 구조입니다.
+    이렇게 하면 나중에 백엔드(출력 채널)를 바꾸기 쉬워집니다.
+    §2.6과 실습 섹션에서 완성 코드를 확인합니다.
+  </p>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> <code>__FILE__</code>을 쓰면 전체 빌드 경로가 나와서 너무 길어요. 어떻게 짧게 만드나요?<br>
+    <strong>A.</strong> <code>strrchr(__FILE__, '/')</code>로 마지막 슬래시 뒤의 파일명만 추출하면 됩니다.
+    <code>logger.c</code>의 <code>basename()</code> 함수가 이 역할을 합니다.
+    Windows 경로(<code>\</code>)도 고려해 <code>strrchr(path, '\\')</code>도 함께 처리합니다.
+    또는 GCC의 <code>__BASE_FILE__</code> 매크로를 사용하는 방법도 있지만, 이식성이 떨어집니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트 — C 전처리기 최적화</strong><br>
+    "가변 인자 매크로를 써본 경험이 있나요?"라는 질문에 이렇게 답하세요:<br>
+    "<code>LOG_E</code>/<code>LOG_D</code> 같은 로그 시스템을 매크로로 구현했습니다.
+    <code>##__VA_ARGS__</code> GCC 확장으로 인자 0개 호출을 허용했고,
+    <code>__FILE__</code>/<code>__LINE__</code>/<code>__func__</code>으로 자동 컨텍스트 삽입을 구현했습니다.
+    또한 <code>#if LOG_LEVEL >= X</code>로 컴파일 타임 필터링을 적용해 배포 바이너리에서
+    DEBUG 코드가 완전히 제거되도록 설계했습니다."
+  </aside>
+
+  <aside class="tip">
+    💡 <strong>GCC ##__VA_ARGS__ vs C99 표준 차이</strong><br>
+    <code>##__VA_ARGS__</code>는 GCC/Clang 전용 확장입니다. C99/C11 표준에서는 지원하지 않습니다.
+    IAR이나 MSVC 같은 다른 컴파일러에서는 동작하지 않을 수 있습니다.
+    이식성이 중요한 프로젝트라면 C23에 도입된 <code>__VA_OPT__</code>를 사용하거나,
+    더미(dummy) 인자를 첫 번째 가변 인자로 추가하는 우회 기법을 씁니다.
+    STM32CubeIDE는 GCC 기반이므로 이 책에서는 <code>##__VA_ARGS__</code>를 사용합니다.
+  </aside>
+</section>
+
+<!-- ===== §2.5 ===== -->
+<section id="sec-05">
+  <h2>§2.5 빌드 타임에 로그를 끈다 — 컴파일 타임 레벨 필터링</h2>
+
+  <p>
+    §2.4의 매크로만으로도 편리하지만, 아직 한 가지 중요한 문제가 남아있습니다.
+    배포용 펌웨어에서 <code>LOG_D()</code> 코드를 일일이 지우거나 주석 처리하는 것은 실수가 생기기 쉽고,
+    다음 개발 버전에서 다시 추가하는 번거로움이 있습니다.
+    더 심각한 문제는, 만약 런타임 <code>if</code>문으로 필터링한다면 코드는 여전히 바이너리에 남아
+    플래시를 낭비한다는 점입니다.
+  </p>
+  <p>
+    해법은 <strong>컴파일 타임 레벨 필터링</strong>입니다.
+    <code>#if</code> 전처리기 지시문으로 로그 코드를 통째로 제거해버리면,
+    바이너리에 흔적조차 남지 않습니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기 — 항공기 블랙박스 기록 밀도 설정</strong><br>
+    비행 훈련 중 교관과 함께 하는 비행기는 모든 조작(스로틀 움직임, 조이스틱 각도, 발판 압력)을 기록합니다.
+    하지만 상업 여객기는 지정된 주요 파라미터만 기록합니다.
+    비행기 설계 시점에 "이 모드에서는 어떤 데이터를 기록할지"가 결정되어 있고,
+    비행 중에는 그 설정을 바꿀 수 없습니다.
+    컴파일 타임 필터링도 같습니다. "이 빌드에는 어떤 로그가 들어갈지"를 컴파일 전에 결정합니다.
+    <br><small>※ 이 비유의 한계: 실제 항공기는 런타임 전환이 가능한 경우도 있습니다. 우리의 컴파일 타임 필터링은 정말로 바이너리에 코드가 존재하지 않습니다.</small>
+  </div>
+
+  <h3>#if vs 런타임 if — 결정적 차이</h3>
+
+  <pre><code class="language-c">/* 방법 1: 런타임 if문 필터링 — 코드는 바이너리에 남는다 */
+
+#define LOG_D_RUNTIME(fmt, ...) \
+    do { \
+        if (g_log_level >= LOG_LEVEL_DEBUG) { \
+            printf("[DEBUG] " fmt "\r\n", ##__VA_ARGS__); \
+        } \
+    } while(0)
+
+/* 문제점:
+ * - if(0) 블록도 컴파일러가 일단 컴파일함
+ * - 조건이 항상 false여도 코드가 .text 섹션 차지
+ * - 최적화 플래그 없이는 비교 연산도 실행됨 */
+  </code></pre>
+
+  <pre><code class="language-c">/* 방법 2: 컴파일 타임 #if 필터링 — 코드가 바이너리에서 완전 제거 */
+
+#if (LOG_LEVEL >= LOG_LEVEL_DEBUG)
+  #define LOG_D(fmt, ...) \
+      log_print(LOG_LEVEL_DEBUG, __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
+#else
+  #define LOG_D(fmt, ...) ((void)0)  /* 빈 표현식으로 치환 — 컴파일러가 제거 */
+#endif
+
+/* 장점:
+ * - LOG_LEVEL < 4이면 LOG_D() 호출이 ((void)0)으로 치환됨
+ * - 컴파일러가 최적화 없이도 코드를 생성하지 않음
+ * - fmt 인자의 문자열 리터럴도 .rodata에서 제거됨 */
+  </code></pre>
+
+  <h3>CubeIDE에서 LOG_LEVEL 설정하기</h3>
+  <p>
+    매번 <code>logger.h</code>를 수정하지 않고 빌드 설정에서 <code>LOG_LEVEL</code>을 변경할 수 있습니다.
+    이렇게 하면 Debug 빌드 설정과 Release 빌드 설정을 각각 다른 로그 레벨로 자동 관리할 수 있습니다.
+  </p>
+  <ol>
+    <li>CubeIDE 프로젝트 우클릭 → <strong>Properties</strong></li>
+    <li><strong>C/C++ Build → Settings → MCU GCC Compiler → Preprocessor</strong></li>
+    <li><strong>Defined Symbols</strong> 목록에 <code>LOG_LEVEL=3</code> 추가 (INFO 레벨)</li>
+    <li>Release 설정에서는 <code>LOG_LEVEL=1</code> (ERROR만) 또는 <code>LOG_LEVEL=0</code> (무음)</li>
+  </ol>
+  <p>
+    또는 CubeMX 생성 <code>Makefile</code> 기반 프로젝트라면 다음과 같이 명령줄 인자로 전달합니다.
+  </p>
+  <pre><code class="language-c">/* make 명령줄 예시 (Makefile 기반 프로젝트) */
+/* make -DLOG_LEVEL=3 all      → INFO 레벨 빌드 */
+/* make -DLOG_LEVEL=0 release  → 로그 없는 배포 빌드 */
+  </code></pre>
+
+  <figure>
+    <img src="../../figures/ch02_sec05_flash_size_comparison.svg" alt="컴파일 타임 필터링 효과 막대 그래프: LOG_LEVEL 0/1/2/3/4별 .text 섹션 크기(바이트) 비교">
+    <figcaption>그림 02-8. LOG_LEVEL별 .text 섹션 크기 비교 — 레벨이 낮을수록 플래시 절약</figcaption>
+  </figure>
+
+  <h3>.map 파일로 크기 변화 직접 확인하기</h3>
+  <p>
+    "정말 플래시가 줄어드나?"를 직접 확인하는 방법입니다.
+    CubeIDE에서 빌드하면 <code>Debug/</code> 폴더에 <code>[프로젝트명].map</code> 파일이 생성됩니다.
+  </p>
+  <pre><code class="language-c">/* .map 파일에서 확인할 내용 */
+
+/* 1. 전체 섹션 크기 요약 (파일 맨 아래) */
+/* Memory region         Used Size  Region Size  %age Used */
+/*    FLASH:             12 KB         512 KB     2.34% */
+/*    RAM:               4 KB           128 KB     3.13% */
+
+/* 2. .text 섹션에 포함된 심볼 목록 */
+/* .text.log_print  0x08002abc   0x1a4  build/logger.o */
+/*  → LOG_LEVEL=0으로 빌드 시 이 항목이 사라짐 */
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>.map 파일 빠르게 읽는 법</strong><br>
+    .map 파일은 수천 줄에 달해 처음에는 당황스럽습니다.
+    파일을 텍스트 에디터로 열고 <code>Memory Configuration</code>을 검색하면
+    FLASH/RAM 사용량 요약이 나옵니다.
+    특정 함수가 몇 바이트를 차지하는지 보려면 함수명(예: <code>log_print</code>)을 검색하면
+    주소와 크기가 나옵니다.
+    <code>LOG_LEVEL=4</code>와 <code>LOG_LEVEL=0</code>으로 두 번 빌드해서
+    .text 섹션 크기를 비교하면 로그 코드가 플래시에서 얼마나 제거되는지 측정할 수 있습니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li><code>#if LOG_LEVEL >= 4</code>와 <code>if(log_level >= 4)</code>의 차이를 바이너리 수준에서 설명할 수 있나요?</li>
+      <li>현재 프로젝트의 .map 파일을 열어 본 적이 있나요? FLASH 사용률이 몇 %인지 확인해보세요.</li>
+      <li>배포 펌웨어에 <code>LOG_LEVEL=LOG_LEVEL_DEBUG</code>를 실수로 넣으면 어떤 위험이 있을까요? (힌트: 정보 노출, 플래시 크기, 실행 속도)</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== §2.6 ===== -->
+<section id="sec-06">
+  <h2>§2.6 로그 시스템 통합 — v0.2 프로젝트 완성</h2>
+
+  <p>
+    지금까지 SWO/ITM 경로, RTT 개념, 로그 레벨 설계, 매크로 구현, 컴파일 타임 필터링을
+    각각 이해했습니다. 이제 이것들을 하나의 <strong>logger 모듈</strong>로 통합하고,
+    Ch01에서 만든 GPIO/EXTI 코드에 로그를 적용하여 v0.2 프로젝트를 완성합니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기 — 공장 생산라인 CCTV 설치 완성</strong><br>
+    Ch01에서 우리는 생산 라인(GPIO 입력/출력, EXTI 인터럽트)을 구축했습니다.
+    라인은 돌아가지만 어디서 불량이 생기는지, 라인이 얼마나 빠르게 돌아가는지 알 수 없었습니다.
+    Ch02는 공장 구석구석에 CCTV를 설치하는 작업입니다.
+    이제 버튼이 눌릴 때마다, LED가 전환될 때마다, 이상이 발생할 때마다 기록이 남습니다.
+    <br><small>※ 이 비유의 한계: CCTV는 사후 확인용이지만, 우리 로그는 실시간 스트리밍됩니다.</small>
+  </div>
+
+  <h3>logger 모듈 아키텍처</h3>
+
+  <figure>
+    <img src="../../figures/ch02_sec06_logger_module_architecture.svg" alt="logger 모듈 레이어 다이어그램: App(LOG 매크로) → logger.c(백엔드 선택) → SWO/RTT/UART(예비) 백엔드 → 물리 출력">
+    <figcaption>그림 02-9. logger 모듈 아키텍처 — 백엔드 추상화로 출력 채널 교체 가능</figcaption>
+  </figure>
+
+  <p>
+    <code>logger.h</code>가 제공하는 <code>LOG_E/W/I/D</code> 매크로는 애플리케이션 코드가 직접 사용합니다.
+    매크로는 내부적으로 <code>log_print()</code>를 호출하고,
+    <code>log_print()</code>는 현재 설정된 백엔드(SWO/ITM)로 출력합니다.
+    Ch04에서는 UART, Ch06에서는 UART DMA 백엔드로 교체하는 실습을 합니다.
+  </p>
+
+  <h3>완성 코드 — logger.h</h3>
+
+  <pre><code class="language-c">/* logger.h — STM32 표준 로그 시스템 (Ch02 v0.2) */
+#ifndef LOGGER_H
+#define LOGGER_H
+
+#include "stm32f4xx_hal.h"
+#include &lt;stdio.h&gt;
+
+/* ===== 로그 레벨 정의 ===== */
+#define LOG_LEVEL_NONE    0
+#define LOG_LEVEL_ERROR   1
+#define LOG_LEVEL_WARN    2
+#define LOG_LEVEL_INFO    3
+#define LOG_LEVEL_DEBUG   4
+
+/* 기본 로그 레벨 (CubeIDE Preprocessor Define으로 오버라이드 가능) */
+#ifndef LOG_LEVEL
+  #define LOG_LEVEL  LOG_LEVEL_DEBUG  /* 개발 빌드 기본값 */
+#endif
+
+/* ===== 내부 출력 함수 ===== */
+void log_print(int level, const char *file, int line,
+               const char *func, const char *fmt, ...);
+
+/* ===== 로그 매크로 ===== */
+#if (LOG_LEVEL >= LOG_LEVEL_ERROR)
+  #define LOG_E(fmt, ...) \
+      log_print(LOG_LEVEL_ERROR, __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
+#else
+  #define LOG_E(fmt, ...) ((void)0)
+#endif
+
+#if (LOG_LEVEL >= LOG_LEVEL_WARN)
+  #define LOG_W(fmt, ...) \
+      log_print(LOG_LEVEL_WARN,  __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
+#else
+  #define LOG_W(fmt, ...) ((void)0)
+#endif
+
+#if (LOG_LEVEL >= LOG_LEVEL_INFO)
+  #define LOG_I(fmt, ...) \
+      log_print(LOG_LEVEL_INFO,  __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
+#else
+  #define LOG_I(fmt, ...) ((void)0)
+#endif
+
+#if (LOG_LEVEL >= LOG_LEVEL_DEBUG)
+  #define LOG_D(fmt, ...) \
+      log_print(LOG_LEVEL_DEBUG, __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
+#else
+  #define LOG_D(fmt, ...) ((void)0)
+#endif
+
+#endif /* LOGGER_H */
+  </code></pre>
+
+  <h3>완성 코드 — logger.c</h3>
+
+  <pre><code class="language-c">/* logger.c — SWO/ITM 백엔드 구현 */
+#include "logger.h"
+#include &lt;stdarg.h&gt;
+#include &lt;string.h&gt;
+
+/* 파일 경로에서 파일명만 추출 */
+static const char *basename(const char *path)
+{
+    const char *p = strrchr(path, '/');
+    if (!p) p = strrchr(path, '\\');  /* Windows 경로 대응 */
+    return p ? (p + 1) : path;
+}
+
+/* 로그 레벨 태그 문자열 */
+static const char *level_tag[] = {
+    "",       /* 0: NONE  */
+    "ERROR",  /* 1: ERROR */
+    "WARN ",  /* 2: WARN  */
+    "INFO ",  /* 3: INFO  */
+    "DEBUG",  /* 4: DEBUG */
+};
+
+/* 내부 출력 함수 — ITM(SWO) 백엔드 */
+void log_print(int level, const char *file, int line,
+               const char *func, const char *fmt, ...)
+{
+    char buf[256];
+    int  offset = 0;
+    va_list args;
+
+    /* 헤더: [타임스탬프ms][레벨][파일:라인][함수] */
+    offset += snprintf(buf + offset, sizeof(buf) - offset,
+                       "[%6lu][%s][%s:%d][%.12s] ",
+                       HAL_GetTick(),
+                       level_tag[level],
+                       basename(file),
+                       line,
+                       func);
+    /* %.12s: 함수명 12자 초과 시 절단 */
+
+    /* 오버플로 방지: 사용자 메시지를 위한 최소 공간 확보 */
+    if (offset >= (int)(sizeof(buf) - 4)) {
+        offset = sizeof(buf) - 4;
+    }
+
+    /* 사용자 메시지 */
+    va_start(args, fmt);
+    offset += vsnprintf(buf + offset, sizeof(buf) - offset, fmt, args);
+    va_end(args);
+
+    /* 개행 추가 */
+    if (offset &lt; (int)(sizeof(buf) - 2)) {
+        buf[offset++] = '\r';
+        buf[offset++] = '\n';
+        buf[offset]   = '\0';
+    }
+
+    /* ITM 채널 0으로 출력 */
+    for (int i = 0; i &lt; offset; i++) {
+        ITM_SendChar((uint32_t)buf[i]);
+    }
+}
+  </code></pre>
+
+  <h3>Ch01 코드 before/after 비교</h3>
+  <p>
+    Ch01에서 완성한 <code>HAL_GPIO_EXTI_Callback()</code>에 LOG를 적용하면 어떻게 달라지는지 비교합니다.
+  </p>
+
+  <pre><code class="language-c">/* ===== Before (Ch01 v0.1) — 로그 없음 ===== */
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    static uint32_t last_tick = 0;
+    uint32_t now = HAL_GetTick();
+
+    if (GPIO_Pin != BUTTON_Pin) {
+        return;
+    }
+
+    /* 50ms 디바운싱 */
+    if ((now - last_tick) &lt; 50) {
+        return;
+    }
+    last_tick = now;
+
+    /* LED 토글 */
+    HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
+}
+  </code></pre>
+
+  <pre><code class="language-c">/* ===== After (Ch02 v0.2) — LOG 적용 ===== */
+#include "logger.h"
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    static uint32_t last_tick = 0;
+    uint32_t now = HAL_GetTick();
+
+    if (GPIO_Pin != BUTTON_Pin) {
+        /* 예상치 못한 핀에서 인터럽트 발생 — 경고 수준 */
+        LOG_W("알 수 없는 EXTI 핀: 0x%04X", GPIO_Pin);
+        return;
+    }
+
+    /* 50ms 디바운싱 — 바운스 발생 시 DEBUG 로그 */
+    if ((now - last_tick) &lt; 50) {
+        LOG_D("디바운싱 필터링 — 경과 시간: %lu ms", now - last_tick);
+        return;
+    }
+    last_tick = now;
+
+    /* 버튼 유효 입력 확인 */
+    LOG_I("버튼 클릭 감지 @ %lu ms", now);
+
+    /* LED 토글 */
+    HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
+    LOG_D("LED 상태 전환 완료");
+}
+  </code></pre>
+
+  <p>
+    After 코드를 보면 코드 흐름의 각 분기점에 로그가 위치합니다.
+    이제 "버튼을 10번 눌렀는데 LED가 5번만 켜지는" 버그가 생겼을 때,
+    <code>LOG_D("디바운싱 필터링")</code>이 실제로 몇 번 출력되는지 확인하면 원인을 즉시 찾을 수 있습니다.
+  </p>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁 — Ch02 종합 실습 진행 방법</strong><br>
+    §2.6 실습은 수강생들이 처음으로 "직접 만든 인프라를 활용하는" 성취감을 느끼는 순간입니다.
+    Before/After 코드를 나란히 보여주고, SWV 콘솔에서 로그가 실시간으로 스크롤되는 화면을 공유하세요.
+    버튼을 빠르게 여러 번 눌러서 디바운싱 로그가 걸러지는 모습을 라이브로 보여주면 효과적입니다.
+    "이제 여러분의 STM32가 말을 합니다"라는 멘트로 섹션을 마무리하면 다음 챕터로의 동기부여가 됩니다.
+    Ch06에서 이 logger를 UART DMA 링 버퍼로 업그레이드한다는 것도 예고해 주세요.
+  </aside>
+</section>
+
+<!-- ===== 실습 ===== -->
+<section id="lab">
+  <h2>실습: logger.h 완성 + Ch01 코드에 로그 적용</h2>
+  <p><strong>목표</strong>: <code>logger.h</code>/<code>logger.c</code> 모듈을 프로젝트에 통합하고, Ch01 GPIO/EXTI 코드에 4단계 로그를 적용하여 SWV 콘솔에서 실시간 로그를 확인한다.</p>
+  <p><strong>환경</strong>: STM32CubeIDE 1.14 이상, NUCLEO-F411RE, USB 케이블 (ST-LINK 연결)</p>
+  <p><strong>소요 시간</strong>: 약 30분</p>
+
+  <h3>Step 1. logger.h 파일 생성 및 설정</h3>
+  <p>Ch01 프로젝트의 <code>Core/Inc/</code> 폴더에 <code>logger.h</code>를 생성합니다.</p>
+  <ol>
+    <li>CubeIDE 프로젝트 탐색기에서 <code>Core/Inc/</code> 우클릭 → <strong>New → Header File</strong></li>
+    <li>파일 이름: <code>logger.h</code></li>
+    <li>§2.6의 <code>logger.h</code> 완성 코드를 전체 복사하여 붙여넣기</li>
+    <li>저장 (<kbd>Ctrl+S</kbd>)</li>
+  </ol>
+  <p>이어서 SWV 활성화를 위해 <code>_write()</code>를 추가합니다.</p>
+  <pre><code class="language-c">/* Core/Src/syscalls.c 하단에 추가 (또는 main.c 상단) */
+
+#include "stm32f4xx_hal.h"
+
+/* printf → SWO/ITM 리다이렉트 */
+int _write(int fd, char *ptr, int len)
+{
+    (void)fd;
+    for (int i = 0; i &lt; len; i++) {
+        ITM_SendChar((uint32_t)ptr[i]);
+    }
+    return len;
+}
+  </code></pre>
+
+  <h3>Step 2. logger.c 구현</h3>
+  <p><code>Core/Src/</code> 폴더에 <code>logger.c</code>를 생성합니다.</p>
+  <ol>
+    <li><code>Core/Src/</code> 우클릭 → <strong>New → Source File</strong></li>
+    <li>파일 이름: <code>logger.c</code></li>
+    <li>§2.6의 <code>logger.c</code> 완성 코드를 전체 복사하여 붙여넣기</li>
+    <li>저장 후 빌드 확인 (<kbd>Ctrl+B</kbd>)</li>
+  </ol>
+  <p>빌드가 성공하면 CubeIDE Debug Configurations에서 SWV를 활성화합니다. (§2.1 설정 참조)</p>
+
+  <h3>Step 3. Ch01 코드에 통합</h3>
+  <p><code>main.c</code>를 열어 다음과 같이 수정합니다.</p>
+  <pre><code class="language-c">/* main.c — logger 통합 */
+#include "main.h"
+#include "logger.h"  /* ← 추가 */
+#include &lt;stdio.h&gt;
+
+int main(void)
+{
+    HAL_Init();
+    SystemClock_Config();
+    MX_GPIO_Init();
+
+    /* stdout 버퍼링 비활성화 */
+    setvbuf(stdout, NULL, _IONBF, 0);
+
+    /* 시스템 시작 로그 */
+    LOG_I("=== STM32 v0.2 시작 ===");
+    LOG_I("Core Clock: %lu Hz", SystemCoreClock);
+    LOG_D("GPIO 초기화 완료");
+
+    while (1) {
+        /* 메인 루프 — 인터럽트 기반이므로 대기 */
+        HAL_Delay(5000);
+        LOG_D("메인 루프 하트비트 @ %lu ms", HAL_GetTick());
+    }
+}
+  </code></pre>
+
+  <pre><code class="language-c">/* stm32f4xx_it.c 또는 gpio.c — EXTI 콜백 수정 */
+#include "logger.h"
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    static uint32_t last_tick = 0;
+    uint32_t now = HAL_GetTick();
+
+    if (GPIO_Pin != BUTTON_Pin) {
+        LOG_W("알 수 없는 EXTI 핀: 0x%04X", GPIO_Pin);
+        return;
+    }
+
+    if ((now - last_tick) &lt; 50) {
+        LOG_D("디바운싱 필터링 — 경과 시간: %lu ms", now - last_tick);
+        return;
+    }
+    last_tick = now;
+
+    LOG_I("버튼 클릭 감지 @ %lu ms", now);
+    HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
+    LOG_D("LED 토글 완료");
+}
+  </code></pre>
+
+  <h3>Step 4. 동작 확인</h3>
+  <p><strong>디버그 실행 순서</strong>:</p>
+  <ol>
+    <li><kbd>F11</kbd>로 디버그 시작</li>
+    <li><strong>Window → Show View → SWV → SWV ITM Data Console</strong> 열기</li>
+    <li>ITM Data Console 설정에서 Port 0 체크 후 <strong>Start Trace</strong> 클릭</li>
+    <li><kbd>F8</kbd>로 실행 재개</li>
+    <li>버튼(B1)을 눌러 로그 확인</li>
+  </ol>
+  <p><strong>예상 로그 출력</strong>:</p>
+  <pre><code>[     0][INFO ][main.c:22][main] === STM32 v0.2 시작 ===
+[     1][INFO ][main.c:23][main] Core Clock: 100000000 Hz
+[     2][DEBUG][main.c:24][main] GPIO 초기화 완료
+[  1523][INFO ][main.c:38][HAL_GPIO_EXT] 버튼 클릭 감지 @ 1523 ms
+[  1523][DEBUG][main.c:41][HAL_GPIO_EXT] LED 토글 완료
+[  1547][DEBUG][main.c:32][HAL_GPIO_EXT] 디바운싱 필터링 — 경과 시간: 24 ms
+[  1823][INFO ][main.c:38][HAL_GPIO_EXT] 버튼 클릭 감지 @ 1823 ms
+  </code></pre>
+  <p><small>※ <code>%.12s</code> 포맷은 최소 너비 패딩 없이 최대 12자로 절단합니다. <code>main</code>(4자)은 그대로, <code>HAL_GPIO_EXTI_Callback</code>(22자)는 <code>HAL_GPIO_EXT</code>로 절단됩니다.</small></p>
+
+  <aside class="tip">
+    💡 <strong>실습이 안 될 때 — 흔한 실수 체크리스트</strong><br>
+    <strong>로그가 전혀 안 나오는 경우:</strong>
+    ① SWV ITM Data Console에서 Port 0이 체크되어 있는지 확인.
+    ② Debug Configurations → Debugger 탭에서 "Enable SWV" 체크 여부 확인.
+    ③ Core Clock 값이 실제 클럭(100MHz)과 일치하는지 확인.
+    ④ NUCLEO SB12 점퍼 연결 확인.<br>
+    <strong>글자가 깨지는 경우:</strong>
+    Core Clock 설정 불일치가 원인입니다. <code>SystemCoreClock</code> 변수 값을 디버거로 확인하고
+    SWV Core Clock 설정과 일치시키세요.<br>
+    <strong>빌드 에러 "ITM_SendChar undeclared":</strong>
+    <code>core_cm4.h</code>가 포함되어 있는지 확인. <code>stm32f4xx_hal.h</code> include 순서를 확인하세요.
+  </aside>
+</section>
+
+<!-- ===== 핵심 정리 ===== -->
+<section class="chapter-summary-section">
+  <h2>핵심 정리</h2>
+  <ul>
+    <li><strong>SWO/ITM</strong>: ARM Cortex-M4 내장 디버그 출력 하드웨어. <code>_write()</code>를 오버라이드해 <code>printf()</code>를 SWO 핀으로 리다이렉트한다. NUCLEO-F411RE에서는 PB3(SB12 점퍼)이 SWO 핀이며, SWV 설정에서 Core Clock을 실제 클럭(100MHz)과 일치시켜야 한다.</li>
+    <li><strong>SEGGER RTT</strong>: 별도 핀 없이 MCU RAM에 링 버퍼를 두고 디버거가 SWD를 통해 폴링하는 방식. SWO보다 고속이고 비블로킹이며 Cortex-M0에서도 사용 가능. NUCLEO의 ST-LINK v2도 RTT Viewer에서 지원한다.</li>
+    <li><strong>4단계 로그 레벨</strong>: ERROR(1) / WARN(2) / INFO(3) / DEBUG(4). 높은 번호일수록 상세하고, <code>LOG_LEVEL</code> 설정값보다 높은 레벨의 메시지는 출력되지 않는다.</li>
+    <li><strong><code>LOG_E/W/I/D</code> 매크로</strong>: <code>##__VA_ARGS__</code> GCC 확장과 <code>__FILE__</code>/<code>__LINE__</code>/<code>__func__</code> 내장 매크로를 조합해 한 줄 호출로 타임스탬프·위치·메시지가 자동 포맷된 로그를 출력한다.</li>
+    <li><strong>컴파일 타임 필터링</strong>: <code>#if (LOG_LEVEL >= X)</code> 구조로 조건을 만족하지 않는 로그 코드는 바이너리에 전혀 포함되지 않는다. CubeIDE Preprocessor Defines에서 <code>LOG_LEVEL</code>을 빌드 설정별로 관리한다.</li>
+    <li><strong>logger 모듈</strong>: <code>logger.h</code>(매크로 정의) + <code>logger.c</code>(백엔드 구현)로 구성. 현재는 SWO/ITM 백엔드이며, Ch04(UART)와 Ch06(UART DMA 링 버퍼)에서 백엔드를 확장한다.</li>
+  </ul>
+
+  <h3>v0.2 아키텍처 업데이트</h3>
+  <p>이 챕터 완료 후 전체 프로젝트에 <code>logger</code> 모듈이 추가되었습니다. 이후 모든 챕터의 코드는 <code>#include "logger.h"</code>를 사용합니다.</p>
+  <figure>
+    <img src="../../figures/ch02_sec06_logger_module_architecture.svg" alt="v0.2 아키텍처: logger 모듈이 공통 인프라 레이어에 추가됨">
+    <figcaption>그림 02-최종. v0.2 아키텍처 현황 — logger 모듈이 모든 레이어에서 사용 가능한 공통 인프라로 추가됨</figcaption>
+  </figure>
+</section>
+
+<!-- ===== 연습문제 ===== -->
+<section class="exercises">
+  <h2>연습문제</h2>
+
+  <div class="exercise">
+    <span class="level">기억/이해</span>
+    <div>
+      <strong>1.</strong> 다음 각 항목이 SWO/ITM 방식의 특징인지, SEGGER RTT 방식의 특징인지 연결하세요.
+      <br><br>
+      (a) ARM Cortex-M0/M0+ 코어에서도 사용할 수 있다.<br>
+      (b) MCU에서 전용 출력 핀이 필요하다.<br>
+      (c) MCU RAM에 링 버퍼를 두고 디버거가 SWD로 폴링한다.<br>
+      (d) <code>ITM_SendChar()</code> API를 사용한다.<br>
+      (e) CubeIDE SWV Console에서 바로 확인할 수 있다.<br>
+      (f) 별도 외부 라이브러리(SEGGER) 파일 추가가 필요하다.
+    </div>
+  </div>
+
+  <div class="exercise">
+    <span class="level">이해</span>
+    <div>
+      <strong>2.</strong> 다음 코드가 있을 때, <code>LOG_LEVEL</code>을 <code>LOG_LEVEL_WARN(2)</code>으로 설정하고 빌드한 경우 실제로 출력되는 라인을 모두 고르세요. 그리고 컴파일 타임 필터링에서 출력되지 않는 로그가 런타임 <code>if</code>문 필터링과 다르게 처리되는 이유를 서술하세요.
+      <pre><code class="language-c">LOG_E("하드웨어 초기화 실패");    /* (A) */
+LOG_W("버퍼 사용률 90%% 초과");   /* (B) */
+LOG_I("시스템 시작 완료");         /* (C) */
+LOG_D("루프 카운터: %d", cnt);    /* (D) */</code></pre>
+    </div>
+  </div>
+
+  <div class="exercise">
+    <span class="level">적용</span>
+    <div>
+      <strong>3.</strong> 다음 요구사항을 만족하는 <code>LOG_I</code> 매크로를 직접 작성하세요.
+      <br><br>
+      요구사항:
+      <ul>
+        <li>포맷: <code>[타임스탬프][INFO ][파일명:라인번호][함수명] 메시지</code></li>
+        <li><code>LOG_LEVEL</code>이 <code>LOG_LEVEL_INFO</code> 이상일 때만 컴파일에 포함</li>
+        <li>가변 인자 지원 (인자 0개 호출도 가능)</li>
+        <li>타임스탬프는 <code>HAL_GetTick()</code> 사용</li>
+        <li><code>log_print()</code> 내부 함수를 호출하는 방식으로 구현</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="exercise">
+    <span class="level">분석</span>
+    <div>
+      <strong>4.</strong> 아래 팀원이 작성한 <code>LOG_D</code> 매크로 구현 코드에서 문제점을 2개 이상 찾고, 각각에 대해 개선 방안을 제시하세요.
+      <pre><code class="language-c">/* 팀원의 구현 — 문제가 있습니다 */
+#define LOG_D(msg, ...) \
+    if (log_level == 4) { \
+        printf("[DEBUG][" __FILE__ ":" __LINE__ "] " msg, __VA_ARGS__); \
+    }</code></pre>
+      (힌트: 런타임 조건, 문자열 리터럴 결합, <code>__LINE__</code> 타입, 가변 인자 처리, <code>do-while</code> 패턴)
+    </div>
+  </div>
+
+  <div class="exercise">
+    <span class="level">평가/창조</span>
+    <div>
+      <strong>5.</strong> 여러분은 배터리로 구동되는 IoT 온도 센서 노드(STM32L0 기반, 플래시 64KB) 펌웨어를 개발합니다. 이 디바이스는 현장에 수백 개 배포됩니다.
+      <br><br>
+      다음 두 상황에 대해 각각 적절한 로그 전략을 설계하고 근거를 제시하세요.
+      <ul>
+        <li><strong>상황 A (개발/테스트 단계)</strong>: 개발자 책상에서 CubeIDE로 디버깅 중</li>
+        <li><strong>상황 B (현장 배포 후)</strong>: 고객 시설에 설치된 상태, OTA 업데이트 불가</li>
+      </ul>
+      포함할 내용: 출력 채널 선택(SWO/RTT/UART/없음), <code>LOG_LEVEL</code> 값, 플래시 절약 전략, 현장에서 문제 발생 시 대응 방법.
+    </div>
+  </div>
+</section>
+
+<!-- ===== 다음 챕터 예고 ===== -->
+<section class="next-chapter">
+  <h2>다음 챕터 예고</h2>
+  <p>
+    현재 프로젝트는 <strong>v0.2</strong> 상태로,
+    GPIO 입출력 + EXTI 인터럽트 + 표준 로그 인프라(LOG_E/W/I/D)까지 구현되었습니다.
+    코드가 "무슨 일을 하는지"는 이제 눈으로 볼 수 있습니다.
+  </p>
+  <p>
+    하지만 아직 한 가지 문제가 남아있습니다.
+    프로젝트가 커질수록 <code>main.c</code> 한 파일에 모든 코드가 쌓여가고,
+    어디서 어떤 모듈이 시작되고 끝나는지 구분이 어려워집니다.
+    이것은 단순히 코드 미학의 문제가 아닙니다. 협업, 테스트, 재사용 가능성에 직결됩니다.
+  </p>
+  <p>
+    다음 <strong>Ch03. 소프트웨어 아키텍처 설계 원칙</strong>에서는
+    레이어드 아키텍처(layered architecture), 모듈 분리 원칙, HAL/Driver/Service/App 계층 구조를 설계하여
+    프로젝트를 <strong>v0.3</strong>으로 업그레이드합니다.
+    Ch02의 <code>logger</code>가 어느 레이어에 속하는지, 왜 그렇게 분류되는지도 이 챕터에서 명확히 정리됩니다.
+  </p>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+</body>
+</html>

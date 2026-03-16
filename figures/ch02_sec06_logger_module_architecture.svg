@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" font-family='"Noto Sans KR", "Malgun Gothic", sans-serif'>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333333"/>
+    </marker>
+    <marker id="arrowhead-white" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#FFFFFF"/>
+    </marker>
+  </defs>
+
+  <!-- 배경 -->
+  <rect width="800" height="500" fill="#FFFFFF"/>
+
+  <!-- 제목 -->
+  <text x="400" y="32" text-anchor="middle" font-size="18" font-weight="bold" fill="#333333">그림 02-9. logger.c 백엔드 추상화 아키텍처</text>
+
+  <!-- ===== 레이어 1: Application 레이어 (빨강) ===== -->
+  <rect x="30" y="50" width="740" height="100" rx="6" fill="#FEECEC" stroke="#EA4335" stroke-width="2.5"/>
+  <rect x="30" y="50" width="740" height="32" rx="6" fill="#EA4335"/>
+  <text x="400" y="72" text-anchor="middle" font-size="15" font-weight="bold" fill="#FFFFFF">레이어 1: Application 레이어</text>
+
+  <!-- 매크로 박스들 -->
+  <rect x="55" y="90" width="150" height="52" rx="4" fill="#FFFFFF" stroke="#EA4335" stroke-width="1.5"/>
+  <text x="130" y="111" text-anchor="middle" font-size="14" font-family="monospace" font-weight="bold" fill="#EA4335">LOG_E()</text>
+  <text x="130" y="130" text-anchor="middle" font-size="12" fill="#666666">에러 로그</text>
+
+  <rect x="215" y="90" width="150" height="52" rx="4" fill="#FFFFFF" stroke="#FF6D00" stroke-width="1.5"/>
+  <text x="290" y="111" text-anchor="middle" font-size="14" font-family="monospace" font-weight="bold" fill="#FF6D00">LOG_W()</text>
+  <text x="290" y="130" text-anchor="middle" font-size="12" fill="#666666">경고 로그</text>
+
+  <rect x="375" y="90" width="150" height="52" rx="4" fill="#FFFFFF" stroke="#34A853" stroke-width="1.5"/>
+  <text x="450" y="111" text-anchor="middle" font-size="14" font-family="monospace" font-weight="bold" fill="#34A853">LOG_I()</text>
+  <text x="450" y="130" text-anchor="middle" font-size="12" fill="#666666">정보 로그</text>
+
+  <rect x="535" y="90" width="150" height="52" rx="4" fill="#FFFFFF" stroke="#1A73E8" stroke-width="1.5"/>
+  <text x="610" y="111" text-anchor="middle" font-size="14" font-family="monospace" font-weight="bold" fill="#1A73E8">LOG_D()</text>
+  <text x="610" y="130" text-anchor="middle" font-size="12" fill="#666666">디버그 로그</text>
+
+  <!-- 앱 레이어 설명 -->
+  <text x="700" y="106" text-anchor="middle" font-size="11" fill="#C62828" font-weight="bold">모든 챕터</text>
+  <text x="700" y="122" text-anchor="middle" font-size="11" fill="#666666">공통 사용</text>
+
+  <!-- 화살표 레이어1 → 레이어2 -->
+  <line x1="400" y1="150" x2="400" y2="176" stroke="#333333" stroke-width="2.5" marker-end="url(#arrowhead)"/>
+  <rect x="290" y="154" width="220" height="22" rx="3" fill="#F8F9FA" stroke="#CCCCCC" stroke-width="1"/>
+  <text x="400" y="169" text-anchor="middle" font-size="12" fill="#555555" font-weight="bold">매크로 호출 → 함수 호출로 전개</text>
+
+  <!-- ===== 레이어 2: logger.c 서비스 레이어 (노랑) ===== -->
+  <rect x="30" y="178" width="740" height="108" rx="6" fill="#FFF8E1" stroke="#FBBC04" stroke-width="2.5"/>
+  <rect x="30" y="178" width="740" height="32" rx="6" fill="#FBBC04"/>
+  <text x="400" y="200" text-anchor="middle" font-size="15" font-weight="bold" fill="#333333">레이어 2: logger.c — 백엔드 선택 레이어</text>
+
+  <!-- Log_Init 박스 -->
+  <rect x="55" y="218" width="200" height="58" rx="4" fill="#FFFFFF" stroke="#FBBC04" stroke-width="1.5"/>
+  <text x="155" y="237" text-anchor="middle" font-size="13" font-weight="bold" fill="#333333">Log_Init(backend)</text>
+  <rect x="63" y="245" width="184" height="22" rx="3" fill="#2D2D2D"/>
+  <text x="155" y="260" text-anchor="middle" font-size="11" font-family="monospace" fill="#FFD54F">초기화 시 백엔드 선택</text>
+
+  <!-- Log_Print 박스 -->
+  <rect x="270" y="218" width="260" height="58" rx="4" fill="#FFFFFF" stroke="#FBBC04" stroke-width="1.5"/>
+  <text x="400" y="237" text-anchor="middle" font-size="12" font-weight="bold" fill="#333333">Log_Print(level, file, line, func, msg)</text>
+  <rect x="278" y="245" width="244" height="22" rx="3" fill="#2D2D2D"/>
+  <text x="400" y="260" text-anchor="middle" font-size="11" font-family="monospace" fill="#FFD54F">공통 출력 인터페이스</text>
+
+  <!-- 백엔드 선택 로직 -->
+  <rect x="545" y="218" width="212" height="58" rx="4" fill="#FFF3E0" stroke="#FF6D00" stroke-width="1.5"/>
+  <text x="651" y="235" text-anchor="middle" font-size="12" font-weight="bold" fill="#E65100">백엔드 선택 로직</text>
+  <rect x="553" y="241" width="196" height="12" rx="2" fill="#2D2D2D"/>
+  <text x="651" y="251" text-anchor="middle" font-size="10" font-family="monospace" fill="#FFD54F">#if LOG_BACKEND == SWO</text>
+  <rect x="553" y="257" width="196" height="12" rx="2" fill="#2D2D2D"/>
+  <text x="651" y="267" text-anchor="middle" font-size="10" font-family="monospace" fill="#FFD54F">#elif LOG_BACKEND == RTT</text>
+
+  <!-- 화살표 레이어2 → 레이어3 (세 갈래) -->
+  <line x1="220" y1="286" x2="220" y2="308" stroke="#333333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="400" y1="286" x2="400" y2="308" stroke="#333333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="600" y1="286" x2="600" y2="308" stroke="#333333" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrowhead)"/>
+
+  <!-- ===== 레이어 3: HAL 레이어 (파랑) ===== -->
+  <rect x="30" y="310" width="740" height="148" rx="6" fill="#E8F0FE" stroke="#1A73E8" stroke-width="2.5"/>
+  <rect x="30" y="310" width="740" height="32" rx="6" fill="#1A73E8"/>
+  <text x="400" y="332" text-anchor="middle" font-size="15" font-weight="bold" fill="#FFFFFF">레이어 3: 출력 백엔드 (HAL 레이어)</text>
+
+  <!-- SWO 백엔드 박스 -->
+  <rect x="50" y="350" width="210" height="98" rx="6" fill="#FFFFFF" stroke="#1A73E8" stroke-width="2"/>
+  <rect x="50" y="350" width="210" height="28" rx="6" fill="#1A73E8"/>
+  <text x="155" y="369" text-anchor="middle" font-size="13" font-weight="bold" fill="#FFFFFF">SWO 백엔드</text>
+  <text x="155" y="384" text-anchor="middle" font-size="11" fill="#FFFFFF">(기본, Ch02~Ch05)</text>
+  <rect x="62" y="382" width="186" height="20" rx="3" fill="#2D2D2D"/>
+  <text x="155" y="396" text-anchor="middle" font-size="11" font-family="monospace" fill="#90CAF9">ITM_SendChar()</text>
+  <text x="155" y="418" text-anchor="middle" font-size="12" fill="#333333">SWO 핀 (PB3)</text>
+  <text x="155" y="435" text-anchor="middle" font-size="11" fill="#666666">ITM/TPIU 하드웨어</text>
+
+  <!-- RTT 백엔드 박스 -->
+  <rect x="295" y="350" width="210" height="98" rx="6" fill="#FFFFFF" stroke="#1A73E8" stroke-width="2"/>
+  <rect x="295" y="350" width="210" height="28" rx="6" fill="#1A73E8"/>
+  <text x="400" y="369" text-anchor="middle" font-size="13" font-weight="bold" fill="#FFFFFF">RTT 백엔드</text>
+  <text x="400" y="384" text-anchor="middle" font-size="11" fill="#FFFFFF">(옵션)</text>
+  <rect x="307" y="382" width="186" height="20" rx="3" fill="#2D2D2D"/>
+  <text x="400" y="396" text-anchor="middle" font-size="11" font-family="monospace" fill="#90CAF9">SEGGER_RTT_printf()</text>
+  <text x="400" y="418" text-anchor="middle" font-size="12" fill="#333333">RAM 링 버퍼</text>
+  <text x="400" y="435" text-anchor="middle" font-size="11" fill="#666666">추가 핀 불필요</text>
+
+  <!-- UART DMA 백엔드 박스 (점선 - 예정) -->
+  <rect x="540" y="350" width="215" height="98" rx="6" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="2" stroke-dasharray="6,3"/>
+  <rect x="540" y="350" width="215" height="28" rx="6" fill="#BDBDBD" stroke="none"/>
+  <text x="648" y="369" text-anchor="middle" font-size="13" font-weight="bold" fill="#555555">UART DMA 백엔드</text>
+  <text x="648" y="384" text-anchor="middle" font-size="11" fill="#777777">(Ch06 이후 추가 예정)</text>
+  <rect x="552" y="384" width="191" height="20" rx="3" fill="#E0E0E0"/>
+  <text x="648" y="398" text-anchor="middle" font-size="11" font-family="monospace" fill="#777777">HAL_UART_Transmit_DMA()</text>
+  <text x="648" y="418" text-anchor="middle" font-size="12" fill="#9E9E9E">링 버퍼</text>
+  <text x="648" y="435" text-anchor="middle" font-size="11" fill="#9E9E9E">USB CDC / UART 포트</text>
+
+  <!-- 하단 메모 -->
+  <rect x="30" y="470" width="740" height="24" rx="4" fill="#FFF8E1" stroke="#FBBC04" stroke-width="1"/>
+  <text x="400" y="486" text-anchor="middle" font-size="12" fill="#666666">* UART DMA 백엔드는 Ch06에서 추가됩니다  |  백엔드 전환: logger.h의 LOG_BACKEND 매크로 값만 변경</text>
+</svg>

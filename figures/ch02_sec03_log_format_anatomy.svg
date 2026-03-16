@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" font-family='"Noto Sans KR", "Malgun Gothic", sans-serif'>
+  <defs>
+    <marker id="arrow-up" markerWidth="10" markerHeight="7" refX="5" refY="7" orient="auto">
+      <polygon points="0 7, 5 0, 10 7" fill="#555555"/>
+    </marker>
+    <marker id="arrow-down" markerWidth="10" markerHeight="7" refX="5" refY="0" orient="auto">
+      <polygon points="0 0, 5 7, 10 0" fill="#555555"/>
+    </marker>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555555"/>
+    </marker>
+  </defs>
+
+  <!-- 배경 -->
+  <rect width="800" height="500" fill="#FFFFFF"/>
+
+  <!-- 제목 -->
+  <text x="400" y="32" text-anchor="middle" font-size="18" font-weight="bold" fill="#333333">그림 02-6. 로그 출력 한 줄의 구성 요소</text>
+
+  <!-- 로그 출력 샘플 박스 (중앙) -->
+  <rect x="30" y="195" width="740" height="54" rx="6" fill="#2D2D2D" stroke="#555555" stroke-width="1.5"/>
+
+  <!-- 필드 1: 타임스탬프 [ 1234] -->
+  <rect x="40" y="202" width="84" height="40" rx="3" fill="#1A73E8"/>
+  <text x="82" y="227" text-anchor="middle" font-size="14" font-family="monospace" font-weight="bold" fill="#FFFFFF">[ 1234]</text>
+
+  <!-- 필드 2: 레벨 [ERROR] -->
+  <rect x="128" y="202" width="84" height="40" rx="3" fill="#EA4335"/>
+  <text x="170" y="227" text-anchor="middle" font-size="14" font-family="monospace" font-weight="bold" fill="#FFFFFF">[ERROR]</text>
+
+  <!-- 필드 3: 파일:라인 [main.c:45] -->
+  <rect x="216" y="202" width="136" height="40" rx="3" fill="#34A853"/>
+  <text x="284" y="227" text-anchor="middle" font-size="14" font-family="monospace" font-weight="bold" fill="#FFFFFF">[main.c:45]</text>
+
+  <!-- 필드 4: 함수명 [main     ] -->
+  <rect x="356" y="202" width="126" height="40" rx="3" fill="#FBBC04"/>
+  <text x="419" y="227" text-anchor="middle" font-size="14" font-family="monospace" font-weight="bold" fill="#333333">[main     ]</text>
+
+  <!-- 필드 5: 메시지 -->
+  <rect x="486" y="202" width="275" height="40" rx="3" fill="#555555"/>
+  <text x="624" y="221" text-anchor="middle" font-size="13" font-family="monospace" fill="#F8F9FA">Sensor init failed:</text>
+  <text x="624" y="237" text-anchor="middle" font-size="13" font-family="monospace" fill="#FF8A80">-1</text>
+
+  <!-- === 위쪽 설명 박스들 === -->
+
+  <!-- 타임스탬프 설명 (위) -->
+  <line x1="82" y1="202" x2="82" y2="165" stroke="#1A73E8" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <rect x="22" y="90" width="160" height="72" rx="4" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1.5"/>
+  <text x="102" y="110" text-anchor="middle" font-size="13" font-weight="bold" fill="#1A73E8">타임스탬프</text>
+  <text x="102" y="130" text-anchor="middle" font-size="12" fill="#333333">HAL_GetTick()</text>
+  <text x="102" y="147" text-anchor="middle" font-size="12" fill="#666666">밀리초(ms) 단위</text>
+  <rect x="30" y="155" width="104" height="18" rx="2" fill="#2D2D2D"/>
+  <text x="82" y="167" text-anchor="middle" font-size="10" font-family="monospace" fill="#90CAF9">// uint32_t ms</text>
+  <line x1="82" y1="162" x2="82" y2="202" stroke="#1A73E8" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrowhead)"/>
+
+  <!-- 레벨 설명 (위) -->
+  <line x1="170" y1="202" x2="170" y2="165" stroke="#EA4335" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <rect x="110" y="90" width="165" height="72" rx="4" fill="#FEECEC" stroke="#EA4335" stroke-width="1.5"/>
+  <text x="193" y="110" text-anchor="middle" font-size="13" font-weight="bold" fill="#EA4335">로그 레벨</text>
+  <text x="193" y="130" text-anchor="middle" font-size="12" fill="#333333">ERROR / WARN</text>
+  <text x="193" y="147" text-anchor="middle" font-size="12" fill="#666666">INFO / DEBUG</text>
+  <rect x="118" y="155" width="148" height="18" rx="2" fill="#2D2D2D"/>
+  <text x="192" y="167" text-anchor="middle" font-size="10" font-family="monospace" fill="#EF9A9A">// 매크로 파라미터</text>
+  <line x1="170" y1="162" x2="170" y2="202" stroke="#EA4335" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrowhead)"/>
+
+  <!-- 메시지 설명 (위) -->
+  <line x1="624" y1="202" x2="624" y2="165" stroke="#666666" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <rect x="540" y="90" width="170" height="72" rx="4" fill="#F8F9FA" stroke="#666666" stroke-width="1.5"/>
+  <text x="625" y="110" text-anchor="middle" font-size="13" font-weight="bold" fill="#333333">사용자 메시지</text>
+  <text x="625" y="130" text-anchor="middle" font-size="12" fill="#333333">printf 형식 지원</text>
+  <text x="625" y="147" text-anchor="middle" font-size="12" fill="#666666">%d, %s, %f 등</text>
+  <rect x="548" y="155" width="154" height="18" rx="2" fill="#2D2D2D"/>
+  <text x="625" y="167" text-anchor="middle" font-size="10" font-family="monospace" fill="#CFD8DC">// fmt, ##__VA_ARGS__</text>
+  <line x1="624" y1="162" x2="624" y2="202" stroke="#666666" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrowhead)"/>
+
+  <!-- === 아래쪽 설명 박스들 === -->
+
+  <!-- 파일:라인 설명 (아래) -->
+  <line x1="284" y1="242" x2="284" y2="268" stroke="#34A853" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <rect x="178" y="270" width="200" height="80" rx="4" fill="#E6F4EA" stroke="#34A853" stroke-width="1.5"/>
+  <text x="278" y="292" text-anchor="middle" font-size="13" font-weight="bold" fill="#34A853">파일명 : 줄 번호</text>
+  <text x="278" y="312" text-anchor="middle" font-size="12" fill="#333333">__FILE__ : __LINE__</text>
+  <text x="278" y="330" text-anchor="middle" font-size="12" fill="#666666">컴파일 타임 자동 삽입</text>
+  <rect x="186" y="338" width="184" height="18" rx="2" fill="#2D2D2D"/>
+  <text x="278" y="350" text-anchor="middle" font-size="10" font-family="monospace" fill="#A5D6A7">// 디버그 정보 자동 포함</text>
+
+  <!-- 함수명 설명 (아래) -->
+  <line x1="419" y1="242" x2="419" y2="268" stroke="#E37D00" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <rect x="340" y="270" width="170" height="80" rx="4" fill="#FFF8E1" stroke="#FBBC04" stroke-width="1.5"/>
+  <text x="425" y="292" text-anchor="middle" font-size="13" font-weight="bold" fill="#E37D00">함수 이름</text>
+  <text x="425" y="312" text-anchor="middle" font-size="12" fill="#333333">__func__</text>
+  <text x="425" y="330" text-anchor="middle" font-size="12" fill="#666666">현재 함수명 자동 삽입</text>
+  <rect x="348" y="338" width="154" height="18" rx="2" fill="#2D2D2D"/>
+  <text x="425" y="350" text-anchor="middle" font-size="10" font-family="monospace" fill="#FFE082">// GCC/Clang 지원</text>
+
+  <!-- 사용 예시 코드 박스 -->
+  <rect x="30" y="390" width="740" height="80" rx="6" fill="#1E1E1E" stroke="#555555" stroke-width="1.5"/>
+  <text x="400" y="410" text-anchor="middle" font-size="12" font-weight="bold" fill="#AAAAAA">// 사용 코드 (매크로가 모든 메타데이터 자동 삽입)</text>
+  <text x="55" y="432" font-size="13" font-family="monospace" fill="#569CD6">LOG_E</text>
+  <text x="117" y="432" font-size="13" font-family="monospace" fill="#D4D4D4">(</text>
+  <text x="126" y="432" font-size="13" font-family="monospace" fill="#CE9178">"Sensor init failed: %d"</text>
+  <text x="418" y="432" font-size="13" font-family="monospace" fill="#D4D4D4">, ret);</text>
+  <text x="55" y="455" font-size="12" font-family="monospace" fill="#6A9955">// → [ 1234][ERROR][main.c:45][main     ] Sensor init failed: -1</text>
+  <text x="55" y="462" font-size="12" font-family="monospace" fill="#6A9955">// 타임스탬프/레벨/파일:라인/함수명 → 모두 매크로가 자동 추가</text>
+</svg>

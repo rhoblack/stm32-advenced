@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" width="900" height="600">
+  <defs>
+    <style>
+      text { font-family: 'Noto Sans KR', sans-serif; }
+    </style>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#1A73E8"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#757575"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="600" fill="#FAFAFA" rx="8"/>
+  <rect x="0" y="0" width="900" height="600" fill="none" stroke="#E0E0E0" stroke-width="1.5" rx="8"/>
+
+  <!-- Title bar -->
+  <rect x="0" y="0" width="900" height="44" fill="#1A73E8" rx="8"/>
+  <rect x="0" y="36" width="900" height="8" fill="#1A73E8"/>
+  <text x="450" y="27" text-anchor="middle" fill="white" font-size="16" font-weight="bold">STM32CubeMX GPIO 설정 화면 구성도 — PA5 Push-Pull 출력 설정</text>
+
+  <!-- ===== LEFT PANEL: Pinout Area ===== -->
+  <rect x="20" y="60" width="290" height="460" fill="#2D2D2D" rx="6"/>
+  <text x="165" y="82" text-anchor="middle" fill="#AAAAAA" font-size="12">Pinout &amp; Configuration</text>
+
+  <!-- MCU Package body -->
+  <rect x="75" y="110" width="180" height="220" fill="#3A3A3A" stroke="#666666" stroke-width="2" rx="4"/>
+  <text x="165" y="196" text-anchor="middle" fill="#CCCCCC" font-size="11" font-weight="bold">STM32</text>
+  <text x="165" y="212" text-anchor="middle" fill="#CCCCCC" font-size="11" font-weight="bold">F411RE</text>
+  <text x="165" y="228" text-anchor="middle" fill="#888888" font-size="9">LQFP64</text>
+
+  <!-- Left side pins on MCU -->
+  <!-- Pin row definitions (left side) -->
+  <!-- PC13 pin -->
+  <rect x="40" y="125" width="35" height="16" fill="#1A73E8" rx="2"/>
+  <text x="57" y="137" text-anchor="middle" fill="white" font-size="9" font-weight="bold">PC13</text>
+  <line x1="75" y1="133" x2="75" y2="133" stroke="#1A73E8" stroke-width="2"/>
+
+  <!-- PA0 pin (gray) -->
+  <rect x="40" y="148" width="35" height="16" fill="#555555" rx="2"/>
+  <text x="57" y="160" text-anchor="middle" fill="#AAAAAA" font-size="9">PA0</text>
+
+  <!-- PA1 pin (gray) -->
+  <rect x="40" y="171" width="35" height="16" fill="#555555" rx="2"/>
+  <text x="57" y="183" text-anchor="middle" fill="#AAAAAA" font-size="9">PA1</text>
+
+  <!-- PA2 pin (gray) -->
+  <rect x="40" y="194" width="35" height="16" fill="#555555" rx="2"/>
+  <text x="57" y="206" text-anchor="middle" fill="#AAAAAA" font-size="9">PA2</text>
+
+  <!-- PA3 pin (gray) -->
+  <rect x="40" y="217" width="35" height="16" fill="#555555" rx="2"/>
+  <text x="57" y="229" text-anchor="middle" fill="#AAAAAA" font-size="9">PA3</text>
+
+  <!-- PA5 pin (green highlight) -->
+  <rect x="40" y="240" width="35" height="16" fill="#34A853" rx="2"/>
+  <text x="57" y="252" text-anchor="middle" fill="white" font-size="9" font-weight="bold">PA5</text>
+
+  <!-- PA6 pin (gray) -->
+  <rect x="40" y="263" width="35" height="16" fill="#555555" rx="2"/>
+  <text x="57" y="275" text-anchor="middle" fill="#AAAAAA" font-size="9">PA6</text>
+
+  <!-- PA7 pin (gray) -->
+  <rect x="40" y="286" width="35" height="16" fill="#555555" rx="2"/>
+  <text x="57" y="298" text-anchor="middle" fill="#AAAAAA" font-size="9">PA7</text>
+
+  <!-- Connector lines from pins to MCU body -->
+  <line x1="75" y1="133" x2="75" y2="133" stroke="#1A73E8" stroke-width="1.5"/>
+  <line x1="75" y1="248" x2="75" y2="248" stroke="#34A853" stroke-width="1.5"/>
+
+  <!-- Right side pins on MCU -->
+  <rect x="255" y="148" width="35" height="16" fill="#555555" rx="2"/>
+  <text x="272" y="160" text-anchor="middle" fill="#AAAAAA" font-size="9">PB0</text>
+
+  <rect x="255" y="171" width="35" height="16" fill="#555555" rx="2"/>
+  <text x="272" y="183" text-anchor="middle" fill="#AAAAAA" font-size="9">PB1</text>
+
+  <rect x="255" y="194" width="35" height="16" fill="#555555" rx="2"/>
+  <text x="272" y="206" text-anchor="middle" fill="#AAAAAA" font-size="9">PB3</text>
+
+  <rect x="255" y="217" width="35" height="16" fill="#555555" rx="2"/>
+  <text x="272" y="229" text-anchor="middle" fill="#AAAAAA" font-size="9">PB4</text>
+
+  <rect x="255" y="240" width="35" height="16" fill="#555555" rx="2"/>
+  <text x="272" y="252" text-anchor="middle" fill="#AAAAAA" font-size="9">PB5</text>
+
+  <rect x="255" y="263" width="35" height="16" fill="#555555" rx="2"/>
+  <text x="272" y="275" text-anchor="middle" fill="#AAAAAA" font-size="9">PB6</text>
+
+  <!-- Pin labels on the left panel -->
+  <!-- PC13 label -->
+  <text x="165" y="137" text-anchor="middle" fill="#64B5F6" font-size="9">← GPIO_EXTI13 / B1 버튼</text>
+
+  <!-- PA5 label -->
+  <text x="165" y="252" text-anchor="middle" fill="#81C784" font-size="9">← GPIO_Output / LD2</text>
+
+  <!-- Legend in left panel -->
+  <rect x="35" y="360" width="240" height="70" fill="#1E1E1E" rx="4" stroke="#444444" stroke-width="1"/>
+  <text x="155" y="376" text-anchor="middle" fill="#AAAAAA" font-size="10" font-weight="bold">핀 범례</text>
+  <rect x="48" y="384" width="12" height="10" fill="#34A853" rx="1"/>
+  <text x="66" y="393" fill="#AAAAAA" font-size="9">GPIO 출력 (PA5 / LD2 LED)</text>
+  <rect x="48" y="400" width="12" height="10" fill="#1A73E8" rx="1"/>
+  <text x="66" y="409" fill="#AAAAAA" font-size="9">GPIO 인터럽트 (PC13 / B1 버튼)</text>
+  <rect x="48" y="416" width="12" height="10" fill="#555555" rx="1"/>
+  <text x="66" y="425" fill="#AAAAAA" font-size="9">미사용 / 기타 핀</text>
+
+  <!-- Left panel bottom note -->
+  <text x="165" y="450" text-anchor="middle" fill="#666666" font-size="9">※ 클릭하여 핀 기능 선택</text>
+
+  <!-- ===== RIGHT PANEL: Configuration ===== -->
+  <!-- Panel background -->
+  <rect x="325" y="60" width="555" height="460" fill="white" rx="6" stroke="#E0E0E0" stroke-width="1.5"/>
+
+  <!-- Header -->
+  <rect x="325" y="60" width="555" height="40" fill="#1A73E8" rx="6"/>
+  <rect x="325" y="82" width="555" height="18" fill="#1A73E8"/>
+  <text x="360" y="83" fill="white" font-size="13" font-weight="bold">GPIO Configuration</text>
+  <text x="600" y="78" text-anchor="middle" fill="#90CAF9" font-size="11">PA5 선택됨</text>
+  <!-- Selected indicator -->
+  <rect x="730" y="66" width="120" height="22" fill="#34A853" rx="11"/>
+  <text x="790" y="81" text-anchor="middle" fill="white" font-size="10" font-weight="bold">PA5 활성화됨</text>
+
+  <!-- Tab bar -->
+  <rect x="325" y="100" width="555" height="28" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <rect x="325" y="100" width="140" height="28" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="395" y="118" text-anchor="middle" fill="#1A73E8" font-size="11" font-weight="bold">GPIO</text>
+  <text x="520" y="118" text-anchor="middle" fill="#757575" font-size="11">NVIC</text>
+  <text x="630" y="118" text-anchor="middle" fill="#757575" font-size="11">DMA Settings</text>
+
+  <!-- Configuration table -->
+  <!-- Table header -->
+  <rect x="340" y="140" width="525" height="26" fill="#E8F0FE" rx="2"/>
+  <text x="460" y="157" text-anchor="middle" fill="#1A73E8" font-size="11" font-weight="bold">설정 항목</text>
+  <text x="660" y="157" text-anchor="middle" fill="#1A73E8" font-size="11" font-weight="bold">선택값</text>
+
+  <!-- Row 1: GPIO output level -->
+  <rect x="340" y="166" width="525" height="36" fill="white" stroke="#E8E8E8" stroke-width="1"/>
+  <rect x="340" y="166" width="240" height="36" fill="#FAFAFA" stroke="#E8E8E8" stroke-width="1"/>
+  <text x="355" y="182" fill="#212121" font-size="11" font-weight="bold">GPIO output level</text>
+  <text x="355" y="196" fill="#757575" font-size="9">초기 출력 전압 레벨</text>
+  <!-- Dropdown indicator -->
+  <rect x="585" y="172" width="140" height="22" fill="#E8F5E9" rx="3" stroke="#34A853" stroke-width="1.5"/>
+  <text x="615" y="187" fill="#34A853" font-size="11" font-weight="bold">Low ✓</text>
+  <text x="720" y="187" fill="#34A853" font-size="14">▼</text>
+  <text x="735" y="183" fill="#757575" font-size="8">전원 인가 시</text>
+  <text x="735" y="193" fill="#757575" font-size="8">LED OFF 상태</text>
+
+  <!-- Row 2: GPIO mode -->
+  <rect x="340" y="202" width="525" height="36" fill="#F9FBE7" stroke="#E8E8E8" stroke-width="1"/>
+  <rect x="340" y="202" width="240" height="36" fill="#F3F6F0" stroke="#E8E8E8" stroke-width="1"/>
+  <text x="355" y="218" fill="#212121" font-size="11" font-weight="bold">GPIO mode</text>
+  <text x="355" y="232" fill="#757575" font-size="9">출력 방식 선택</text>
+  <rect x="585" y="208" width="190" height="22" fill="#E8F5E9" rx="3" stroke="#34A853" stroke-width="1.5"/>
+  <text x="595" y="223" fill="#34A853" font-size="10" font-weight="bold">Output Push Pull ✓</text>
+  <text x="735" y="218" fill="#757575" font-size="8">내부 풀업/풀다운</text>
+  <text x="735" y="228" fill="#757575" font-size="8">직접 구동 방식</text>
+
+  <!-- Row 3: Pull-up/Pull-down -->
+  <rect x="340" y="238" width="525" height="36" fill="white" stroke="#E8E8E8" stroke-width="1"/>
+  <rect x="340" y="238" width="240" height="36" fill="#FAFAFA" stroke="#E8E8E8" stroke-width="1"/>
+  <text x="355" y="254" fill="#212121" font-size="11" font-weight="bold">GPIO Pull-up/Pull-down</text>
+  <text x="355" y="268" fill="#757575" font-size="9">내부 저항 설정</text>
+  <rect x="585" y="244" width="220" height="22" fill="#E8F5E9" rx="3" stroke="#34A853" stroke-width="1.5"/>
+  <text x="595" y="259" fill="#34A853" font-size="9" font-weight="bold">No pull-up and no pull-down ✓</text>
+  <text x="735" y="254" fill="#757575" font-size="8">외부 LED 회로에</text>
+  <text x="735" y="264" fill="#757575" font-size="8">저항 포함됨</text>
+
+  <!-- Row 4: Maximum output speed -->
+  <rect x="340" y="274" width="525" height="36" fill="#F9FBE7" stroke="#E8E8E8" stroke-width="1"/>
+  <rect x="340" y="274" width="240" height="36" fill="#F3F6F0" stroke="#E8E8E8" stroke-width="1"/>
+  <text x="355" y="290" fill="#212121" font-size="11" font-weight="bold">Maximum output speed</text>
+  <text x="355" y="304" fill="#757575" font-size="9">슬루 레이트 제한</text>
+  <rect x="585" y="280" width="140" height="22" fill="#E8F5E9" rx="3" stroke="#34A853" stroke-width="1.5"/>
+  <text x="615" y="295" fill="#34A853" font-size="11" font-weight="bold">Low ✓</text>
+  <text x="720" y="295" fill="#34A853" font-size="14">▼</text>
+  <text x="735" y="290" fill="#757575" font-size="8">LED 제어는</text>
+  <text x="735" y="300" fill="#757575" font-size="8">Low 속도로 충분</text>
+
+  <!-- Row 5: User Label -->
+  <rect x="340" y="310" width="525" height="36" fill="white" stroke="#E8E8E8" stroke-width="1"/>
+  <rect x="340" y="310" width="240" height="36" fill="#FAFAFA" stroke="#E8E8E8" stroke-width="1"/>
+  <text x="355" y="326" fill="#212121" font-size="11" font-weight="bold">User Label</text>
+  <text x="355" y="340" fill="#757575" font-size="9">핀 별칭 지정 (코드에서 사용)</text>
+  <rect x="585" y="316" width="140" height="22" fill="#E8F5E9" rx="3" stroke="#34A853" stroke-width="1.5"/>
+  <text x="595" y="331" fill="#34A853" font-size="11" font-weight="bold">LD2 ✓</text>
+  <text x="735" y="326" fill="#757575" font-size="8">LD2_Pin 매크로로</text>
+  <text x="735" y="336" fill="#757575" font-size="8">코드에 자동 정의됨</text>
+
+  <!-- Info box -->
+  <rect x="340" y="360" width="525" height="50" fill="#E8F0FE" rx="4" stroke="#1A73E8" stroke-width="1"/>
+  <text x="355" y="378" fill="#1A73E8" font-size="10" font-weight="bold">💡 Push-Pull 출력 방식이란?</text>
+  <text x="355" y="394" fill="#212121" font-size="10">내부 PMOS(High)와 NMOS(Low) 트랜지스터로 출력을 직접 구동합니다.</text>
+  <text x="355" y="406" fill="#212121" font-size="10">외부 풀업 저항 없이 HIGH/LOW 신호를 능동적으로 출력합니다.</text>
+
+  <!-- ===== Bottom: Code Generation Flow ===== -->
+  <rect x="20" y="535" width="860" height="52" fill="white" rx="6" stroke="#E0E0E0" stroke-width="1.5"/>
+
+  <!-- Step 1 -->
+  <rect x="35" y="546" width="160" height="30" fill="#E8F0FE" rx="4" stroke="#1A73E8" stroke-width="1.5"/>
+  <text x="115" y="563" text-anchor="middle" fill="#1A73E8" font-size="10" font-weight="bold">CubeMX GPIO 설정 완료</text>
+
+  <!-- Arrow 1 -->
+  <line x1="195" y1="561" x2="230" y2="561" stroke="#1A73E8" stroke-width="2" marker-end="url(#arrowBlue)"/>
+
+  <!-- Step 2 -->
+  <rect x="232" y="546" width="160" height="30" fill="#E8F0FE" rx="4" stroke="#1A73E8" stroke-width="1.5"/>
+  <text x="312" y="563" text-anchor="middle" fill="#1A73E8" font-size="10" font-weight="bold">Generate Code 클릭</text>
+
+  <!-- Arrow 2 -->
+  <line x1="392" y1="561" x2="427" y2="561" stroke="#1A73E8" stroke-width="2" marker-end="url(#arrowBlue)"/>
+
+  <!-- Step 3 -->
+  <rect x="429" y="546" width="195" height="30" fill="#E8F5E9" rx="4" stroke="#34A853" stroke-width="1.5"/>
+  <text x="527" y="563" text-anchor="middle" fill="#34A853" font-size="10" font-weight="bold">MX_GPIO_Init() 자동 생성</text>
+
+  <!-- Arrow 3 -->
+  <line x1="624" y1="561" x2="659" y2="561" stroke="#34A853" stroke-width="2" marker-end="url(#arrowBlue)"/>
+
+  <!-- Step 4 -->
+  <rect x="661" y="546" width="200" height="30" fill="#E8F5E9" rx="4" stroke="#34A853" stroke-width="1.5"/>
+  <text x="761" y="556" text-anchor="middle" fill="#34A853" font-size="9" font-weight="bold">LD2_Pin, LD2_GPIO_Port</text>
+  <text x="761" y="570" text-anchor="middle" fill="#34A853" font-size="9" font-weight="bold">매크로 자동 정의</text>
+
+</svg>

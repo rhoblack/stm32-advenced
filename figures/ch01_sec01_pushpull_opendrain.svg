@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620" width="1000" height="620">
+  <defs>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#1A73E8"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#757575"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#EA4335"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#34A853"/>
+    </marker>
+  </defs>
+
+  <!-- 배경 -->
+  <rect width="1000" height="620" fill="#FAFAFA"/>
+
+  <!-- 제목 -->
+  <rect x="0" y="0" width="1000" height="50" fill="#212121"/>
+  <text x="500" y="32" font-family="Noto Sans KR, sans-serif" font-size="18" font-weight="bold" fill="white" text-anchor="middle">GPIO 출력 방식 비교: Push-Pull vs Open-Drain</text>
+
+  <!-- ========== 좌측: Push-Pull ========== -->
+  <rect x="30" y="65" width="440" height="390" rx="10" fill="white" stroke="#E0E0E0" stroke-width="2"/>
+  <rect x="30" y="65" width="440" height="40" rx="10" fill="#1A73E8"/>
+  <rect x="30" y="93" width="440" height="12" fill="#1A73E8"/>
+  <text x="250" y="90" font-family="Noto Sans KR, sans-serif" font-size="15" font-weight="bold" fill="white" text-anchor="middle">Push-Pull 회로</text>
+
+  <!-- VDD 라벨 (좌) -->
+  <rect x="200" y="118" width="80" height="30" rx="5" fill="#FFEB3B" stroke="#FBC02D" stroke-width="1.5"/>
+  <text x="240" y="138" font-family="Noto Sans KR, sans-serif" font-size="14" font-weight="bold" fill="#212121" text-anchor="middle">VDD (3.3V)</text>
+
+  <!-- PMOS 트랜지스터 (좌) -->
+  <!-- 게이트 제어선 -->
+  <line x1="240" y1="148" x2="240" y2="175" stroke="#212121" stroke-width="2"/>
+  <!-- PMOS 바디 -->
+  <rect x="195" y="175" width="90" height="50" rx="6" fill="#E3F2FD" stroke="#1A73E8" stroke-width="2"/>
+  <text x="240" y="196" font-family="Noto Sans KR, sans-serif" font-size="11" fill="#1A73E8" text-anchor="middle" font-weight="bold">PMOS</text>
+  <text x="240" y="213" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#1A73E8" text-anchor="middle">(P채널 FET)</text>
+  <!-- 게이트 입력 -->
+  <line x1="155" y1="200" x2="195" y2="200" stroke="#212121" stroke-width="2"/>
+  <text x="145" y="204" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#555" text-anchor="end">GPIO제어</text>
+
+  <!-- PMOS → Output 연결선 -->
+  <line x1="240" y1="225" x2="240" y2="285" stroke="#212121" stroke-width="2.5"/>
+
+  <!-- Output Pin 박스 -->
+  <rect x="190" y="285" width="100" height="40" rx="6" fill="#FF7043" stroke="#E64A19" stroke-width="2"/>
+  <text x="240" y="310" font-family="Noto Sans KR, sans-serif" font-size="13" font-weight="bold" fill="white" text-anchor="middle">Output Pin</text>
+
+  <!-- Output → NMOS 연결선 -->
+  <line x1="240" y1="325" x2="240" y2="370" stroke="#212121" stroke-width="2.5"/>
+
+  <!-- NMOS 트랜지스터 (좌) -->
+  <rect x="195" y="370" width="90" height="50" rx="6" fill="#E8F5E9" stroke="#34A853" stroke-width="2"/>
+  <text x="240" y="391" font-family="Noto Sans KR, sans-serif" font-size="11" fill="#34A853" text-anchor="middle" font-weight="bold">NMOS</text>
+  <text x="240" y="408" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#34A853" text-anchor="middle">(N채널 FET)</text>
+  <!-- 게이트 입력 -->
+  <line x1="155" y1="395" x2="195" y2="395" stroke="#212121" stroke-width="2"/>
+  <text x="145" y="399" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#555" text-anchor="end">GPIO제어</text>
+
+  <!-- NMOS → GND 연결선 -->
+  <line x1="240" y1="420" x2="240" y2="440" stroke="#212121" stroke-width="2"/>
+  <rect x="200" y="440" width="80" height="28" rx="5" fill="#ECEFF1" stroke="#90A4AE" stroke-width="1.5"/>
+  <text x="240" y="459" font-family="Noto Sans KR, sans-serif" font-size="14" font-weight="bold" fill="#212121" text-anchor="middle">GND</text>
+
+  <!-- HIGH 출력 화살표 (VDD→Pin) -->
+  <path d="M 350 200 L 390 200 L 390 305 L 375 305" stroke="#1A73E8" stroke-width="2" fill="none" marker-end="url(#arrowBlue)" stroke-dasharray="5,3"/>
+  <text x="395" y="195" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#1A73E8">HIGH:</text>
+  <text x="395" y="208" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#1A73E8">PMOS ON</text>
+  <text x="395" y="221" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#1A73E8">NMOS OFF</text>
+
+  <!-- LOW 출력 화살표 (Pin→GND) -->
+  <path d="M 350 395 L 390 395 L 390 305 L 375 305" stroke="#EA4335" stroke-width="2" fill="none" marker-end="url(#arrowRed)" stroke-dasharray="5,3"/>
+  <text x="395" y="370" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#EA4335">LOW:</text>
+  <text x="395" y="383" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#EA4335">PMOS OFF</text>
+  <text x="395" y="396" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#EA4335">NMOS ON</text>
+
+  <!-- Push-Pull 설명 -->
+  <rect x="40" y="425" width="420" height="22" rx="4" fill="#E3F2FD"/>
+  <text x="250" y="440" font-family="Noto Sans KR, sans-serif" font-size="11" fill="#1A73E8" text-anchor="middle" font-weight="bold">Push-Pull: HIGH/LOW 모두 능동 구동 가능</text>
+
+  <!-- ========== 우측: Open-Drain ========== -->
+  <rect x="530" y="65" width="440" height="390" rx="10" fill="white" stroke="#E0E0E0" stroke-width="2"/>
+  <rect x="530" y="65" width="440" height="40" rx="10" fill="#34A853"/>
+  <rect x="530" y="93" width="440" height="12" fill="#34A853"/>
+  <text x="750" y="90" font-family="Noto Sans KR, sans-serif" font-size="15" font-weight="bold" fill="white" text-anchor="middle">Open-Drain 회로</text>
+
+  <!-- 외부 VDD + Pull-up 저항 -->
+  <rect x="700" y="118" width="80" height="30" rx="5" fill="#FFEB3B" stroke="#FBC02D" stroke-width="1.5"/>
+  <text x="740" y="138" font-family="Noto Sans KR, sans-serif" font-size="14" font-weight="bold" fill="#212121" text-anchor="middle">VDD (외부)</text>
+
+  <!-- 외부 Pull-up 저항 -->
+  <line x1="740" y1="148" x2="740" y2="170" stroke="#757575" stroke-width="2" stroke-dasharray="5,3"/>
+  <rect x="710" y="170" width="60" height="30" rx="4" fill="#FFF9C4" stroke="#F57F17" stroke-width="2"/>
+  <text x="740" y="190" font-family="Noto Sans KR, sans-serif" font-size="12" fill="#E65100" text-anchor="middle" font-weight="bold">4.7kΩ</text>
+  <text x="800" y="183" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#E65100">← 외부 필요</text>
+  <line x1="740" y1="200" x2="740" y2="230" stroke="#757575" stroke-width="2" stroke-dasharray="5,3"/>
+
+  <!-- Output Pin (우) -->
+  <rect x="690" y="230" width="100" height="40" rx="6" fill="#FF7043" stroke="#E64A19" stroke-width="2"/>
+  <text x="740" y="255" font-family="Noto Sans KR, sans-serif" font-size="13" font-weight="bold" fill="white" text-anchor="middle">Output Pin</text>
+
+  <!-- Pin → NMOS -->
+  <line x1="740" y1="270" x2="740" y2="330" stroke="#212121" stroke-width="2.5"/>
+
+  <!-- NMOS만 존재 (우) -->
+  <rect x="695" y="330" width="90" height="50" rx="6" fill="#E8F5E9" stroke="#34A853" stroke-width="2"/>
+  <text x="740" y="351" font-family="Noto Sans KR, sans-serif" font-size="11" fill="#34A853" text-anchor="middle" font-weight="bold">NMOS만 존재</text>
+  <text x="740" y="368" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#34A853" text-anchor="middle">(N채널 FET)</text>
+  <!-- 게이트 -->
+  <line x1="655" y1="355" x2="695" y2="355" stroke="#212121" stroke-width="2"/>
+  <text x="645" y="359" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#555" text-anchor="end">GPIO제어</text>
+
+  <!-- NMOS → GND (우) -->
+  <line x1="740" y1="380" x2="740" y2="400" stroke="#212121" stroke-width="2"/>
+  <rect x="700" y="400" width="80" height="28" rx="5" fill="#ECEFF1" stroke="#90A4AE" stroke-width="1.5"/>
+  <text x="740" y="419" font-family="Noto Sans KR, sans-serif" font-size="14" font-weight="bold" fill="#212121" text-anchor="middle">GND</text>
+
+  <!-- HIGH 상태: Hi-Z -->
+  <text x="555" y="200" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#757575">HIGH:</text>
+  <text x="555" y="213" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#757575">NMOS OFF</text>
+  <text x="555" y="226" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#757575">→ Hi-Z</text>
+  <text x="555" y="239" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#757575">(풀업으로 HIGH)</text>
+
+  <!-- LOW 화살표 -->
+  <path d="M 650 355 L 620 355 L 620 250 L 640 250" stroke="#EA4335" stroke-width="2" fill="none" marker-end="url(#arrowRed)" stroke-dasharray="5,3"/>
+  <text x="555" y="340" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#EA4335">LOW:</text>
+  <text x="555" y="353" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#EA4335">NMOS ON</text>
+  <text x="555" y="366" font-family="Noto Sans KR, sans-serif" font-size="10" fill="#EA4335">Pin → GND</text>
+
+  <!-- Open-Drain 설명 -->
+  <rect x="540" y="425" width="420" height="22" rx="4" fill="#E8F5E9"/>
+  <text x="750" y="440" font-family="Noto Sans KR, sans-serif" font-size="11" fill="#34A853" text-anchor="middle" font-weight="bold">Open-Drain: LOW만 능동 구동 / HIGH는 외부 풀업 필요</text>
+
+  <!-- ========== 하단 비교 표 ========== -->
+  <rect x="30" y="468" width="940" height="135" rx="10" fill="white" stroke="#E0E0E0" stroke-width="2"/>
+  <text x="500" y="490" font-family="Noto Sans KR, sans-serif" font-size="14" font-weight="bold" fill="#212121" text-anchor="middle">용도 비교</text>
+
+  <!-- 표 헤더 -->
+  <rect x="50" y="500" width="200" height="30" rx="4" fill="#212121"/>
+  <text x="150" y="520" font-family="Noto Sans KR, sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle">항목</text>
+  <rect x="260" y="500" width="320" height="30" rx="4" fill="#1A73E8"/>
+  <text x="420" y="520" font-family="Noto Sans KR, sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle">Push-Pull</text>
+  <rect x="590" y="500" width="360" height="30" rx="4" fill="#34A853"/>
+  <text x="770" y="520" font-family="Noto Sans KR, sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle">Open-Drain</text>
+
+  <!-- 행 1 -->
+  <rect x="50" y="530" width="200" height="28" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="150" y="549" font-family="Noto Sans KR, sans-serif" font-size="12" fill="#212121" text-anchor="middle">주요 용도</text>
+  <rect x="260" y="530" width="320" height="28" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="420" y="549" font-family="Noto Sans KR, sans-serif" font-size="12" fill="#212121" text-anchor="middle">LED 제어, 일반 GPIO 신호</text>
+  <rect x="590" y="530" width="360" height="28" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="770" y="549" font-family="Noto Sans KR, sans-serif" font-size="12" fill="#212121" text-anchor="middle">I2C 버스, 버스 공유 (Wired-AND)</text>
+
+  <!-- 행 2 -->
+  <rect x="50" y="558" width="200" height="28" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="150" y="577" font-family="Noto Sans KR, sans-serif" font-size="12" fill="#212121" text-anchor="middle">외부 회로</text>
+  <rect x="260" y="558" width="320" height="28" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="420" y="577" font-family="Noto Sans KR, sans-serif" font-size="12" fill="#1A73E8" text-anchor="middle">불필요 (내부 완결)</text>
+  <rect x="590" y="558" width="360" height="28" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="770" y="577" font-family="Noto Sans KR, sans-serif" font-size="12" fill="#EA4335" text-anchor="middle">외부 풀업 저항 필수</text>
+
+  <!-- 행 3 -->
+  <rect x="50" y="586" width="200" height="28" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="150" y="605" font-family="Noto Sans KR, sans-serif" font-size="12" fill="#212121" text-anchor="middle">전압 레벨</text>
+  <rect x="260" y="586" width="320" height="28" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="420" y="605" font-family="Noto Sans KR, sans-serif" font-size="12" fill="#212121" text-anchor="middle">VDD 고정</text>
+  <rect x="590" y="586" width="360" height="28" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="770" y="605" font-family="Noto Sans KR, sans-serif" font-size="12" fill="#34A853" text-anchor="middle">풀업 전압에 따라 유연 조정 가능</text>
+</svg>

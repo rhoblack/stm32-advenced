@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" font-family='"Noto Sans KR", "Malgun Gothic", sans-serif'>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333333"/>
+    </marker>
+    <marker id="arrowhead-red" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#EA4335"/>
+    </marker>
+    <marker id="arrowhead-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#9E9E9E"/>
+    </marker>
+  </defs>
+
+  <!-- 배경 -->
+  <rect width="800" height="500" fill="#FFFFFF"/>
+
+  <!-- 제목 -->
+  <text x="400" y="32" text-anchor="middle" font-size="18" font-weight="bold" fill="#333333">그림 02-5. 로그 레벨 계층 구조와 필터링</text>
+
+  <!-- 피라미드 레이어 4: DEBUG (가장 넓음, 회색) -->
+  <polygon points="110,390 490,390 450,320 150,320" fill="#9E9E9E" stroke="#757575" stroke-width="1.5"/>
+  <text x="300" y="350" text-anchor="middle" font-size="16" font-weight="bold" fill="#FFFFFF">LOG_D — DEBUG</text>
+  <text x="300" y="370" text-anchor="middle" font-size="12" fill="#F5F5F5">상세 내부 상태, 개발 시에만 사용</text>
+  <!-- 레벨 번호 -->
+  <text x="120" y="380" font-size="22" font-weight="bold" fill="#FFFFFF" opacity="0.5">4</text>
+
+  <!-- 피라미드 레이어 3: INFO (초록) -->
+  <polygon points="150,318 450,318 415,248 185,248" fill="#34A853" stroke="#2E7D32" stroke-width="1.5"/>
+  <text x="300" y="278" text-anchor="middle" font-size="16" font-weight="bold" fill="#FFFFFF">LOG_I — INFO</text>
+  <text x="300" y="298" text-anchor="middle" font-size="12" fill="#E8F5E9">일반 동작 상태, 중요 이벤트 기록</text>
+  <!-- 레벨 번호 -->
+  <text x="162" y="310" font-size="22" font-weight="bold" fill="#FFFFFF" opacity="0.5">3</text>
+
+  <!-- 피라미드 레이어 2: WARN (주황) -->
+  <polygon points="185,246 415,246 382,176 218,176" fill="#FF6D00" stroke="#E65100" stroke-width="1.5"/>
+  <text x="300" y="206" text-anchor="middle" font-size="16" font-weight="bold" fill="#FFFFFF">LOG_W — WARN</text>
+  <text x="300" y="226" text-anchor="middle" font-size="12" fill="#FFF3E0">정상 범위 벗어남, 주의 필요</text>
+  <!-- 레벨 번호 -->
+  <text x="197" y="238" font-size="22" font-weight="bold" fill="#FFFFFF" opacity="0.5">2</text>
+
+  <!-- 피라미드 레이어 1: ERROR (빨강, 가장 좁음) -->
+  <polygon points="218,174 382,174 348,104 252,104" fill="#EA4335" stroke="#C62828" stroke-width="1.5"/>
+  <text x="300" y="134" text-anchor="middle" font-size="16" font-weight="bold" fill="#FFFFFF">LOG_E — ERROR</text>
+  <text x="300" y="154" text-anchor="middle" font-size="12" fill="#FFCDD2">시스템 동작 불가, 즉시 처리 필요</text>
+  <!-- 레벨 번호 -->
+  <text x="230" y="167" font-size="22" font-weight="bold" fill="#FFFFFF" opacity="0.5">1</text>
+
+  <!-- 피라미드 꼭대기 표시 -->
+  <polygon points="252,102 348,102 300,58" fill="#C62828" stroke="#B71C1C" stroke-width="1.5"/>
+  <text x="300" y="88" text-anchor="middle" font-size="11" fill="#FFFFFF">심각</text>
+
+  <!-- 오른쪽 필터링 설명 영역 -->
+  <rect x="520" y="55" width="265" height="380" rx="6" fill="#F8F9FA" stroke="#CCCCCC" stroke-width="1.5"/>
+  <rect x="520" y="55" width="265" height="36" rx="6" fill="#333333"/>
+  <text x="652" y="80" text-anchor="middle" font-size="14" font-weight="bold" fill="#FFFFFF">필터링 동작 예시</text>
+
+  <!-- 필터 설정 설명 -->
+  <text x="535" y="114" font-size="12" fill="#666666">설정:</text>
+  <rect x="572" y="100" width="198" height="24" rx="3" fill="#2D2D2D"/>
+  <text x="671" y="116" text-anchor="middle" font-size="12" font-family="monospace" fill="#F8F9FA">#define LOG_LEVEL  LOG_WARN</text>
+
+  <text x="535" y="145" font-size="13" fill="#333333">이 설정으로 출력되는 레벨:</text>
+
+  <!-- ERROR: 통과 -->
+  <rect x="535" y="155" width="230" height="38" rx="4" fill="#FEECEC" stroke="#EA4335" stroke-width="1.5"/>
+  <text x="555" y="172" font-size="13" font-weight="bold" fill="#EA4335">ERROR (레벨 1)</text>
+  <text x="555" y="187" font-size="12" fill="#333333">레벨 1 &lt;= WARN(2) → 출력됨</text>
+  <text x="748" y="178" text-anchor="middle" font-size="18" font-weight="bold" fill="#34A853">✓</text>
+
+  <!-- WARN: 통과 -->
+  <rect x="535" y="200" width="230" height="38" rx="4" fill="#FFF3E0" stroke="#FF6D00" stroke-width="1.5"/>
+  <text x="555" y="217" font-size="13" font-weight="bold" fill="#FF6D00">WARN (레벨 2)</text>
+  <text x="555" y="232" font-size="12" fill="#333333">레벨 2 &lt;= WARN(2) → 출력됨</text>
+  <text x="748" y="222" text-anchor="middle" font-size="18" font-weight="bold" fill="#34A853">✓</text>
+
+  <!-- INFO: 차단 -->
+  <rect x="535" y="245" width="230" height="38" rx="4" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.5"/>
+  <text x="555" y="262" font-size="13" fill="#9E9E9E">INFO (레벨 3)</text>
+  <text x="555" y="277" font-size="12" fill="#9E9E9E">레벨 3 &gt; WARN(2) → 차단</text>
+  <text x="748" y="267" text-anchor="middle" font-size="18" fill="#EA4335">✗</text>
+
+  <!-- DEBUG: 차단 -->
+  <rect x="535" y="290" width="230" height="38" rx="4" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.5"/>
+  <text x="555" y="307" font-size="13" fill="#9E9E9E">DEBUG (레벨 4)</text>
+  <text x="555" y="322" font-size="12" fill="#9E9E9E">레벨 4 &gt; WARN(2) → 차단</text>
+  <text x="748" y="312" text-anchor="middle" font-size="18" fill="#EA4335">✗</text>
+
+  <!-- 조건 설명 박스 -->
+  <rect x="535" y="338" width="230" height="45" rx="4" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+  <text x="650" y="356" text-anchor="middle" font-size="12" fill="#333333">출력 조건: level &lt;= LOG_LEVEL</text>
+  <text x="650" y="374" text-anchor="middle" font-size="12" font-weight="bold" fill="#1A73E8">#if (LEVEL &lt;= LOG_LEVEL) ... #endif</text>
+
+  <!-- 오른쪽 하단 범례 -->
+  <text x="535" y="410" font-size="12" fill="#666666">컴파일 타임에 결정 → 차단된 코드는</text>
+  <text x="535" y="425" font-size="12" fill="#666666">바이너리에서 완전 제거됨</text>
+
+  <!-- 하단 메모 -->
+  <rect x="20" y="450" width="760" height="38" rx="4" fill="#F8F9FA" stroke="#CCCCCC" stroke-width="1"/>
+  <text x="400" y="466" text-anchor="middle" font-size="12" fill="#666666" font-weight="bold">빌드 설정 가이드</text>
+  <text x="400" y="482" text-anchor="middle" font-size="12" fill="#666666">개발 빌드: LOG_LEVEL = LOG_DEBUG (전체 출력)  |  릴리즈 빌드: LOG_LEVEL = LOG_WARN 이상만 출력</text>
+</svg>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" font-family='"Noto Sans KR", "Malgun Gothic", sans-serif'>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555555"/>
+    </marker>
+    <marker id="arrowhead-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#34A853"/>
+    </marker>
+    <marker id="arrowhead-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#9E9E9E"/>
+    </marker>
+  </defs>
+
+  <!-- 배경 -->
+  <rect width="800" height="500" fill="#FFFFFF"/>
+
+  <!-- 제목 -->
+  <text x="400" y="32" text-anchor="middle" font-size="18" font-weight="bold" fill="#333333">그림 02-7. LOG_D 매크로 전처리기 전개 과정</text>
+
+  <!-- 단계 1: 소스 코드 -->
+  <rect x="30" y="50" width="740" height="90" rx="6" fill="#FFF8E1" stroke="#FBBC04" stroke-width="2"/>
+  <rect x="30" y="50" width="740" height="30" rx="6" fill="#FBBC04"/>
+  <text x="400" y="71" text-anchor="middle" font-size="14" font-weight="bold" fill="#333333">단계 1: 소스 코드 (개발자 작성)</text>
+  <!-- 코드 -->
+  <rect x="50" y="86" width="700" height="44" rx="4" fill="#1E1E1E"/>
+  <text x="70" y="103" font-size="13" font-family="monospace" fill="#569CD6">LOG_D</text>
+  <text x="130" y="103" font-size="13" font-family="monospace" fill="#D4D4D4">(</text>
+  <text x="140" y="103" font-size="13" font-family="monospace" fill="#CE9178">"val=%d, tick=%lu"</text>
+  <text x="348" y="103" font-size="13" font-family="monospace" fill="#D4D4D4">,  val,  HAL_GetTick());</text>
+  <text x="70" y="122" font-size="12" font-family="monospace" fill="#6A9955">// 개발자가 직접 작성하는 코드 — 간결함</text>
+
+  <!-- 화살표 1→2 + 레이블 -->
+  <line x1="400" y1="140" x2="400" y2="170" stroke="#555555" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <rect x="300" y="148" width="200" height="22" rx="3" fill="#F8F9FA" stroke="#CCCCCC" stroke-width="1"/>
+  <text x="400" y="163" text-anchor="middle" font-size="12" fill="#555555" font-weight="bold">전처리기 (Preprocessor)</text>
+
+  <!-- 단계 2: 전처리 후 -->
+  <rect x="30" y="172" width="740" height="120" rx="6" fill="#E8F0FE" stroke="#1A73E8" stroke-width="2"/>
+  <rect x="30" y="172" width="740" height="30" rx="6" fill="#1A73E8"/>
+  <text x="400" y="193" text-anchor="middle" font-size="14" font-weight="bold" fill="#FFFFFF">단계 2: 전처리 후 (컴파일러 입력)</text>
+  <!-- 코드 -->
+  <rect x="50" y="206" width="700" height="76" rx="4" fill="#1E1E1E"/>
+  <text x="70" y="224" font-size="12" font-family="monospace" fill="#C586C0">#if</text>
+  <text x="100" y="224" font-size="12" font-family="monospace" fill="#D4D4D4"> (LOG_LEVEL &gt;= 4)</text>
+  <text x="70" y="244" font-size="12" font-family="monospace" fill="#D4D4D4">  </text>
+  <text x="86" y="244" font-size="12" font-family="monospace" fill="#DCDCAA">log_print</text>
+  <text x="163" y="244" font-size="12" font-family="monospace" fill="#D4D4D4">(4, </text>
+  <text x="195" y="244" font-size="12" font-family="monospace" fill="#CE9178">"main.c"</text>
+  <text x="260" y="244" font-size="12" font-family="monospace" fill="#D4D4D4">, 42, </text>
+  <text x="305" y="244" font-size="12" font-family="monospace" fill="#CE9178">"loop"</text>
+  <text x="352" y="244" font-size="12" font-family="monospace" fill="#D4D4D4">, </text>
+  <text x="367" y="244" font-size="12" font-family="monospace" fill="#CE9178">"val=%d, tick=%lu"</text>
+  <text x="575" y="244" font-size="12" font-family="monospace" fill="#D4D4D4">, val, HAL_GetTick());</text>
+  <text x="70" y="264" font-size="12" font-family="monospace" fill="#C586C0">#endif</text>
+  <text x="160" y="264" font-size="12" font-family="monospace" fill="#6A9955">// __FILE__, __LINE__, __func__ 이미 치환됨</text>
+
+  <!-- 화살표 2→분기 -->
+  <line x1="400" y1="292" x2="400" y2="320" stroke="#555555" stroke-width="2"/>
+  <!-- 분기선 -->
+  <line x1="195" y1="320" x2="605" y2="320" stroke="#555555" stroke-width="2"/>
+  <!-- 왼쪽 분기 화살표 -->
+  <line x1="195" y1="320" x2="195" y2="348" stroke="#34A853" stroke-width="2" marker-end="url(#arrowhead-green)"/>
+  <!-- 오른쪽 분기 화살표 -->
+  <line x1="605" y1="320" x2="605" y2="348" stroke="#9E9E9E" stroke-width="2" marker-end="url(#arrowhead-gray)"/>
+
+  <!-- 분기 레이블 -->
+  <rect x="100" y="302" width="190" height="22" rx="3" fill="#E6F4EA" stroke="#34A853" stroke-width="1"/>
+  <text x="195" y="317" text-anchor="middle" font-size="12" fill="#34A853" font-weight="bold">LOG_LEVEL >= 4 일 때</text>
+  <rect x="510" y="302" width="190" height="22" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1"/>
+  <text x="605" y="317" text-anchor="middle" font-size="12" fill="#9E9E9E" font-weight="bold">LOG_LEVEL &lt; 4 일 때</text>
+
+  <!-- 분기 A: 코드 생성 (초록) -->
+  <rect x="30" y="350" width="330" height="100" rx="6" fill="#E6F4EA" stroke="#34A853" stroke-width="2"/>
+  <text x="195" y="374" text-anchor="middle" font-size="13" font-weight="bold" fill="#1B5E20">실제 함수 호출 코드 생성</text>
+  <text x="58" y="396" font-size="12" fill="#333333">→ log_print() 함수 호출 코드 포함</text>
+  <text x="58" y="414" font-size="12" fill="#333333">→ .text 섹션에 기계어 코드 포함</text>
+  <text x="58" y="432" font-size="12" fill="#333333">→ 런타임에 실행됨</text>
+  <rect x="58" y="437" width="180" height="8" rx="2" fill="#34A853"/>
+
+  <!-- 분기 B: 코드 제거 (회색) -->
+  <rect x="440" y="350" width="330" height="100" rx="6" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="2"/>
+  <text x="605" y="374" text-anchor="middle" font-size="13" font-weight="bold" fill="#616161">빈 코드로 치환 → 완전 제거</text>
+  <text x="468" y="396" font-size="12" fill="#666666">→ #if 조건 false → 컴파일러 무시</text>
+  <text x="468" y="414" font-size="12" fill="#666666">→ .text 섹션에 포함되지 않음</text>
+  <text x="468" y="432" font-size="12" fill="#666666">→ 플래시 절약 + 런타임 비용 0</text>
+  <rect x="468" y="437" width="180" height="8" rx="2" fill="#9E9E9E"/>
+
+  <!-- 하단 메모 -->
+  <rect x="30" y="462" width="740" height="30" rx="4" fill="#FFF8E1" stroke="#FBBC04" stroke-width="1.5"/>
+  <text x="400" y="481" text-anchor="middle" font-size="12" fill="#555555">
+    <tspan font-weight="bold">##__VA_ARGS__</tspan> : 인자가 없을 때 앞의 쉼표(,)를 자동 제거하는 GCC 확장 문법  |  표준 C99: __VA_ARGS__만 지원
+  </text>
+</svg>
