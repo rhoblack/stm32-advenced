@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 450" font-family="'Noto Sans KR', sans-serif" font-size="13">
+  <defs>
+    <marker id="iArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+    </marker>
+    <marker id="iArrRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#EA4335"/>
+    </marker>
+  </defs>
+
+  <text x="390" y="24" text-anchor="middle" font-size="16" font-weight="700" fill="#212121">인터럽트 1바이트 재등록 패턴 — 시퀀스 다이어그램</text>
+
+  <!-- 참여자 -->
+  <rect x="20" y="45" width="100" height="30" rx="6" fill="#F5F5F5" stroke="#999"/>
+  <text x="70" y="65" text-anchor="middle" font-size="11" font-weight="600" fill="#333">PC (송신)</text>
+
+  <rect x="180" y="45" width="100" height="30" rx="6" fill="#1A73E8" opacity="0.15" stroke="#1A73E8"/>
+  <text x="230" y="65" text-anchor="middle" font-size="11" font-weight="600" fill="#1A73E8">USART2 HW</text>
+
+  <rect x="340" y="45" width="80" height="30" rx="6" fill="#FBBC04" opacity="0.15" stroke="#FBBC04"/>
+  <text x="380" y="65" text-anchor="middle" font-size="11" font-weight="600" fill="#F57F17">NVIC</text>
+
+  <rect x="480" y="45" width="120" height="30" rx="6" fill="#34A853" opacity="0.15" stroke="#34A853" stroke-width="2"/>
+  <text x="540" y="65" text-anchor="middle" font-size="11" font-weight="700" fill="#34A853">RxCpltCallback</text>
+
+  <rect x="660" y="45" width="100" height="30" rx="6" fill="#EA4335" opacity="0.15" stroke="#EA4335"/>
+  <text x="710" y="65" text-anchor="middle" font-size="11" font-weight="600" fill="#EA4335">main loop</text>
+
+  <!-- 생명선 -->
+  <line x1="70" y1="75" x2="70" y2="420" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="230" y1="75" x2="230" y2="420" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="380" y1="75" x2="380" y2="420" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="540" y1="75" x2="540" y2="420" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="710" y1="75" x2="710" y2="420" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+
+  <!-- main loop 활성 (전체) -->
+  <rect x="704" y="85" width="12" height="330" fill="#EA4335" opacity="0.15"/>
+  <text x="710" y="98" text-anchor="middle" font-size="9" fill="#EA4335">계속 동작</text>
+
+  <!-- ===== 초기 등록 ===== -->
+  <rect x="460" y="105" width="170" height="20" rx="3" fill="#E8F5E9" stroke="#34A853"/>
+  <text x="545" y="119" text-anchor="middle" font-size="10" fill="#1B5E20" font-weight="600">HAL_UART_Receive_IT(&huart2, &rx_byte, 1)</text>
+  <text x="400" y="102" text-anchor="end" font-size="9" fill="#34A853" font-weight="600">초기화 시 1회 등록</text>
+
+  <!-- ===== 1번째 바이트 수신 ===== -->
+  <!-- PC → HW -->
+  <line x1="70" y1="145" x2="224" y2="145" stroke="#333" stroke-width="2" marker-end="url(#iArr)"/>
+  <text x="147" y="138" text-anchor="middle" font-size="10" fill="#333" font-weight="600">'A' 전송</text>
+
+  <!-- HW 수신 완료 → NVIC -->
+  <rect x="224" y="143" width="12" height="20" fill="#1A73E8" opacity="0.3"/>
+  <line x1="236" y1="155" x2="374" y2="155" stroke="#1A73E8" stroke-width="2" marker-end="url(#iArr)"/>
+  <text x="305" y="148" text-anchor="middle" font-size="10" fill="#1A73E8">RXNE 인터럽트</text>
+
+  <!-- NVIC → Callback -->
+  <rect x="374" y="153" width="12" height="15" fill="#FBBC04" opacity="0.3"/>
+  <line x1="386" y1="165" x2="534" y2="165" stroke="#333" stroke-width="2" marker-end="url(#iArr)"/>
+  <text x="460" y="158" text-anchor="middle" font-size="10" fill="#333">ISR 진입</text>
+
+  <!-- Callback 활성 -->
+  <rect x="534" y="163" width="12" height="70" fill="#34A853" opacity="0.3"/>
+
+  <!-- 내부: 바이트 저장 -->
+  <rect x="555" y="172" width="100" height="18" rx="3" fill="#E8F5E9" stroke="#34A853"/>
+  <text x="605" y="185" text-anchor="middle" font-size="9" fill="#1B5E20">rx_buf[idx++] = 'A'</text>
+
+  <!-- ★ 핵심: 재등록 -->
+  <rect x="555" y="198" width="165" height="22" rx="3" fill="#FFF8E1" stroke="#FF6F00" stroke-width="2"/>
+  <text x="637" y="213" text-anchor="middle" font-size="10" fill="#E65100" font-weight="700">Receive_IT 재등록!</text>
+
+  <!-- main loop 표시 -->
+  <text x="710" y="195" text-anchor="middle" font-size="9" fill="#EA4335">LED 토글 중</text>
+
+  <!-- ===== 2번째 바이트 수신 ===== -->
+  <line x1="70" y1="250" x2="224" y2="250" stroke="#333" stroke-width="2" marker-end="url(#iArr)"/>
+  <text x="147" y="243" text-anchor="middle" font-size="10" fill="#333" font-weight="600">'B' 전송</text>
+
+  <rect x="224" y="248" width="12" height="20" fill="#1A73E8" opacity="0.3"/>
+  <line x1="236" y1="260" x2="374" y2="260" stroke="#1A73E8" stroke-width="2" marker-end="url(#iArr)"/>
+  <text x="305" y="253" text-anchor="middle" font-size="10" fill="#1A73E8">RXNE 인터럽트</text>
+
+  <rect x="374" y="258" width="12" height="15" fill="#FBBC04" opacity="0.3"/>
+  <line x1="386" y1="270" x2="534" y2="270" stroke="#333" stroke-width="2" marker-end="url(#iArr)"/>
+
+  <rect x="534" y="268" width="12" height="70" fill="#34A853" opacity="0.3"/>
+
+  <rect x="555" y="278" width="100" height="18" rx="3" fill="#E8F5E9" stroke="#34A853"/>
+  <text x="605" y="291" text-anchor="middle" font-size="9" fill="#1B5E20">rx_buf[idx++] = 'B'</text>
+
+  <rect x="555" y="304" width="165" height="22" rx="3" fill="#FFF8E1" stroke="#FF6F00" stroke-width="2"/>
+  <text x="637" y="319" text-anchor="middle" font-size="10" fill="#E65100" font-weight="700">Receive_IT 재등록!</text>
+
+  <text x="710" y="300" text-anchor="middle" font-size="9" fill="#EA4335">LED 토글 중</text>
+
+  <!-- 반복 표시 -->
+  <text x="637" y="355" text-anchor="middle" font-size="11" fill="#34A853" font-weight="700">... 매 바이트마다 재등록 반복 ...</text>
+
+  <!-- 핵심 메시지 -->
+  <rect x="30" y="380" width="720" height="35" rx="8" fill="#FFF8E1" stroke="#FF6F00" stroke-width="1.5"/>
+  <text x="390" y="403" text-anchor="middle" font-size="12" fill="#E65100" font-weight="700">핵심: 콜백 마지막에 HAL_UART_Receive_IT()를 다시 호출해야 다음 바이트를 받을 수 있다!</text>
+</svg>

@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch04. UART 기초 — STM32 고급 실무교육</title>
+  <link rel="stylesheet" href="../../templates/book_style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+
+<!-- ===== 챕터 헤더 ===== -->
+<header class="chapter-header">
+  <div class="chapter-meta">Part 1 · Chapter 04 · 프로젝트 <span class="version">v0.4</span></div>
+  <h1>Ch04. UART 기초</h1>
+  <p class="chapter-summary">MCU에게 목소리를 준다 — UART 시리얼 통신으로 PC와 데이터를 주고받는 Driver를 완성한다</p>
+  <div class="chapter-badge">누적 기능: PC로 시스템 상태 시리얼 출력 + PC 명령 수신</div>
+</header>
+
+<!-- ===== §4.0 도입 ===== -->
+<section id="sec-00">
+  <h2>§4.0 "이미 했는데 왜 또?" — SWO와 UART의 차이</h2>
+
+  <p>
+    잠깐, 여기까지 온 여러분의 성과를 확인하고 갑시다.
+    Ch01에서 버튼 인터럽트로 LED를 제어하고, Ch02에서 로그 시스템을 구축하고, Ch03에서 4계층 아키텍처 설계도까지 완성했습니다.
+    <strong>3개 챕터, 3개의 핵심 역량</strong>을 이미 갖추었습니다.
+    이제 그 역량 위에 네 번째 블록을 쌓을 차례입니다.
+  </p>
+
+  <p>
+    Ch02에서 우리는 이미 MCU 내부를 들여다보는 데 성공했습니다.
+    <code>LOG_I("버튼 눌림!")</code> 한 줄이면 STM32CubeIDE SWV Console에 메시지가 나타났습니다.
+    그렇다면 Ch04에서 또 "출력"을 배우는 이유가 뭘까요?
+  </p>
+
+  <p>
+    답은 <strong>범위</strong>입니다.
+    Ch02의 SWO(Serial Wire Output)는 <strong>디버거에게만 말하는 청진기</strong>입니다.
+    ST-Link가 연결되어 있어야만 작동하고, 디버깅 세션 밖에서는 침묵합니다.
+  </p>
+
+  <p>
+    Ch04의 UART(Universal Asynchronous Receiver/Transmitter, 범용 비동기 송수신기)는 <strong>누구에게나 말하는 목소리</strong>입니다.
+    PC는 물론, 라즈베리파이, 블루투스 모듈, 다른 MCU — UART를 이해하는 모든 장치와 대화할 수 있습니다.
+    디버거 없이도 동작합니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch04_sec01_swo_vs_uart.svg" alt="SWO 경로 vs UART 경로 비교">
+    <figcaption>그림 04-1. SWO(Ch02)와 UART(Ch04)의 경로 비교 — SWO는 디버거 전용, UART는 범용 통신</figcaption>
+  </figure>
+
+  <p>
+    NUCLEO-F411RE 보드에서 두 경로는 물리적으로 같은 USB 케이블을 공유하지만,
+    내부에서는 완전히 다른 통로를 사용합니다.
+    SWO는 SWD(Serial Wire Debug) 디버깅 채널을,
+    UART는 ST-Link의 Virtual COM Port(가상 시리얼 포트)를 경유합니다.
+  </p>
+
+  <p>
+    이 챕터가 끝나면 두 가지가 바뀝니다:
+  </p>
+  <ul>
+    <li><strong>출력 범위 확장</strong>: 디버거 없이도 PC 터미널에서 MCU 상태를 확인할 수 있습니다.</li>
+    <li><strong>입력 추가</strong>: PC에서 MCU로 명령을 보낼 수 있습니다. Ch01의 버튼에 이어 두 번째 입력 채널입니다.</li>
+  </ul>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    도입부에서 "ST-Link USB를 뽑아 보세요"라고 시연하면 효과적입니다.
+    SWO 출력은 즉시 사라지지만, 별도 전원을 공급하면 UART는 계속 동작합니다.
+    이 차이가 "범위"의 체감입니다.
+  </aside>
+</section>
+
+
+<!-- ===== 아키텍처 위치 (Ch04 이상 필수) ===== -->
+<section class="architecture-position">
+  <h2>이 챕터의 아키텍처 위치</h2>
+  <p>
+    Ch03에서 우리는 4계층 아키텍처를 설계하고, Driver 레이어에 <code>uart_driver</code>라는 <strong>회색 블록</strong>을 배치했습니다.
+    오늘 그 회색 블록이 <strong>초록색으로 칠해집니다</strong>.
+    Driver 레이어의 첫 번째 통신 모듈을 직접 구현하는 것입니다.
+  </p>
+  <figure>
+    <img src="../../figures/ch04_sec00_architecture.svg" alt="레이어 아키텍처에서 uart_driver 위치">
+    <figcaption>그림 04-2. uart_driver의 레이어 위치 — Driver 계층에서 HAL_UART를 감싸 상위에 깔끔한 인터페이스를 제공</figcaption>
+  </figure>
+
+  <h3>인터페이스 설계</h3>
+  <p>
+    Ch03의 레스토랑 비유를 떠올려 보세요.
+    요리사(Driver)는 홀 매니저(App)에게 <strong>메뉴판(인터페이스)</strong>을 보여줍니다.
+    홀 매니저는 메뉴판만 보면 되지, 가스레인지 조작법(HAL)을 알 필요가 없습니다.
+    <code>uart_driver.h</code>가 바로 그 메뉴판입니다.
+  </p>
+  <pre><code class="language-c">/* uart_driver.h — 공개 인터페이스 (메뉴판) */
+
+typedef enum {
+    UART_OK = 0, UART_ERROR, UART_BUSY, UART_TIMEOUT
+} uart_status_t;
+
+void          uart_driver_init(void);
+uart_status_t uart_send(const uint8_t *buf, uint16_t len);
+uart_status_t uart_send_string(const char *str);
+uint16_t      uart_available(void);
+uint8_t       uart_read_byte(void);</code></pre>
+  <p>
+    App 레이어는 <code>uart_send_string("Hello")</code>만 호출하면 됩니다.
+    내부가 폴링인지 인터럽트인지 DMA인지 모릅니다.
+    <strong>이 인터페이스는 Ch06에서 DMA로 전환해도 변경 없이 유지됩니다.</strong>
+    이것이 Ch03에서 배운 레이어 분리의 실질적 가치입니다.
+  </p>
+
+  <h3>시퀀스 다이어그램</h3>
+  <p>
+    <code>uart_send()</code>를 호출하면 실제로 어떤 일이 일어나는지, 4계층을 관통하는 흐름을 시퀀스 다이어그램으로 확인합니다.
+    Ch03에서는 시퀀스 다이어그램을 "읽었"지만, Ch04부터는 직접 "그릴" 수 있어야 합니다.
+  </p>
+  <figure>
+    <img src="../../figures/ch04_sec00_sequence.svg" alt="UART 송신 시퀀스 다이어그램">
+    <figcaption>그림 04-3. UART 송신 시퀀스 — App이 Driver 인터페이스만 알면 HAL 상세는 숨겨진다</figcaption>
+  </figure>
+</section>
+
+
+<!-- ===== 학습 목표 ===== -->
+<section class="learning-objectives">
+  <h2>학습 목표</h2>
+  <p>이 챕터를 완료하면 다음을 할 수 있습니다.</p>
+  <ul>
+    <li>[기억] UART 프레임의 구성 요소(Start, Data, Parity, Stop)와 Baud Rate의 정의를 열거할 수 있다.</li>
+    <li>[이해] SWO(Ch02)와 UART(Ch04)의 차이를 설명하고, 각각의 용도를 구분할 수 있다.</li>
+    <li>[이해] 폴링 방식 송수신과 인터럽트 방식 수신의 차이를 CPU 활용 관점에서 설명할 수 있다.</li>
+    <li>[적용] CubeMX에서 USART2를 설정하고, HAL_UART_Transmit으로 PC에 문자열을 전송할 수 있다.</li>
+    <li>[적용] HAL_UART_Receive_IT 1바이트 재등록 패턴으로 인터럽트 기반 수신을 구현할 수 있다.</li>
+    <li>[적용] uart_driver.c/h를 Driver 레이어 컴포넌트로 설계하고 아키텍처 v0.4를 갱신할 수 있다.</li>
+  </ul>
+  <div class="project-milestone">
+    <strong>프로젝트 v0.4</strong>: 이 챕터 완료 후 PC 터미널에서 MCU 상태를 실시간으로 확인하고, 간단한 명령으로 LED를 제어할 수 있습니다.
+  </div>
+</section>
+
+
+<!-- ===== §4.1 UART 프레임 구조 + Baud Rate ===== -->
+<section id="sec-01">
+  <h2>§4.1 UART 프레임 구조와 Baud Rate</h2>
+
+  <p>
+    UART 통신을 한 문장으로 요약하면:
+    <strong>"미리 약속한 속도로 한 글자씩 주고받는 비동기 통신"</strong>입니다.
+    I2C나 SPI처럼 별도의 클럭 신호선이 없습니다.
+    대신 양쪽이 "1초에 몇 비트를 보내자"고 속도를 약속합니다.
+    이 약속이 <strong>Baud Rate(보 레이트)</strong>입니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기 — 편지 봉투</strong><br>
+    UART의 한 프레임은 <strong>편지 봉투</strong>와 같습니다.<br>
+    "봉투를 연다(Start bit)" → "편지 내용을 읽는다(Data 8bit)" → "봉투를 닫는다(Stop bit)"<br>
+    편지를 쓰는 속도(Baud Rate)를 양쪽이 같게 맞춰야 읽을 수 있습니다.
+    한쪽이 빠르게 쓰고 다른 쪽이 천천히 읽으면 글자가 겹치거나 빠집니다.
+    <br><small>※ 비유의 한계: 편지는 한 방향이지만, UART는 TX/RX 두 선으로 동시에 양방향(Full Duplex) 통신이 가능합니다.</small>
+  </div>
+
+  <h3>UART 프레임의 5가지 구성 요소</h3>
+
+  <p>UART는 한 번에 1바이트(8비트)를 프레임으로 감싸서 전송합니다. 우리가 사용할 설정은 <strong>115200-8-N-1</strong>입니다.</p>
+
+  <ul>
+    <li><strong>Start bit (1비트)</strong>: 항상 0(Low). "지금부터 데이터가 시작됩니다"라는 신호입니다.</li>
+    <li><strong>Data bits (8비트)</strong>: 실제 데이터. LSB(최하위 비트)부터 전송합니다. 0x41('A')이면 D0=1, D1=0, ..., D6=1, D7=0 순서입니다.</li>
+    <li><strong>Parity bit (0비트, N=None)</strong>: 오류 검출용. 우리 설정에서는 사용하지 않습니다(None).</li>
+    <li><strong>Stop bit (1비트)</strong>: 항상 1(High). "데이터가 끝났습니다"라는 신호입니다.</li>
+    <li><strong>Baud Rate</strong>: 초당 비트 전송 속도. 115200bps = 초당 115,200비트. 1비트 시간 = 1/115200 = 약 8.68us.</li>
+  </ul>
+
+  <figure>
+    <img src="../../figures/ch04_sec01_uart_frame.svg" alt="UART 프레임 타이밍 다이어그램">
+    <figcaption>그림 04-4. UART 프레임 구조 — 0x41('A') 전송 시 타이밍. 115200bps에서 1프레임 = 10비트 = 86.8us</figcaption>
+  </figure>
+
+  <p>
+    <strong>115200-8-N-1</strong>을 해석하면:
+    Baud Rate 115200bps, Data 8비트, Parity None, Stop 1비트.
+    1프레임 = 1(Start) + 8(Data) + 1(Stop) = 10비트.
+    따라서 초당 최대 전송 가능 바이트 = 115200 / 10 = <strong>11,520 바이트/초</strong>입니다.
+  </p>
+
+  <h3>Baud Rate가 맞지 않으면?</h3>
+
+  <p>
+    MCU는 115200bps로 보내는데 PC 터미널이 9600bps로 읽으면 어떻게 될까요?
+    수신측은 실제 비트보다 12배 느리게 샘플링하므로, 한 비트를 읽는 동안 12비트가 지나가 버립니다.
+    결과는 <strong>깨진 문자</strong>(쓰레기값)입니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch04_sec01_baudrate_mismatch.svg" alt="Baud Rate 불일치 시 데이터 깨짐">
+    <figcaption>그림 04-5. Baud Rate 불일치 — 송신 115200bps vs 수신 9600bps일 때 샘플링 타이밍 어긋남</figcaption>
+  </figure>
+
+  <aside class="tip">
+    💡 <strong>실무 팁 — 깨진 문자가 보이면</strong><br>
+    시리얼 터미널에서 "ÿÿÿ" 또는 "??" 같은 문자가 나온다면 99% Baud Rate 불일치입니다.
+    MCU와 PC 터미널의 설정을 동일하게 맞추세요 (115200-8-N-1).
+    NUCLEO-F411RE의 ST-Link Virtual COM Port는 기본 115200bps를 사용합니다.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> 왜 하필 115200인가요? 더 빠른 속도는 안 되나요?<br>
+    <strong>A.</strong> 115200은 역사적으로 가장 널리 쓰이는 속도이고, ST-Link Virtual COM Port의 기본값입니다.
+    STM32F411은 USART2에서 최대 약 2.625Mbps까지 지원하지만, USB CDC 변환 속도와 터미널 호환성 때문에 실무에서는 115200 또는 921600을 주로 사용합니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    <strong>"UART와 USART의 차이를 설명하시오."</strong><br>
+    UART = Asynchronous(비동기). 클럭 신호 없이 Baud Rate 약속으로 동기화.
+    USART = Synchronous/Asynchronous 둘 다 가능. 추가 CLK 핀으로 동기 모드 지원.
+    STM32의 USART2는 비동기 모드로 사용하면 UART와 동일합니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>UART 프레임의 Start, Data, Stop 역할을 각각 한 문장으로 설명할 수 있는가?</li>
+      <li>115200-8-N-1에서 1프레임의 총 비트 수와 전송 시간을 계산할 수 있는가?</li>
+      <li>Baud Rate 불일치 시 어떤 증상이 나타나는지 알고 있는가?</li>
+    </ul>
+  </aside>
+</section>
+
+
+<!-- ===== §4.2 NUCLEO-F411RE UART 설정 ===== -->
+<section id="sec-02">
+  <h2>§4.2 CubeMX USART2 설정과 NUCLEO 핀 배치</h2>
+
+  <p>
+    이론을 배웠으니 바로 하드웨어를 설정합니다.
+    NUCLEO-F411RE 보드에서 PC 통신에 사용하는 USART2의 CubeMX 설정입니다.
+  </p>
+
+  <h3>NUCLEO-F411RE의 USART2 — 왜 USART2인가?</h3>
+
+  <p>
+    NUCLEO 보드에는 ST-Link가 내장되어 있고,
+    ST-Link의 <strong>Virtual COM Port(가상 시리얼 포트)</strong>가 USART2에 하드와이어드(물리적으로 연결)되어 있습니다.
+    별도의 USB-UART 변환 모듈 없이 USB 케이블 하나로 PC와 시리얼 통신이 가능한 이유입니다.
+  </p>
+
+  <ul>
+    <li><strong>PA2</strong> = USART2_TX (MCU → PC 방향)</li>
+    <li><strong>PA3</strong> = USART2_RX (PC → MCU 방향)</li>
+  </ul>
+
+  <p>
+    이 두 핀은 ST-Link에 고정 연결되어 있으므로 다른 용도로 사용할 수 없습니다.
+    CubeMX에서 USART2를 Asynchronous 모드로 활성화하면 자동으로 PA2/PA3가 배정됩니다.
+  </p>
+
+  <h3>CubeMX 설정 단계</h3>
+
+  <ol>
+    <li><strong>Connectivity → USART2</strong>: Mode를 <code>Asynchronous</code>로 선택</li>
+    <li><strong>Parameter Settings</strong>:
+      <ul>
+        <li>Baud Rate: <code>115200</code></li>
+        <li>Word Length: <code>8 Bits</code></li>
+        <li>Parity: <code>None</code></li>
+        <li>Stop Bits: <code>1</code></li>
+      </ul>
+    </li>
+    <li><strong>NVIC Settings</strong>: <code>USART2 global interrupt</code> → <strong>Enable</strong> 체크 (§4.4 인터럽트 수신에 필요)</li>
+    <li><strong>Generate Code</strong> → <code>MX_USART2_UART_Init()</code> 자동 생성 확인</li>
+  </ol>
+
+  <aside class="tip">
+    💡 <strong>실무 팁 — NVIC 미리 활성화</strong><br>
+    §4.3에서는 폴링만 사용하지만, NVIC를 미리 활성화해 두면
+    §4.4에서 인터럽트 전환 시 CubeMX를 다시 열 필요가 없습니다.
+    인터럽트를 활성화해도 <code>HAL_UART_Receive_IT()</code>를 호출하기 전까지는 작동하지 않으니 안전합니다.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> USART2 대신 USART1이나 USART6을 쓸 수는 없나요?<br>
+    <strong>A.</strong> 물론 가능합니다. 하지만 USART1/6은 별도의 USB-UART 변환 모듈을 연결해야 합니다.
+    NUCLEO 보드의 ST-Link Virtual COM Port는 USART2에만 연결되어 있기 때문입니다.
+    실무에서는 프로젝트 요구에 따라 다른 USART를 사용하기도 합니다.
+  </aside>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁 — CubeMX 설정 시연</strong><br>
+    수강생이 "터미널에 아무것도 안 나와요"라고 하면,
+    <strong>3가지를 순서대로 확인</strong>하세요:
+    (1) COM 포트 번호 확인 (장치 관리자), (2) Baud Rate 115200 확인, (3) CubeMX에서 USART2 Asynchronous 활성화 확인.
+    90%의 문제가 이 세 가지 중 하나입니다.<br><br>
+    <strong>시연 패턴</strong>: 강사가 30초 안에 CubeMX 설정을 시연한 후, 학생이 30초 안에 따라합니다.
+    설정 항목이 4개뿐이므로 1분이면 충분합니다.
+    "Connectivity → USART2 → Asynchronous → 115200 → NVIC Enable → Generate" 순서를 칠판에 적어두면 참조하기 쉽습니다.
+  </aside>
+</section>
+
+
+<!-- ===== §4.3 폴링 방식 송신 + printf 리다이렉트 ===== -->
+<section id="sec-03">
+  <h2>§4.3 폴링 방식 송신과 printf 리다이렉트</h2>
+
+  <p>
+    CubeMX 설정을 마쳤으니 코드를 작성합니다.
+    가장 간단한 방법부터: <code>HAL_UART_Transmit()</code>으로 문자열을 PC에 보내 봅시다.
+  </p>
+
+  <h3>첫 번째 UART 출력: "Hello UART!"</h3>
+
+  <p>
+    <code>HAL_UART_Transmit()</code>은 <strong>폴링(Polling, 주기적 확인)</strong> 방식의 송신 함수입니다.
+    함수를 호출하면 모든 바이트가 전송될 때까지 CPU가 멈춰서 기다립니다.
+    이것을 <strong>블로킹(Blocking, 차단)</strong>이라고 합니다.
+  </p>
+
+  <pre><code class="language-c">/* ch04_01_uart_polling_echo.c — 첫 UART 출력 */
+
+extern UART_HandleTypeDef huart2;
+
+/* 문자열 송신 (폴링 방식) */
+void uart_send_string(const char *str)
+{
+    uint16_t len = (uint16_t)strlen(str);
+    HAL_StatusTypeDef status;
+
+    status = HAL_UART_Transmit(&huart2,
+                               (uint8_t *)str, len,
+                               100);  /* 타임아웃 100ms */
+    if (status != HAL_OK) {
+        LOG_W("UART TX 실패: status=%d", status);
+    }
+}
+
+/* main()에서 호출 */
+uart_send_string("Hello UART!\r\n");</code></pre>
+
+  <p>
+    <code>HAL_UART_Transmit()</code>의 파라미터:
+  </p>
+  <ul>
+    <li><code>&huart2</code>: CubeMX가 생성한 USART2 핸들</li>
+    <li><code>(uint8_t *)str</code>: 송신할 데이터 포인터 (HAL은 uint8_t* 요구)</li>
+    <li><code>len</code>: 송신 바이트 수</li>
+    <li><code>100</code>: 타임아웃(ms). 이 시간 내에 전송 완료되지 않으면 HAL_TIMEOUT 반환</li>
+  </ul>
+
+  <div class="analogy">
+    <strong>비유로 이해하기 — 택배 기사 기다리기</strong><br>
+    폴링 송신은 <strong>택배 기사가 물건을 다 실을 때까지 편의점 앞에서 기다리는 것</strong>입니다.
+    택배 기사(USART 하드웨어)가 한 바이트씩 트럭(TX 핀)에 싣고, 다 실으면 "완료"라고 알려줍니다.
+    그동안 여러분(CPU)은 아무것도 못 합니다.
+    <br><small>※ 비유의 한계: 실제 택배 기사는 물건을 한 번에 싣지만, UART 하드웨어는 한 바이트씩 shift register를 통해 전송합니다.</small>
+  </div>
+
+  <h3>블로킹의 대가 — LED가 멈춘다!</h3>
+
+  <p>
+    폴링의 문제를 직접 확인해 봅시다.
+    UART 송신 코드와 LED 500ms 토글 코드를 함께 넣으면:
+  </p>
+
+  <pre><code class="language-c">/* 폴링 수신 — 블로킹 체험 */
+uint32_t last_led = 0;  /* LED 토글 타이밍 */
+
+while (1)
+{
+    /* UART 수신 대기 (최대 1초 블로킹!) */
+    uint8_t rx = 0;
+    HAL_UART_Receive(&huart2, &rx, 1, 1000);
+    if (rx != 0) {
+        HAL_UART_Transmit(&huart2, &rx, 1, 10);
+        LOG_D("에코: '%c'", rx);
+    }
+
+    /* LED 토글 — 위 코드가 1초 블로킹하므로
+     * 실제 토글 주기는 500ms가 아니라 ~1.5초! */
+    uint32_t now = HAL_GetTick();
+    if (now - last_led >= 500) {
+        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+        last_led = now;
+        LOG_D("LED 토글 (now=%lu)", now);
+    }
+}</code></pre>
+
+  <p>
+    <code>HAL_UART_Receive()</code>가 1초 동안 CPU를 잡고 있으므로,
+    LED 토글 코드는 1초 후에야 실행됩니다.
+    LED가 500ms 주기로 깜빡이지 않고, 뚝뚝 끊기며 깜빡입니다.
+    <strong>이것이 폴링의 한계</strong>입니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch04_sec03_polling_timeline.svg" alt="폴링 UART 송신 CPU 타임라인">
+    <figcaption>그림 04-6. 폴링 방식 CPU 타임라인 — HAL_UART_Transmit() 호출 구간에서 CPU가 블로킹된다</figcaption>
+  </figure>
+
+  <h3>printf 리다이렉트 — _write() 오버라이드</h3>
+
+  <p>
+    매번 <code>HAL_UART_Transmit()</code>을 직접 호출하는 것은 불편합니다.
+    C 표준 <code>printf()</code>를 UART로 연결하면 훨씬 편리합니다.
+    방법은 간단합니다: newlib의 저수준 출력 함수 <code>_write()</code>를 오버라이드합니다.
+  </p>
+
+  <pre><code class="language-c">/* printf → UART 리다이렉트 */
+int _write(int file, char *ptr, int len)
+{
+    (void)file;  /* stdout/stderr 구분 없이 UART */
+    HAL_UART_Transmit(&huart2,
+                      (uint8_t *)ptr, (uint16_t)len,
+                      100);
+    return len;
+}
+
+/* 이제 printf 사용 가능! */
+printf("uptime=%lus  LED=%s\r\n",
+       HAL_GetTick() / 1000,
+       led_state ? "ON" : "OFF");</code></pre>
+
+  <p>
+    <code>_write()</code>는 <code>printf()</code>가 내부적으로 호출하는 함수입니다.
+    STM32CubeIDE 프로젝트에서는 <code>syscalls.c</code>에 <code>__weak</code>로 선언되어 있으므로,
+    <code>main.c</code>에서 같은 이름으로 재정의하면 됩니다.
+  </p>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> Ch02에서도 printf를 SWO로 리다이렉트했는데, 어떤 차이인가요?<br>
+    <strong>A.</strong> Ch02는 <code>ITM_SendChar()</code>를 통해 SWD 디버깅 채널로 출력했습니다.
+    Ch04는 <code>HAL_UART_Transmit()</code>을 통해 USART2 하드웨어 핀으로 출력합니다.
+    동시에 사용하면 충돌할 수 있으므로, UART printf를 활성화하면 SWO printf는 비활성화하는 것이 일반적입니다.
+  </aside>
+
+  <aside class="tip">
+    💡 <strong>실무 팁 — printf 성능 주의</strong><br>
+    <code>printf()</code>는 내부적으로 포맷 문자열을 처리하므로 <code>HAL_UART_Transmit()</code>보다 느립니다.
+    Release 빌드에서는 <code>LOG_D</code> 매크로의 컴파일 타임 필터링(Ch02)으로 불필요한 출력을 제거하세요.
+    실시간 시스템에서 <code>printf</code>를 ISR 내에서 호출하면 심각한 지연이 발생합니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    <strong>"UART 폴링 방식의 단점은?"</strong><br>
+    ① CPU 블로킹: 전송/수신 완료까지 다른 작업 불가.
+    ② 실시간성 저하: LED 토글, 센서 읽기 등 주기적 작업의 타이밍이 어긋남.
+    ③ 수신 데이터 손실: 수신 대기 중이 아닐 때 도착한 데이터를 놓칠 수 있음.
+    → 해결: 인터럽트(§4.4) 또는 DMA(Ch06) 사용.
+  </aside>
+</section>
+
+
+<!-- ===== §4.4 인터럽트 기반 수신 — 1바이트 재등록 패턴 ===== -->
+<section id="sec-04">
+  <h2>§4.4 인터럽트 기반 수신 — 1바이트 재등록 패턴</h2>
+
+  <p>
+    §4.3에서 폴링의 한계를 체감했습니다.
+    UART 수신을 기다리느라 LED가 멈추는 문제를 해결합니다.
+    해법은 <strong>인터럽트(Interrupt, 하드웨어 알림)</strong>입니다.
+    Ch01에서 버튼 EXTI 인터럽트를 사용했던 것을 기억하세요.
+    UART에도 동일한 원리를 적용합니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기 — 호텔 모닝콜</strong><br>
+    <strong>폴링</strong> = 프런트 데스크에 5분마다 전화해서 "모닝콜 왔어요?" 확인. 잠을 설침.<br>
+    <strong>인터럽트</strong> = 프런트에 "내일 7시에 전화해 주세요" 예약. 그때까지 푹 잠.<br><br>
+    <code>HAL_UART_Receive_IT()</code>는 <strong>"다음 1바이트가 오면 알려달라"는 모닝콜 예약</strong>입니다.
+    예약 후 CPU는 main loop를 자유롭게 실행합니다.
+    바이트가 도착하면 하드웨어가 알려주고(RXNE 인터럽트), 콜백 함수가 호출됩니다.<br><br>
+    핵심: <strong>모닝콜은 1회성</strong>입니다. 한 번 울린 후 다음 날도 원하면 <strong>다시 예약</strong>해야 합니다.
+    이것이 "재등록 패턴"입니다.
+    <br><small>※ 비유의 한계: 실제 인터럽트는 CPU의 현재 작업을 "중단"하고 ISR을 실행하지만, 모닝콜은 잠에서 "깨어나는" 것입니다. 중단 후 원래 작업으로 복귀하는 메커니즘은 비유에 없습니다.</small>
+  </div>
+
+  <h3>시퀀스 다이어그램으로 먼저 이해하기</h3>
+
+  <p>
+    코드를 보기 전에, 인터럽트 수신의 전체 흐름을 시퀀스 다이어그램으로 확인합니다.
+    핵심은 <strong>콜백 마지막에 Receive_IT를 다시 호출</strong>하는 루프입니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch04_sec04_interrupt_sequence.svg" alt="1바이트 재등록 시퀀스 다이어그램">
+    <figcaption>그림 04-7. 인터럽트 1바이트 재등록 시퀀스 — 콜백에서 다음 수신을 재등록해야 연속 수신이 가능하다</figcaption>
+  </figure>
+
+  <p>흐름을 단계별로 정리합니다:</p>
+
+  <ol>
+    <li><strong>초기화 시</strong>: <code>HAL_UART_Receive_IT(&huart2, &rx_byte, 1)</code> — "1바이트 오면 알려달라" 예약</li>
+    <li><strong>PC에서 'A' 전송</strong>: USART2 하드웨어가 바이트 수신, RXNE 플래그 세트</li>
+    <li><strong>NVIC → ISR 진입</strong>: HAL이 내부적으로 바이트를 <code>rx_byte</code>에 저장</li>
+    <li><strong>HAL_UART_RxCpltCallback() 호출</strong>: 우리가 구현한 콜백 실행</li>
+    <li><strong>콜백 내부</strong>: (a) 수신 바이트 버퍼에 저장 → (b) <code>HAL_UART_Receive_IT()</code> <strong>재등록</strong></li>
+    <li><strong>main loop 복귀</strong>: 버퍼에서 바이트 읽어 처리 (LED 제어 등)</li>
+  </ol>
+
+  <h3>핵심 코드: 콜백 + 재등록</h3>
+
+  <pre><code class="language-c">/* 인터럽트 수신 핵심 패턴 */
+
+static volatile uint8_t g_rx_byte;  /* ISR 수신 버퍼 */
+
+/* HAL 콜백 — RXNE 인터럽트 처리 후 자동 호출 */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART2) {
+        /* 1) 수신된 바이트를 버퍼에 저장 */
+        uint16_t next = (g_rx_head + 1) % RX_BUF_SIZE;
+        if (next != g_rx_tail) {
+            g_rx_buf[g_rx_head] = g_rx_byte;
+            g_rx_head = next;
+        }
+
+        /* 2) ★ 다음 1바이트 수신 재등록 ★ */
+        HAL_UART_Receive_IT(&huart2,
+            (uint8_t *)&g_rx_byte, 1);
+    }
+}
+
+/* 초기화 시 최초 1회 등록 */
+HAL_UART_Receive_IT(&huart2,
+    (uint8_t *)&g_rx_byte, 1);</code></pre>
+
+  <p>
+    <strong>가장 중요한 줄</strong>은 콜백 마지막의 <code>HAL_UART_Receive_IT()</code>입니다.
+    이 줄이 없으면 첫 1바이트만 수신되고, 이후에는 아무리 PC에서 보내도 MCU가 반응하지 않습니다.
+    <strong>이것이 가장 흔한 실수</strong>이며, 디버깅에 30분 이상 걸리는 경우가 많습니다.
+  </p>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    라이브 코딩에서 <strong>일부러 재등록 줄을 빼고</strong> 시연하세요.
+    첫 글자 'A'만 에코되고, 'B'부터는 아무 반응이 없는 모습을 보여주면
+    "아, 이래서 재등록이 필요하구나"를 강렬하게 체감합니다.
+    10초의 실패 시연이 10분의 설명보다 효과적입니다.
+  </aside>
+
+  <h3>main loop에서 수신 데이터 처리</h3>
+
+  <pre><code class="language-c">/* main loop — 인터럽트 덕분에 블로킹 없음! */
+while (1)
+{
+    /* 1) 수신 데이터 확인 (비블로킹) */
+    if (uart_available() > 0) {
+        uint8_t rx = uart_read_byte();
+        LOG_D("수신: '%c'", rx);
+
+        switch (rx) {
+        case '1':
+            HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,
+                              GPIO_PIN_SET);
+            printf("[CMD] LED ON\r\n");
+            break;
+        case '0':
+            HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,
+                              GPIO_PIN_RESET);
+            printf("[CMD] LED OFF\r\n");
+            break;
+        }
+    }
+
+    /* 2) LED 토글 — 인터럽트 덕분에 멈추지 않음! */
+    uint32_t now = HAL_GetTick();
+    if (now - last_led >= 500) {
+        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+        last_led = now;
+    }
+}</code></pre>
+
+  <p>
+    폴링과의 핵심 차이: <code>uart_available()</code>은 버퍼만 확인하므로 <strong>즉시 반환</strong>합니다.
+    CPU가 멈추지 않으니 LED 토글도, 센서 읽기도, 모터 제어도 동시에 할 수 있습니다.
+  </p>
+
+  <h3>폴링 vs 인터럽트 — CPU 타임라인 비교</h3>
+
+  <figure>
+    <img src="../../figures/ch04_sec04_polling_vs_interrupt.svg" alt="폴링 vs 인터럽트 CPU 타임라인 비교">
+    <figcaption>그림 04-8. CPU 타임라인 비교 — 폴링은 대부분 블로킹, 인터럽트는 ISR 수 마이크로초만 소비</figcaption>
+  </figure>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> 왜 한 번에 여러 바이트를 받지 않고 1바이트씩 받나요?<br>
+    <strong>A.</strong> UART 수신은 언제, 몇 바이트가 올지 예측할 수 없습니다.
+    <code>HAL_UART_Receive_IT(&huart2, buf, 10)</code>으로 10바이트를 지정하면, 정확히 10바이트가 도착해야만 콜백이 호출됩니다.
+    9바이트만 오면 콜백이 영원히 호출되지 않습니다.
+    1바이트 재등록은 이 문제를 우회하는 가장 안전한 패턴입니다.
+    Ch06에서는 DMA + IDLE Line 감지로 더 효율적인 가변 길이 수신을 배웁니다.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> 데이터가 빠르게 연속으로 오면 놓치지 않나요?<br>
+    <strong>A.</strong> 좋은 질문입니다. 콜백 처리 중에 다음 바이트가 도착하면 <strong>Overrun Error</strong>가 발생할 수 있습니다.
+    115200bps에서 1바이트 수신 시간은 약 87us이므로 콜백이 이보다 빨리 완료되면 괜찮습니다.
+    하지만 콜백에서 무거운 처리(printf 등)를 하면 위험합니다.
+    콜백은 "버퍼에 저장"만 하고, 무거운 처리는 main loop에서 하는 것이 원칙입니다.
+    Ch06의 DMA + 링 버퍼가 이 문제의 근본적 해결책입니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    <strong>"HAL_UART_Receive_IT의 1바이트 재등록 패턴을 설명하시오."</strong><br>
+    ① 초기화 시 <code>Receive_IT(1바이트)</code>를 호출하여 수신 대기 등록.
+    ② 바이트 도착 시 HAL이 RxCpltCallback 호출.
+    ③ 콜백에서 바이트를 버퍼에 저장하고, 즉시 <code>Receive_IT(1바이트)</code>를 재호출.
+    ④ 재호출하지 않으면 첫 1바이트만 수신되고 이후 데이터 손실.
+    ⑤ 장점: CPU 비블로킹. 단점: 고속 연속 데이터 시 Overrun 위험 → DMA로 해결.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>콜백에서 <code>HAL_UART_Receive_IT()</code>를 빼면 어떤 증상이 나타나는지 설명할 수 있는가?</li>
+      <li>폴링 방식과 인터럽트 방식의 CPU 활용 차이를 그림으로 그릴 수 있는가?</li>
+      <li>콜백 내에서 <code>printf()</code>를 호출하면 안 되는 이유를 알고 있는가?</li>
+      <li>처음 "재등록 패턴"을 봤을 때 복잡하다고 느꼈는가? 지금은 "콜백 마지막에 한 줄 추가"라는 것이 자연스러운가? 그 변화가 학습입니다.</li>
+    </ul>
+  </aside>
+</section>
+
+
+<!-- ===== §4.5 Driver 분리 & 아키텍처 v0.4 완성 ===== -->
+<section id="sec-05">
+  <h2>§4.5 Driver 분리와 아키텍처 v0.4 완성</h2>
+
+  <p>
+    §4.3~§4.4에서 폴링 송신과 인터럽트 수신을 구현했습니다.
+    지금까지의 코드는 <code>main.c</code>에 직접 작성했습니다.
+    Ch03에서 배운 아키텍처 원칙을 적용할 때입니다:
+    <strong>UART 관련 코드를 <code>uart_driver.c/h</code>로 분리하여 Driver 레이어에 배치합니다.</strong>
+  </p>
+
+  <p>
+    Ch03의 레스토랑 비유를 다시 꺼냅니다.
+    요리사(Driver)가 손님(App)의 주문서(인터페이스)만 받아서 처리합니다.
+    요리사가 가스레인지(HAL_UART 폴링)를 인덕션(HAL_UART DMA, Ch06)으로 바꿔도, <strong>주문서는 변경되지 않습니다</strong>.
+    이것이 Driver 레이어를 분리하는 이유입니다.
+  </p>
+
+  <h3>uart_driver.h — 공개 인터페이스 (주문서)</h3>
+
+  <pre><code class="language-c">/* uart_driver.h — 공개 인터페이스
+ *
+ * App은 이 헤더만 include한다.
+ * HAL 헤더(stm32f4xx_hal.h)를 직접 include하지 않는다.
+ */
+
+#ifndef UART_DRIVER_H
+#define UART_DRIVER_H
+
+#include &lt;stdint.h&gt;
+
+typedef enum {
+    UART_OK = 0,
+    UART_ERROR,
+    UART_BUSY,
+    UART_TIMEOUT
+} uart_status_t;
+
+void          uart_driver_init(void);
+uart_status_t uart_send(const uint8_t *buf, uint16_t len);
+uart_status_t uart_send_string(const char *str);
+uint16_t      uart_available(void);
+uint8_t       uart_read_byte(void);
+
+#endif /* UART_DRIVER_H */</code></pre>
+
+  <p>
+    주목할 점: 이 헤더에는 <code>stm32f4xx_hal.h</code>가 없습니다.
+    <code>UART_HandleTypeDef</code>도 없습니다.
+    상위 레이어(App)는 HAL의 존재를 모릅니다.
+    <strong>이것이 올바른 인터페이스 설계</strong>입니다.
+  </p>
+
+  <h3>uart_driver.c — 내부 구현 (레시피)</h3>
+
+  <pre><code class="language-c">/* uart_driver.c — 내부 구현 (Driver 레이어)
+ * HAL 상세를 캡슐화하여 상위에 숨긴다 */
+
+#include "uart_driver.h"
+#include "main.h"   /* HAL 포함 — Driver만 HAL을 안다 */
+#include "log.h"
+#include &lt;string.h&gt;
+
+extern UART_HandleTypeDef huart2;
+
+#define RX_BUF_SIZE  128
+static volatile uint8_t  s_rx_byte;
+static volatile uint8_t  s_rx_buf[RX_BUF_SIZE];
+static volatile uint16_t s_rx_head = 0;
+static volatile uint16_t s_rx_tail = 0;
+
+void uart_driver_init(void)
+{
+    s_rx_head = 0;
+    s_rx_tail = 0;
+    HAL_UART_Receive_IT(&huart2,
+                        (uint8_t *)&s_rx_byte, 1);
+    LOG_I("uart_driver 초기화 완료");
+}
+
+uart_status_t uart_send(const uint8_t *buf,
+                         uint16_t len)
+{
+    if (buf == NULL || len == 0) {
+        return UART_ERROR;
+    }
+    HAL_StatusTypeDef s;
+    s = HAL_UART_Transmit(&huart2,
+                          (uint8_t *)buf, len, 100);
+    return (s == HAL_OK) ? UART_OK : UART_ERROR;
+}
+
+uart_status_t uart_send_string(const char *str)
+{
+    if (str == NULL) return UART_ERROR;
+    return uart_send((const uint8_t *)str,
+                     (uint16_t)strlen(str));
+}
+
+uint16_t uart_available(void)
+{
+    return (s_rx_head - s_rx_tail + RX_BUF_SIZE)
+           % RX_BUF_SIZE;
+}
+
+uint8_t uart_read_byte(void)
+{
+    if (s_rx_head == s_rx_tail) return 0;
+    uint8_t b = s_rx_buf[s_rx_tail];
+    s_rx_tail = (s_rx_tail + 1) % RX_BUF_SIZE;
+    return b;
+}
+
+void HAL_UART_RxCpltCallback(
+    UART_HandleTypeDef *huart)
+{
+    if (huart->Instance != USART2) return;
+    uint16_t next;
+    next = (s_rx_head + 1) % RX_BUF_SIZE;
+    if (next != s_rx_tail) {
+        s_rx_buf[s_rx_head] = s_rx_byte;
+        s_rx_head = next;
+    }
+    HAL_UART_Receive_IT(&huart2,
+                        (uint8_t *)&s_rx_byte, 1);
+}</code></pre>
+
+  <h3>main.c에서의 사용 — App 레이어</h3>
+
+  <pre><code class="language-c">/* main.c — App 레이어 (v0.4) */
+#include "uart_driver.h"  /* HAL 헤더 불필요! */
+#include "log.h"
+
+int main(void)
+{
+    HAL_Init();
+    SystemClock_Config();
+    MX_GPIO_Init();
+    MX_USART2_UART_Init();
+
+    uart_driver_init();  /* Driver 초기화 */
+    LOG_I("=== 시스템 v0.4 시작 ===");
+    uart_send_string("System v0.4 Ready\r\n");
+
+    uint32_t last_status = 0;
+    uint32_t btn_count = 0;
+
+    while (1)
+    {
+        /* UART 명령 수신 처리 */
+        if (uart_available() > 0) {
+            uint8_t cmd = uart_read_byte();
+            switch (cmd) {
+            case 'S': /* 상태 출력 */
+                printf("[STATUS] uptime=%lus\r\n",
+                       HAL_GetTick() / 1000);
+                break;
+            case 'L': /* LED 토글 */
+                HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+                printf("[CMD] LED toggled\r\n");
+                break;
+            }
+        }
+
+        /* 1초 주기 시스템 상태 자동 출력 */
+        uint32_t now = HAL_GetTick();
+        if (now - last_status >= 1000) {
+            printf("[AUTO] %lus alive\r\n",
+                   now / 1000);
+            last_status = now;
+        }
+    }
+}</code></pre>
+
+  <p>
+    <code>main.c</code>에서 <code>#include "uart_driver.h"</code>만 하면 됩니다.
+    <code>HAL_UART_Transmit</code>, <code>UART_HandleTypeDef</code>, <code>USART2</code> — 이런 HAL 상세가 App에 노출되지 않습니다.
+  </p>
+
+  <h3>아키텍처 v0.3 → v0.4 갱신</h3>
+
+  <p>
+    이 챕터에서 프로젝트 아키텍처에 <code>uart_driver</code>가 추가되었습니다.
+    Ch03에서 회색이었던 Driver 레이어의 UART 블록이 초록색으로 변합니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch04_sec05_architecture_v04.svg" alt="v0.4 아키텍처 — uart_driver 추가">
+    <figcaption>그림 04-9. 아키텍처 v0.4 — uart_driver가 Driver 레이어에 추가. Ch05에서 DMA 원리를, Ch06에서 UART DMA 전환을 다룬다.</figcaption>
+  </figure>
+
+  <aside class="tip">
+    💡 <strong>실무 팁 — Driver 분리 체크리스트</strong><br>
+    Driver 모듈이 올바르게 분리되었는지 확인하세요:
+    <ul>
+      <li>✅ <code>.h</code> 파일에 HAL 헤더가 include되지 않는가?</li>
+      <li>✅ <code>.h</code> 파일에 하드웨어 상수(GPIO_PIN_5 등)가 노출되지 않는가?</li>
+      <li>✅ <code>.c</code> 파일을 다른 USART로 교체해도 <code>.h</code> 인터페이스가 변하지 않는가?</li>
+      <li>✅ App에서 <code>uart_driver.h</code>만 include하여 컴파일되는가?</li>
+    </ul>
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> uart_driver.c를 다른 프로젝트에 복사하면 바로 동작하나요?<br>
+    <strong>A.</strong> 거의 그렇습니다. CubeMX에서 USART2를 동일하게 설정하면 <code>huart2</code> 핸들이 자동 생성되므로,
+    <code>uart_driver.c/h</code>를 그대로 복사하여 사용할 수 있습니다.
+    이것이 Driver 레이어의 재사용성(Reusability)입니다.
+    다만 다른 USART를 사용한다면 <code>huart2</code>를 <code>huart1</code> 등으로 변경해야 합니다.
+  </aside>
+
+  <p>
+    이 챕터에서 여러분은 <strong>HAL 함수를 호출하는 사용자</strong>에서 <strong>Driver 모듈을 설계하는 설계자</strong>로 한 단계 성장했습니다.
+    <code>HAL_UART_Transmit()</code>을 직접 쓰는 것이 아니라, <code>uart_send()</code>라는 인터페이스를 정의하고 그 뒤에 HAL을 숨겼습니다.
+    Ch05부터는 이 설계 능력이 매 챕터에서 반복됩니다.
+  </p>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li><code>uart_driver.h</code>에 <code>stm32f4xx_hal.h</code>가 포함되어 있으면 인터페이스 설계가 올바른가?</li>
+      <li>Ch06에서 DMA로 전환할 때, <code>uart_driver.h</code>의 어느 부분이 변경되어야 하는가? (정답: 없음!)</li>
+      <li>v0.3 → v0.4 아키텍처 다이어그램에서 어느 블록이 변했는지 짚을 수 있는가?</li>
+    </ul>
+  </aside>
+</section>
+
+
+<!-- ===== 실습 ===== -->
+<section id="lab">
+  <h2>실습: UART 시스템 모니터 v0.4</h2>
+  <p><strong>목표</strong>: UART로 PC에 시스템 상태를 출력하고, PC에서 간단한 명령을 수신하여 LED를 제어한다.</p>
+  <p><strong>환경</strong>: STM32CubeIDE, NUCLEO-F411RE, 시리얼 터미널 (PuTTY/TeraTerm/Arduino Serial Monitor)</p>
+
+  <h3>Step 1. CubeMX 설정</h3>
+  <p>
+    USART2: Asynchronous, 115200-8-N-1.
+    NVIC: USART2 global interrupt → Enable.
+    PA5: GPIO_Output (LED2).
+    Generate Code.
+  </p>
+
+  <h3>Step 2. 파일 추가</h3>
+  <p>
+    프로젝트에 <code>uart_driver.c</code>와 <code>uart_driver.h</code>를 추가합니다.
+    <code>main.c</code>에서 <code>#include "uart_driver.h"</code>를 추가하고,
+    <code>uart_driver_init()</code>를 <code>MX_USART2_UART_Init()</code> 뒤에서 호출합니다.
+  </p>
+
+  <h3>Step 3. 코드 작성</h3>
+  <p>
+    §4.5의 main.c 코드를 참고하여 작성합니다.
+    PC에서 'S' → 상태 출력, 'L' → LED 토글 명령을 구현합니다.
+  </p>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁 — 실습 운영</strong><br>
+    CubeMX 프로젝트와 완성 코드를 미리 배포하고, 학생이 직접 빌드+실행하는 데 초점을 맞추세요.
+    실습 시간 40분 중 처음 5분은 빌드 확인, 나머지 35분은 "나만의 명령어 추가" 자유 토론이 효과적입니다.
+    시간 부족 시 축소안: §4.5 Driver 분리는 코드만 빌드하고, §4.4 간이 버퍼는 완성 코드 제공으로 대체합니다.
+  </aside>
+
+  <h3>Step 4. 동작 확인</h3>
+  <p><strong>예상 결과</strong>: 시리얼 터미널에 1초 주기 상태 메시지가 출력되고, 키 입력에 반응합니다.</p>
+  <p><strong>터미널 출력 예시</strong>:</p>
+  <pre><code>[AUTO] 1s alive
+[AUTO] 2s alive
+[STATUS] uptime=3s
+[CMD] LED toggled
+[AUTO] 4s alive</code></pre>
+
+  <aside class="tip">
+    💡 <strong>실습이 안 될 때</strong><br>
+    <strong>터미널에 아무것도 안 나온다면:</strong>
+    (1) 장치 관리자에서 COM 포트 번호 확인 → 터미널에서 같은 포트 선택.
+    (2) 터미널 Baud Rate가 115200인지 확인.
+    (3) CubeMX에서 USART2가 Asynchronous로 설정되었는지 확인.
+    (4) <code>uart_driver_init()</code>가 호출되었는지 확인.<br><br>
+    <strong>첫 글자만 에코되고 이후 무반응이면:</strong>
+    HAL_UART_RxCpltCallback 내에서 <code>HAL_UART_Receive_IT()</code> 재등록을 빠뜨렸습니다.
+    이것은 가장 흔한 실수입니다.
+  </aside>
+
+  <aside class="instructor-tip">
+    📌 <strong>시간 부족 시 축소안</strong><br>
+    4시간 강의에서 실습 시간이 부족하면 다음과 같이 조정하세요:<br>
+    <strong>축소 1</strong>: §4.5 Driver 분리는 완성 코드를 제공하고 빌드만 확인 (설계 원리는 설명만).<br>
+    <strong>축소 2</strong>: §4.4 간이 버퍼는 완성 코드 제공, 재등록 패턴 시연에만 집중.<br>
+    <strong>확장</strong>: 시간 여유 시 'R' 명령 추가(연습문제 7번) 자유 코딩 시간 배정.
+  </aside>
+</section>
+
+
+<!-- ===== 핵심 정리 ===== -->
+<section class="chapter-summary-section">
+  <h2>핵심 정리</h2>
+  <ul>
+    <li><strong>SWO vs UART</strong>: SWO는 디버거 전용(청진기), UART는 범용 통신(목소리). Ch04부터 PC와 양방향 대화가 가능해졌다.</li>
+    <li><strong>UART 프레임</strong>: Start(1) + Data(8) + Stop(1) = 10비트. 115200bps에서 1바이트 = 86.8us.</li>
+    <li><strong>폴링 vs 인터럽트</strong>: 폴링은 CPU 블로킹, 인터럽트는 ISR 수 마이크로초만 소비. LED 토글 여부로 차이를 체감.</li>
+    <li><strong>1바이트 재등록 패턴</strong>: 콜백 마지막에 <code>HAL_UART_Receive_IT()</code>를 반드시 재호출. 빠뜨리면 첫 1바이트만 수신.</li>
+    <li><strong>Driver 분리</strong>: <code>uart_driver.h</code>에 HAL 상세 없음. 폴링→인터럽트→DMA 전환 시 인터페이스 불변.</li>
+  </ul>
+
+  <h3>아키텍처 업데이트</h3>
+  <p>
+    이 챕터에서 프로젝트 아키텍처에 <code>uart_driver</code>가 추가되어 <strong>v0.4</strong>로 업그레이드되었습니다.
+    Driver 레이어의 첫 번째 통신 모듈이 완성되었습니다.
+    Ch03에서 회색이었던 블록이 이제 초록색입니다.
+  </p>
+</section>
+
+
+<!-- ===== 연습문제 ===== -->
+<section class="exercises">
+  <h2>연습문제</h2>
+
+  <div class="exercise">
+    <span class="level">기억</span>
+    <strong>1.</strong> UART 프레임의 5가지 구성 요소를 나열하고, 115200-8-N-1에서 1프레임의 총 비트 수를 구하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">이해</span>
+    <strong>2.</strong> SWO(Ch02)와 UART(Ch04)의 차이를 3가지 관점(경로, 디버거 의존성, 범용성)에서 비교하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">이해</span>
+    <strong>3.</strong> 다음 코드에서 <code>HAL_UART_Receive_IT()</code> 재등록을 주석 처리하면 어떤 증상이 나타나는지 서술하시오.
+    <pre><code class="language-c">void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    rx_buf[idx++] = rx_byte;
+    // HAL_UART_Receive_IT(huart, &rx_byte, 1);
+}</code></pre>
+  </div>
+
+  <div class="exercise">
+    <span class="level">적용</span>
+    <strong>4.</strong> 현재 <code>uart_send()</code>는 폴링으로 구현되어 있다.
+    송신 완료를 인터럽트로 처리하려면 어떤 HAL 함수를 사용해야 하며,
+    어떤 콜백이 호출되는지 조사하시오.
+    (힌트: <code>HAL_UART_Transmit_IT</code>, <code>HAL_UART_TxCpltCallback</code>)
+  </div>
+
+  <div class="exercise">
+    <span class="level">분석</span>
+    <strong>5.</strong> <code>uart_driver.h</code>에 <code>#include "stm32f4xx_hal.h"</code>를 추가하면
+    Ch03의 어떤 아키텍처 원칙을 위반하는지 설명하고, 그 결과 어떤 문제가 발생할 수 있는지 서술하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">분석</span>
+    <strong>6.</strong> 아래 시나리오에서 먼저 확인해야 할 레이어를 제시하고 근거를 설명하시오.
+    "PC에서 'L'을 보내면 LED가 켜지지만, 'S'를 보내면 아무 반응이 없다."
+  </div>
+
+  <div class="exercise">
+    <span class="level">적용</span>
+    <strong>7.</strong> UART 수신 명령에 'R' (카운터 리셋) 기능을 추가하시오. 전역 카운터를 0으로 초기화하고 "Counter reset" 메시지를 출력하도록 구현하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">분석</span>
+    <strong>8.</strong> (면접 대비) 다음 질문에 답하시오:
+    "폴링, 인터럽트, DMA 세 가지 UART 수신 방식을 CPU 점유율, 구현 복잡도, 최대 처리량 관점에서 비교하시오."
+    (DMA는 Ch05~06 미리보기 — 지금은 폴링과 인터럽트만 답하고, DMA는 "Ch06에서 학습 예정"으로 표시)
+  </div>
+</section>
+
+
+<!-- ===== 다음 챕터 예고 ===== -->
+<section class="next-chapter">
+  <h2>다음 챕터 예고</h2>
+  <p>
+    현재 프로젝트는 <strong>v0.4</strong> 상태로,
+    LED/Button 기본 I/O(v0.1) + 로그 인프라(v0.2) + 아키텍처 설계도(v0.3) + <strong>UART 시리얼 통신(v0.4)</strong>까지 구현되었습니다.
+  </p>
+  <p>
+    다음 <strong>Ch05. DMA 아키텍처와 동작 원리</strong>에서는
+    CPU를 해방시키는 DMA(Direct Memory Access, 직접 메모리 접근)의 원리를 배웁니다.
+    현재 <code>uart_send()</code>의 폴링 블로킹 문제를 근본적으로 해결하는 기술입니다.
+    프로젝트는 <strong>v0.5</strong>로 업그레이드됩니다.
+  </p>
+  <p>
+    <strong>예고</strong>: Ch06에서는 Ch04의 <code>uart_driver.c</code> 내부 구현을 DMA로 교체합니다.
+    그때 <code>uart_driver.h</code>의 인터페이스는 <strong>단 한 줄도 변경되지 않습니다</strong>.
+    오늘 설계한 레이어 분리의 진가가 발휘되는 순간입니다.
+  </p>
+</section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+</body>
+</html>

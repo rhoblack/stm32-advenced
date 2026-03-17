@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 380" font-family="'Noto Sans KR', sans-serif" font-size="13">
+  <defs>
+    <marker id="seqArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+    </marker>
+  </defs>
+
+  <text x="350" y="24" text-anchor="middle" font-size="16" font-weight="700" fill="#212121">Ch01 버튼 → LED 토글 시퀀스 다이어그램</text>
+
+  <!-- 참여자 헤더 -->
+  <rect x="30" y="45" width="100" height="35" rx="6" fill="#F5F5F5" stroke="#999"/>
+  <text x="80" y="67" text-anchor="middle" font-size="12" font-weight="600" fill="#333">사용자</text>
+
+  <rect x="195" y="45" width="110" height="35" rx="6" fill="#1A73E8" opacity="0.15" stroke="#1A73E8"/>
+  <text x="250" y="67" text-anchor="middle" font-size="12" font-weight="600" fill="#1A73E8">EXTI / HAL</text>
+
+  <rect x="375" y="45" width="120" height="35" rx="6" fill="#EA4335" opacity="0.15" stroke="#EA4335"/>
+  <text x="435" y="67" text-anchor="middle" font-size="12" font-weight="600" fill="#EA4335">App Callback</text>
+
+  <rect x="565" y="45" width="100" height="35" rx="6" fill="#1A73E8" opacity="0.15" stroke="#1A73E8"/>
+  <text x="615" y="67" text-anchor="middle" font-size="12" font-weight="600" fill="#1A73E8">LED / HAL</text>
+
+  <!-- 생명선 (세로 점선) -->
+  <line x1="80" y1="80" x2="80" y2="340" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="250" y1="80" x2="250" y2="340" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="435" y1="80" x2="435" y2="340" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="615" y1="80" x2="615" y2="340" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+
+  <!-- 메시지 1: 사용자 → EXTI/HAL (버튼 누름) -->
+  <line x1="80" y1="110" x2="244" y2="110" stroke="#333" stroke-width="2" marker-end="url(#seqArrow)"/>
+  <text x="162" y="103" text-anchor="middle" font-size="11" fill="#333" font-weight="600">버튼 누름 (PC13 하강 에지)</text>
+
+  <!-- 활성 박스: EXTI -->
+  <rect x="244" y="108" width="12" height="40" fill="#1A73E8" opacity="0.3"/>
+
+  <!-- 메시지 2: EXTI/HAL → App Callback -->
+  <line x1="256" y1="130" x2="429" y2="130" stroke="#333" stroke-width="2" marker-end="url(#seqArrow)"/>
+  <text x="342" y="123" text-anchor="middle" font-size="11" fill="#333" font-weight="600">HAL_GPIO_EXTI_Callback(PIN_13)</text>
+
+  <!-- 활성 박스: App -->
+  <rect x="429" y="128" width="12" height="90" fill="#EA4335" opacity="0.3"/>
+
+  <!-- 내부 처리: 디바운싱 -->
+  <rect x="455" y="148" width="120" height="22" rx="3" fill="#FFF8E1" stroke="#FFB300"/>
+  <text x="515" y="163" text-anchor="middle" font-size="10" fill="#E65100">디바운싱 검사 (50ms)</text>
+
+  <!-- 내부 처리: 상태 토글 -->
+  <rect x="455" y="178" width="120" height="22" rx="3" fill="#FFF8E1" stroke="#FFB300"/>
+  <text x="515" y="193" text-anchor="middle" font-size="10" fill="#E65100">g_led_state ^= 1</text>
+
+  <!-- 메시지 3: App → LED/HAL (WritePin) -->
+  <line x1="441" y1="215" x2="609" y2="215" stroke="#EA4335" stroke-width="2" marker-end="url(#seqArrow)"/>
+  <text x="525" y="208" text-anchor="middle" font-size="11" fill="#EA4335" font-weight="600">HAL_GPIO_WritePin(SET)</text>
+  <text x="525" y="235" text-anchor="middle" font-size="10" fill="#EA4335">⚠️ 계층 건너뛰기 위반!</text>
+
+  <!-- 활성 박스: LED -->
+  <rect x="609" y="213" width="12" height="25" fill="#1A73E8" opacity="0.3"/>
+
+  <!-- LED 상태 표시 -->
+  <rect x="635" y="215" width="55" height="22" rx="4" fill="#34A853" opacity="0.2" stroke="#34A853"/>
+  <text x="662" y="230" text-anchor="middle" font-size="10" fill="#34A853" font-weight="600">LED ON</text>
+
+  <!-- 메시지 4: App → LOG (로그 출력) -->
+  <rect x="455" y="250" width="120" height="22" rx="3" fill="#E8F5E9" stroke="#34A853"/>
+  <text x="515" y="265" text-anchor="middle" font-size="10" fill="#1B5E20">LOG_I("버튼→LED")</text>
+
+  <!-- 범례 -->
+  <rect x="30" y="300" width="640" height="35" rx="6" fill="#F9F9F9" stroke="#E0E0E0"/>
+  <line x1="50" y1="318" x2="90" y2="318" stroke="#333" stroke-width="2" marker-end="url(#seqArrow)"/>
+  <text x="100" y="322" font-size="10" fill="#666">함수 호출</text>
+  <rect x="200" y="310" width="12" height="16" fill="#1A73E8" opacity="0.3"/>
+  <text x="220" y="322" font-size="10" fill="#666">활성 구간</text>
+  <line x1="330" y1="318" x2="370" y2="318" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <text x="380" y="322" font-size="10" fill="#666">생명선 (시간 흐름 ↓)</text>
+  <rect x="530" y="310" width="50" height="16" rx="3" fill="#FFF8E1" stroke="#FFB300"/>
+  <text x="590" y="322" font-size="10" fill="#666">내부 처리</text>
+</svg>

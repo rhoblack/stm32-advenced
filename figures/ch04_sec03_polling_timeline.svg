@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 280" font-family="'Noto Sans KR', sans-serif" font-size="13">
+  <text x="400" y="24" text-anchor="middle" font-size="16" font-weight="700" fill="#212121">폴링 UART 송신 시 CPU 타임라인</text>
+  <text x="400" y="44" text-anchor="middle" font-size="11" fill="#888">HAL_UART_Transmit() 호출 동안 CPU는 다른 일을 할 수 없다</text>
+
+  <!-- 시간 축 -->
+  <line x1="50" y1="200" x2="760" y2="200" stroke="#CCC" stroke-width="1"/>
+  <text x="405" y="220" text-anchor="middle" font-size="10" fill="#999">시간 →</text>
+
+  <!-- CPU 활용 라벨 -->
+  <text x="30" y="100" text-anchor="middle" font-size="10" fill="#666" transform="rotate(-90, 30, 100)">CPU</text>
+
+  <!-- 구간 1: main 루프 (자유) -->
+  <rect x="60" y="80" width="100" height="30" rx="4" fill="#34A853" opacity="0.7"/>
+  <text x="110" y="100" text-anchor="middle" font-size="10" fill="white" font-weight="600">main loop</text>
+  <text x="110" y="130" text-anchor="middle" font-size="9" fill="#34A853">LED 토글 가능</text>
+
+  <!-- 구간 2: UART_Send 호출 (블로킹) -->
+  <rect x="170" y="80" width="220" height="30" rx="4" fill="#EA4335" opacity="0.85"/>
+  <text x="280" y="100" text-anchor="middle" font-size="10" fill="white" font-weight="700">HAL_UART_Transmit() 블로킹!</text>
+  <text x="280" y="130" text-anchor="middle" font-size="9" fill="#EA4335" font-weight="600">CPU 정지: TXE 플래그 폴링 대기</text>
+
+  <!-- 블로킹 구간 강조 -->
+  <rect x="170" y="70" width="220" height="50" rx="4" fill="none" stroke="#EA4335" stroke-width="2" stroke-dasharray="5,3"/>
+
+  <!-- LED 못 토글 -->
+  <text x="280" y="155" text-anchor="middle" font-size="10" fill="#EA4335" font-weight="700">LED 토글 불가!</text>
+  <text x="280" y="170" text-anchor="middle" font-size="9" fill="#EA4335">버튼 인터럽트도 지연</text>
+
+  <!-- 구간 3: main 루프 (자유) -->
+  <rect x="400" y="80" width="100" height="30" rx="4" fill="#34A853" opacity="0.7"/>
+  <text x="450" y="100" text-anchor="middle" font-size="10" fill="white" font-weight="600">main loop</text>
+  <text x="450" y="130" text-anchor="middle" font-size="9" fill="#34A853">LED 토글 가능</text>
+
+  <!-- 구간 4: 다시 UART_Send -->
+  <rect x="510" y="80" width="220" height="30" rx="4" fill="#EA4335" opacity="0.85"/>
+  <text x="620" y="100" text-anchor="middle" font-size="10" fill="white" font-weight="700">HAL_UART_Transmit() 블로킹!</text>
+
+  <!-- 범례 -->
+  <rect x="60" y="235" width="700" height="35" rx="6" fill="#F9F9F9" stroke="#E0E0E0"/>
+  <rect x="80" y="246" width="30" height="14" rx="3" fill="#34A853" opacity="0.7"/>
+  <text x="120" y="257" font-size="10" fill="#666">CPU 여유 (다른 작업 가능)</text>
+  <rect x="310" y="246" width="30" height="14" rx="3" fill="#EA4335" opacity="0.85"/>
+  <text x="350" y="257" font-size="10" fill="#666">CPU 블로킹 (송신 완료 대기)</text>
+  <text x="580" y="257" font-size="10" fill="#EA4335" font-weight="600">100바이트 @ 115200 = ~0.87ms 블로킹</text>
+</svg>

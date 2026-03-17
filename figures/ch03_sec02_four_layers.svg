@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 500" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <defs>
+    <marker id="depArrow" viewBox="0 0 10 10" refX="5" refY="10" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 0 L 5 10 z" fill="#333"/>
+    </marker>
+    <marker id="crossArrow" viewBox="0 0 10 10" refX="5" refY="10" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 0 L 5 10 z" fill="#EA4335"/>
+    </marker>
+  </defs>
+
+  <text x="350" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="#212121">STM32 4계층 레이어드 아키텍처</text>
+
+  <!-- App 레이어 -->
+  <rect x="50" y="55" width="500" height="80" rx="8" fill="#EA4335" opacity="0.12" stroke="#EA4335" stroke-width="2"/>
+  <rect x="60" y="62" width="8" height="66" rx="4" fill="#EA4335"/>
+  <text x="80" y="82" font-size="16" font-weight="700" fill="#EA4335">App 레이어</text>
+  <text x="80" y="100" font-size="12" fill="#666">책임: 사용자 상호작용, 시스템 흐름 제어, 이벤트 처리</text>
+  <text x="80" y="118" font-size="12" fill="#888">예: main(), cli_app.c, protocol_app.c</text>
+  <text x="520" y="100" text-anchor="end" font-size="11" font-weight="600" fill="#EA4335">호출 대상: Service만</text>
+
+  <!-- 의존 화살표 1 -->
+  <line x1="300" y1="135" x2="300" y2="155" stroke="#333" stroke-width="2" marker-end="url(#depArrow)"/>
+
+  <!-- Service 레이어 -->
+  <rect x="50" y="160" width="500" height="80" rx="8" fill="#FBBC04" opacity="0.12" stroke="#FBBC04" stroke-width="2"/>
+  <rect x="60" y="167" width="8" height="66" rx="4" fill="#FBBC04"/>
+  <text x="80" y="187" font-size="16" font-weight="700" fill="#F57F17">Service 레이어</text>
+  <text x="80" y="205" font-size="12" fill="#666">책임: 비즈니스 로직, 여러 Driver 조합, 상태 관리 (FSM)</text>
+  <text x="80" y="223" font-size="12" fill="#888">예: clock_service.c, sensor_service.c, gfx_service.c</text>
+  <text x="520" y="205" text-anchor="end" font-size="11" font-weight="600" fill="#F57F17">호출 대상: Driver만</text>
+
+  <!-- 의존 화살표 2 -->
+  <line x1="300" y1="240" x2="300" y2="260" stroke="#333" stroke-width="2" marker-end="url(#depArrow)"/>
+
+  <!-- Driver 레이어 -->
+  <rect x="50" y="265" width="500" height="80" rx="8" fill="#34A853" opacity="0.12" stroke="#34A853" stroke-width="2"/>
+  <rect x="60" y="272" width="8" height="66" rx="4" fill="#34A853"/>
+  <text x="80" y="292" font-size="16" font-weight="700" fill="#34A853">Driver 레이어</text>
+  <text x="80" y="310" font-size="12" fill="#666">책임: 하드웨어 주변장치 캡슐화, 상위에 하드웨어 독립 API 노출</text>
+  <text x="80" y="328" font-size="12" fill="#888">예: uart_driver.c, gpio_driver.c, spi_driver.c, tim_driver.c</text>
+  <text x="520" y="310" text-anchor="end" font-size="11" font-weight="600" fill="#34A853">호출 대상: HAL만</text>
+
+  <!-- 의존 화살표 3 -->
+  <line x1="300" y1="345" x2="300" y2="365" stroke="#333" stroke-width="2" marker-end="url(#depArrow)"/>
+
+  <!-- HAL 레이어 -->
+  <rect x="50" y="370" width="500" height="80" rx="8" fill="#1A73E8" opacity="0.12" stroke="#1A73E8" stroke-width="2"/>
+  <rect x="60" y="377" width="8" height="66" rx="4" fill="#1A73E8"/>
+  <text x="80" y="397" font-size="16" font-weight="700" fill="#1A73E8">HAL 레이어</text>
+  <text x="80" y="415" font-size="12" fill="#666">책임: 레지스터 접근 추상화 (ST 제공, 수정하지 않음)</text>
+  <text x="80" y="433" font-size="12" fill="#888">예: HAL_GPIO_*, HAL_UART_*, HAL_TIM_*, HAL_SPI_*</text>
+  <text x="520" y="415" text-anchor="end" font-size="11" font-weight="600" fill="#1A73E8">하드웨어 레지스터</text>
+
+  <!-- 오른쪽 규칙 박스 -->
+  <rect x="580" y="55" width="110" height="395" rx="8" fill="#F5F5F5" stroke="#CCC" stroke-width="1"/>
+  <text x="635" y="80" text-anchor="middle" font-size="13" font-weight="700" fill="#333">의존 규칙</text>
+
+  <!-- 큰 화살표 -->
+  <line x1="635" y1="95" x2="635" y2="420" stroke="#333" stroke-width="3" marker-end="url(#depArrow)"/>
+  <text x="635" y="245" text-anchor="middle" font-size="12" fill="#333" transform="rotate(-90 635 245)">단방향 의존만 허용</text>
+
+  <!-- 금지 표시 -->
+  <text x="350" y="480" text-anchor="middle" font-size="13" fill="#EA4335" font-weight="600">&#x26D4; 역방향 호출 금지 | &#x26D4; 계층 건너뛰기 금지 (App → HAL 직접 호출 불가)</text>
+</svg>

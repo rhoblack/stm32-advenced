@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch03. 소프트웨어 아키텍처 설계 원칙 — STM32 고급 실무교육</title>
+  <link rel="stylesheet" href="../../templates/book_style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+
+<!-- ===== 챕터 헤더 ===== -->
+<header class="chapter-header">
+  <div class="chapter-meta">Part 0 · Chapter 03 · 프로젝트 <span class="version">v0.3</span></div>
+  <h1>Ch03. 소프트웨어 아키텍처 설계 원칙</h1>
+  <p class="chapter-summary">코드가 1000줄을 넘기 전에 설계도를 그린다 — HAL/Driver/Service/App 4계층 구조로 프로젝트의 뼈대를 세운다</p>
+  <div class="chapter-badge">누적 기능: 프로젝트 아키텍처 설계도 v0.3 작성 — 이후 매 챕터에서 갱신</div>
+</header>
+
+<!-- ===== 학습 목표 ===== -->
+<section class="learning-objectives">
+  <h2>학습 목표</h2>
+  <p>이 챕터를 완료하면 다음을 할 수 있습니다.</p>
+  <ul>
+    <li>[이해] 4계층(HAL/Driver/Service/App) 아키텍처의 정의와 계층별 책임을 설명할 수 있다.</li>
+    <li>[적용] Ch01~02 코드를 4계층 다이어그램에 올바르게 배치할 수 있다.</li>
+    <li>[분석] 코드가 어느 레이어에 속하는지 판단하고, 의존 방향 위반을 식별할 수 있다.</li>
+    <li>[분석] FSM(유한 상태 머신)의 상태/전이/이벤트/액션 4요소를 식별하고 상태 전이 다이어그램을 해석할 수 있다.</li>
+    <li>[창조] 프로젝트 아키텍처 설계도 v0.3을 작성할 수 있다.</li>
+  </ul>
+  <div class="project-milestone">
+    <strong>프로젝트 v0.3</strong>: 이 챕터 완료 후 전체 프로젝트의 아키텍처 설계도가 완성됩니다. 이후 모든 챕터에서 이 설계도에 컴포넌트를 추가하며 시스템을 성장시킵니다.
+  </div>
+</section>
+
+
+<!-- ===== §3.1 왜 아키텍처가 필요한가? ===== -->
+<section id="sec-01">
+  <h2>§3.1 왜 아키텍처가 필요한가?</h2>
+
+  <p>
+    잠깐, 여기까지 온 여러분을 축하합니다.
+    Ch01에서 버튼으로 LED를 토글하고, Ch02에서 <code>LOG_I</code> 매크로로 MCU 내부를 들여다보는 데 성공했습니다.
+    GPIO와 인터럽트, 로그 시스템이라는 임베디드 개발의 기초 체력을 갖춘 것입니다.
+    이제 그 체력 위에 <strong>설계도</strong>를 세울 차례입니다.
+  </p>
+
+  <p>
+    Ch02를 마치고 프로젝트 폴더를 열어보세요.
+    <code>main.c</code> 한 파일에 GPIO 초기화, 인터럽트 콜백, 로그 매크로, SWO 설정 코드가 전부 들어 있습니다.
+    지금은 200줄이니 괜찮습니다.
+    하지만 이 교재를 Ch19까지 마치면 프로젝트에는 UART, DMA, 타이머, SPI, I2C, LCD, 스텝모터, CLI, PC 대시보드 코드가 추가됩니다.
+    약 3,000줄입니다.
+  </p>
+
+  <p>
+    지금 구조를 잡지 않으면 어떻게 될까요?
+    3분만 투자해서 미래를 미리 엿보겠습니다.
+  </p>
+
+  <h3>"3분 공포 체험" — 스파게티 코드의 결말</h3>
+
+  <p>
+    아래 코드는 아키텍처 없이 Ch10(v1.0)까지의 모든 기능을 <code>main.c</code> 하나에 넣었을 때의 모습입니다.
+    실제 빌드하지 않아도 됩니다. 눈으로 훑어보기만 하세요.
+  </p>
+
+  <pre><code class="language-c">/* 아키텍처 없이 Ch10까지 확장한 main() — 안티패턴 */
+while (1)
+{
+    uint32_t now = HAL_GetTick();
+
+    /* 1초마다 센서 읽기 — 20ms 블로킹! */
+    if (now - last_sensor >= 1000) {
+        sht31_read(&g_temperature, &g_humidity);
+        /* ↑ I2C 폴링 20ms 동안 CPU 정지 */
+    }
+
+    /* 500ms마다 LCD 갱신 — 40ms 소요 */
+    if (now - last_lcd >= 500) {
+        lcd_send_command(0x2C);
+        /* SPI 전송 중 다른 작업 불가 */
+    }
+
+    /* 스텝모터 — 1ms 정밀 타이밍 필요! */
+    if (g_motor_position != g_motor_target) {
+        stepper_one_step(dir);
+        HAL_Delay(1);
+        /* ↑ 센서 20ms + LCD 40ms 블로킹이면
+         *   실제 간격은 61ms. 시침이 떨린다! */
+    }
+}</code></pre>
+
+  <p>
+    <code>sht31_read()</code>가 I2C 폴링으로 20ms 동안 CPU를 잡고 있으면,
+    스텝모터의 1ms 타이밍을 놓칩니다.
+    시침이 떨리는 시계를 만들고 싶으신 분은 이 구조로 진행하시면 됩니다.
+  </p>
+
+  <p>
+    이제 더 근본적인 질문을 해보겠습니다.
+    "이 코드에서 <strong>센서 값이 틀려요</strong>"라는 버그 리포트가 왔습니다.
+    어디부터 보시겠습니까?
+    <code>sht31_read()</code>? I2C 초기화? SPI가 같은 GPIO 핀을 점유?
+    타이머 인터럽트가 I2C 통신 도중에 끼어든 건 아닌지?
+    답은: <strong>3,000줄 전체를 수색해야 합니다</strong>.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch03_sec01_spaghetti_vs_layered.svg" alt="스파게티 코드 vs 레이어드 아키텍처 비교">
+    <figcaption>그림 03-1. 스파게티 코드(왼쪽)에서는 모든 것이 모든 것에 의존한다. 레이어드 아키텍처(오른쪽)에서는 센서 버그를 Driver 레이어만 보고 해결할 수 있다.</figcaption>
+  </figure>
+
+  <p>
+    4계층 아키텍처를 적용하면, 센서 문제는 Driver 레이어의 <code>sht31_driver.c</code> 200줄만 확인하면 됩니다.
+    3,000줄을 뒤지는 대신 200줄만 보면 됩니다.
+    <strong>아키텍처는 이론이 아닙니다. 여러분이 야근하지 않기 위한 기술입니다.</strong>
+  </p>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> Ch01~02 코드는 잘 동작하는데 왜 구조를 바꿔야 하나요?<br>
+    <strong>A.</strong> 지금은 기능이 2개(LED + 로그)라서 괜찮습니다.
+    하지만 Ch10에서 기능이 8개로 늘어나면, 한 기능의 변경이 다른 기능에 영향을 주기 시작합니다.
+    "동작하는 코드"와 "유지보수 가능한 코드"의 차이는 기능이 5개를 넘는 순간부터 체감됩니다.
+  </aside>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    스파게티 코드 시연에서 수강생 반응이 없으면, "이 코드 리뷰해 주세요"라고 요청해 보세요.
+    "어디부터 봐야 할지 모르겠다"는 반응이 나오면 성공입니다.
+    코드 리뷰가 불가능하다는 체감이 아키텍처 필요성의 가장 강력한 동기입니다.
+  </aside>
+</section>
+
+
+<!-- ===== §3.2 레이어드 아키텍처 4계층과 의존 원칙 ===== -->
+<section id="sec-02">
+  <h2>§3.2 레이어드 아키텍처 4계층과 의존 원칙</h2>
+
+  <p>
+    §3.1에서 스파게티 코드의 문제를 체감했습니다.
+    해결책은 <strong>레이어드 아키텍처(Layered Architecture, 계층형 아키텍처)</strong>입니다.
+    코드를 역할에 따라 4개 층으로 나누고, 각 층이 바로 아래 층만 사용하도록 제한하는 구조입니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기 — 레스토랑 주방</strong><br>
+    소프트웨어 아키텍처의 4계층은 레스토랑의 운영 구조와 같습니다.<br><br>
+    <strong>홀 매니저(App)</strong>는 고객의 주문을 접수하고 서빙을 결정합니다. 직접 요리하지 않습니다.<br>
+    <strong>메뉴 관리자(Service)</strong>는 전채→메인→디저트 순서를 구성합니다. 개별 요리는 요리사에게 맡깁니다.<br>
+    <strong>요리사(Driver)</strong>는 "볶기", "끓이기" 같은 단위 조리를 수행합니다. 가스레인지를 직접 다룹니다.<br>
+    <strong>주방 기기(HAL)</strong>는 가스레인지, 오븐, 냉장고입니다. 기기를 인덕션으로 교체해도 요리법은 동일합니다.<br><br>
+    핵심 규칙: <strong>홀 매니저가 가스레인지를 직접 만지지 않듯, App 레이어는 HAL을 직접 호출하지 않습니다.</strong>
+    <br><small>※ 비유의 한계: (1) 실제 레스토랑에서는 요리사가 "재료 떨어졌다"고 홀에 통보합니다. 소프트웨어에서는 이것을 콜백(callback) 또는 이벤트로 처리하며, 의존 방향의 예외가 아니라 별도의 "이벤트 기반 통지" 메커니즘입니다. (2) 레스토랑에서는 주문이 순서대로 처리되지만, 임베디드 시스템에서는 인터럽트/DMA가 요리 도중에 끼어드는 "동시성"이 존재합니다. 이 부분은 Ch05(DMA)와 Ch06(UART DMA)에서 다룹니다.</small>
+  </div>
+
+  <figure>
+    <img src="../../figures/ch03_sec02_restaurant_layers.svg" alt="레스토랑 주방 비유와 4계층 아키텍처 매핑">
+    <figcaption>그림 03-2. 레스토랑 주방의 역할 분담과 소프트웨어 4계층의 1:1 매핑</figcaption>
+  </figure>
+
+  <h3>4계층의 정의와 책임</h3>
+
+  <p>이 교재에서 사용하는 4계층의 정확한 정의입니다. 이 구조는 Ch04부터 Ch19까지 일관되게 적용됩니다.</p>
+
+  <p>
+    <span class="layer-hal">HAL</span>
+    <strong>Hardware Abstraction Layer(하드웨어 추상화 계층)</strong> — ST가 제공하는 라이브러리입니다.
+    <code>HAL_GPIO_WritePin()</code>, <code>HAL_UART_Transmit()</code> 같은 함수로 레지스터 직접 접근을 추상화합니다.
+    이 계층은 <strong>우리가 수정하지 않습니다</strong>. CubeMX가 생성하고 ST가 유지보수합니다.
+  </p>
+
+  <p>
+    <span class="layer-driver">Driver</span>
+    <strong>드라이버 계층</strong> — 특정 하드웨어 주변장치를 HAL 위에서 감싸는 모듈입니다.
+    <code>uart_driver.c</code>, <code>gpio_driver.c</code> 처럼 주변장치별로 파일을 분리합니다.
+    상위 레이어에 <strong>하드웨어 독립적인 인터페이스</strong>를 노출합니다.
+    예를 들어 <code>led_driver_toggle()</code>을 호출하면 되지, <code>GPIOA</code>나 <code>GPIO_PIN_5</code>를 알 필요가 없습니다.
+  </p>
+
+  <p>
+    <span class="layer-service">Service</span>
+    <strong>서비스 계층</strong> — 여러 Driver를 조합하여 의미 있는 기능 단위를 구성합니다.
+    <code>clock_service.c</code>는 RTC Driver + 스텝모터 Driver를 조합하여 "시계" 기능을 완성합니다.
+    비즈니스 로직(상태 관리, 알고리즘)이 이 계층에 위치합니다.
+    HAL을 직접 호출하지 않으며, Driver만 사용합니다.
+  </p>
+
+  <p>
+    <span class="layer-app">App</span>
+    <strong>애플리케이션 계층</strong> — 최상위 레이어입니다.
+    <code>main()</code> 함수, CLI 명령어 처리, UI 화면 전환 등 사용자와 직접 상호작용하는 코드가 여기에 있습니다.
+    Service에게 "주문서(API 호출)"를 전달할 뿐, 주방 내부(Driver, HAL)를 모릅니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch03_sec02_four_layers.svg" alt="STM32 4계층 레이어드 아키텍처 전체도">
+    <figcaption>그림 03-3. STM32 4계층 레이어드 아키텍처 — 각 계층의 책임과 의존 방향</figcaption>
+  </figure>
+
+  <h3>단방향 의존 원칙</h3>
+
+  <p>
+    레이어드 아키텍처의 가장 중요한 규칙은 <strong>단방향 의존</strong>입니다.
+  </p>
+
+  <p>
+    <strong>App → Service → Driver → HAL</strong> 방향으로만 호출할 수 있습니다.
+    역방향(HAL → Driver → Service → App)으로 호출하는 것은 금지입니다.
+    계층을 건너뛰는 것(App → HAL 직접 호출)도 금지입니다.
+  </p>
+
+  <p>
+    왜 이 규칙이 중요할까요?
+  </p>
+
+  <ul>
+    <li><strong>변경 영향 최소화</strong>: UART 드라이버를 폴링에서 DMA로 바꿔도, <code>UART_Send()</code> 인터페이스가 동일하면 Service 이상의 코드는 한 줄도 수정할 필요가 없습니다.</li>
+    <li><strong>버그 격리</strong>: 센서 값이 틀리면 <code>sht31_driver.c</code>만 확인합니다. App 코드를 볼 필요가 없습니다.</li>
+    <li><strong>병렬 개발</strong>: 한 명은 Driver를, 다른 한 명은 Service를 개발할 수 있습니다. 인터페이스만 합의하면 됩니다.</li>
+    <li><strong>하드웨어 교체</strong>: MCU를 F411에서 F446으로 바꿔도 HAL과 Driver만 수정하면 됩니다.</li>
+  </ul>
+
+  <h3>인터페이스 = 주문서</h3>
+
+  <p>
+    각 레이어가 상위 레이어에 노출하는 함수 시그니처를 <strong>인터페이스(Interface, 접점)</strong>라고 합니다.
+    레스토랑 비유에서 "메뉴판"이 인터페이스입니다.
+    홀 매니저(App)는 메뉴판(인터페이스)만 보고 주문하면 됩니다. 레시피(구현)를 알 필요가 없습니다.
+  </p>
+
+  <p>
+    인터페이스는 <code>.h</code> 헤더 파일에 선언하고, 구현은 <code>.c</code> 파일에 숨깁니다.
+    지금 바로 LED Driver의 인터페이스를 설계해 보겠습니다.
+  </p>
+
+  <pre><code class="language-c">/* led_driver.h — LED Driver 인터페이스 (주문서) */
+
+typedef enum { LED_OFF = 0, LED_ON = 1 } led_state_t;
+
+void led_driver_init(void);           /* LED GPIO 초기화 */
+void led_driver_set(led_state_t s);   /* LED 켜기/끄기 */
+void led_driver_toggle(void);         /* LED 토글 */
+
+/* App은 이 3개 함수만 알면 된다.
+ * GPIOA, GPIO_PIN_5 같은 하드웨어 정보를 모른다.
+ * → 핀이 PA5에서 PB0로 바뀌어도 App 코드는 수정 불필요! */</code></pre>
+
+  <pre><code class="language-c">/* button_driver.h — Button Driver 인터페이스 */
+
+typedef void (*button_callback_t)(void);
+
+void     button_driver_init(button_callback_t on_press);
+uint32_t button_driver_get_press_count(void);
+
+/* 디바운싱은 Driver 내부에서 처리한다.
+ * App은 "유효한 누름"만 콜백으로 받는다.
+ * → 디바운싱 시간을 50ms에서 100ms로 바꿔도 App은 모른다. */</code></pre>
+
+  <aside class="tip">
+    💡 <strong>실무 팁 — Driver 파일 네이밍</strong><br>
+    파일명은 <code>[주변장치]_driver.c/h</code> 패턴을 사용합니다.
+    <code>uart_driver.c</code>, <code>spi_driver.c</code>, <code>tim_driver.c</code> 처럼 통일하면
+    파일명만 보고 "이건 Driver 레이어구나"를 즉시 알 수 있습니다.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> 로그 시스템(<code>LOG_I</code>)은 모든 레이어에서 호출하는데, 어느 레이어에 넣나요?<br>
+    <strong>A.</strong> 이것을 <strong>횡단 관심사(Cross-cutting Concern, 공통 관심사)</strong>라고 합니다.
+    로그 시스템의 <em>구현체</em>(<code>log_print()</code>)는 Driver 레이어에 있지만,
+    <em>매크로 인터페이스</em>(<code>LOG_I</code>)는 모든 레이어에서 사용합니다.
+    레스토랑 비유로는 <strong>화재 경보기</strong>와 같습니다 — 주방, 홀, 사무실 어디서든 울립니다.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> Driver와 Service의 경계가 헷갈립니다. 어떻게 구분하나요?<br>
+    <strong>A.</strong> 핵심 기준은 <strong>"하드웨어를 아는가?"</strong>입니다.
+    <code>sht31_driver.c</code>는 I2C 주소 0x44, 측정 커맨드 0x2400 같은 하드웨어 상세를 알고 있으므로 Driver입니다.
+    <code>sensor_service.c</code>는 "온도가 30도를 넘으면 알람"이라는 비즈니스 규칙만 알고, SHT31인지 DHT22인지 모릅니다 — 이것이 Service입니다.
+    레스토랑 비유로는, 요리사(Driver)는 "소금 몇 그램, 불 세기 몇 도"를 알지만, 메뉴 관리자(Service)는 "이 코스에 스프가 먼저"만 압니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    <strong>"레이어드 아키텍처의 장점을 실제 경험으로 설명하세요"</strong><br>
+    키워드: ① 계층 분리로 변경 영향 최소화 ② 인터페이스 기반 교체 가능성 ③ 버그 격리 — 문제 레이어만 디버깅 ④ 팀 협업 — 계층별 병렬 개발<br>
+    모범 답변: "STM32 프로젝트에서 UART 드라이버를 DMA 모드로 교체할 때, <code>UART_Send()</code> 인터페이스를 유지했기 때문에 Service 이상의 코드는 수정하지 않았습니다."
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>4계층의 이름과 각 계층의 한 줄 정의를 말할 수 있는가?</li>
+      <li>"단방향 의존"이 왜 필요한지 자신의 말로 설명할 수 있는가?</li>
+      <li>Ch01의 <code>HAL_GPIO_WritePin()</code>은 어느 레이어인가? — HAL입니다. 우리는 이미 HAL을 쓰고 있었습니다.</li>
+    </ul>
+  </aside>
+</section>
+
+
+<!-- ===== §3.3 Ch01~02 코드를 계층에 배치하기 ===== -->
+<section id="sec-03">
+  <h2>§3.3 Ch01~02 코드를 계층에 배치하기</h2>
+
+  <p>
+    4계층의 정의를 배웠으니, 이제 여러분이 직접 작성한 코드를 분류해 보겠습니다.
+    Ch01~02에서 만든 v0.2 코드의 각 요소가 어느 레이어에 속하는지 판단하는 실습입니다.
+  </p>
+
+  <p>
+    아래 표의 "내 답" 칸을 먼저 채운 후, 해설을 확인하세요.
+    정답이 하나가 아닌 경우도 있습니다. <strong>고민하는 과정 자체가 아키텍처 설계</strong>입니다.
+  </p>
+
+  <h3>분류 워크시트</h3>
+
+  <table style="width:100%; border-collapse:collapse; margin:1rem 0;">
+    <thead>
+      <tr style="background:#F5F5F5;">
+        <th style="border:1px solid #DDD; padding:8px; text-align:left;">코드 요소</th>
+        <th style="border:1px solid #DDD; padding:8px; text-align:left;">출처</th>
+        <th style="border:1px solid #DDD; padding:8px; text-align:center;">내 답</th>
+        <th style="border:1px solid #DDD; padding:8px; text-align:center;">정답</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="border:1px solid #DDD; padding:8px;"><code>HAL_GPIO_Init()</code></td>
+        <td style="border:1px solid #DDD; padding:8px;">ST HAL 라이브러리</td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"></td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"><span class="layer-hal">HAL</span></td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #DDD; padding:8px;"><code>HAL_GPIO_WritePin()</code></td>
+        <td style="border:1px solid #DDD; padding:8px;">ST HAL 라이브러리</td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"></td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"><span class="layer-hal">HAL</span></td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #DDD; padding:8px;"><code>MX_GPIO_Init()</code></td>
+        <td style="border:1px solid #DDD; padding:8px;">CubeMX 자동 생성</td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"></td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"><span class="layer-driver">Driver 후보</span></td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #DDD; padding:8px;"><code>log_print()</code></td>
+        <td style="border:1px solid #DDD; padding:8px;">Ch02 직접 구현</td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"></td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"><span class="layer-driver">Driver</span></td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #DDD; padding:8px;"><code>LOG_I()</code> 매크로</td>
+        <td style="border:1px solid #DDD; padding:8px;">Ch02 직접 구현</td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"></td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;">횡단 관심사</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #DDD; padding:8px;"><code>HAL_GPIO_EXTI_Callback()</code></td>
+        <td style="border:1px solid #DDD; padding:8px;">Ch01 직접 구현</td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"></td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"><span class="layer-app">App</span></td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #DDD; padding:8px;"><code>main()</code></td>
+        <td style="border:1px solid #DDD; padding:8px;">직접 구현</td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"></td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"><span class="layer-app">App</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>해설: 쉽지 않은 경계선</h3>
+
+  <p>
+    <code>MX_GPIO_Init()</code>을 HAL로 분류하셨나요, Driver로 분류하셨나요?
+    CubeMX가 자동 생성한 코드이니 HAL 같지만, 프로젝트별 핀 설정을 포함하므로 Driver 초기화에 가깝습니다.
+    이런 경계선의 애매함이 정상입니다. 중요한 것은 <strong>"이 코드는 어디에 속할까?"를 고민하는 습관</strong>입니다.
+  </p>
+
+  <p>
+    <code>HAL_GPIO_EXTI_Callback()</code>은 어떤가요?
+    HAL이 <code>__weak</code>로 선언한 함수를 우리가 오버라이드했습니다.
+    "HAL에서 호출하니까 HAL 아닌가?"라고 생각할 수 있지만,
+    함수의 <strong>구현 내용</strong>이 App 로직(LED 토글, 카운트 증가)이므로 App 레이어입니다.
+    향후에는 Driver가 1차로 인터럽트를 수신하고, App에 이벤트를 전달하는 구조로 발전합니다.
+  </p>
+
+  <h3>의존 방향 위반 찾기</h3>
+
+  <p>
+    v0.2 코드에서 아키텍처 위반을 하나 찾아보세요. 힌트: <code>HAL_GPIO_EXTI_Callback()</code> 내부입니다.
+  </p>
+
+  <pre><code class="language-c">/* v0.2 — HAL_GPIO_EXTI_Callback 내부 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    /* ... 디바운싱 처리 ... */
+
+    g_led_state ^= 1U;
+    /* ⚠️ App 레이어에서 HAL 직접 호출! (계층 건너뛰기) */
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,
+                      g_led_state ? GPIO_PIN_SET : GPIO_PIN_RESET);
+
+    /* 이상적인 코드: */
+    /* led_driver_toggle();  ← Driver API 호출 */
+}</code></pre>
+
+  <p>
+    <code>HAL_GPIO_EXTI_Callback()</code>은 App 레이어인데,
+    <code>HAL_GPIO_WritePin()</code>이라는 HAL 함수를 직접 호출합니다.
+    App → HAL 직접 호출이므로 <strong>계층 건너뛰기 위반</strong>입니다.
+  </p>
+
+  <p>
+    이상적으로는 <code>led_driver_toggle()</code>이라는 Driver API를 호출해야 합니다.
+    하지만 아직 <code>led_driver</code>가 없으니 직접 호출할 수밖에 없었습니다.
+    이 위반은 <strong>의도적</strong>입니다. Ch04부터 Driver를 하나씩 만들면서 자연스럽게 해결됩니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch03_sec03_v02_mapping.svg" alt="Ch01~02 코드의 4계층 배치도">
+    <figcaption>그림 03-4. v0.2 코드의 4계층 배치 — EXTI 콜백에서 HAL 직접 호출이 위반으로 표시된다</figcaption>
+  </figure>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>v0.2 코드에서 의존 방향 위반을 정확히 짚을 수 있는가?</li>
+      <li>EXTI 콜백을 Driver/App 중 어디에 넣을지 고민되셨는가? — 이 고민 자체가 아키텍처 설계입니다.</li>
+    </ul>
+  </aside>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    수강생이 "위반 아닌 것 아닌가요?"라고 하면,
+    "맞아요, 아직 Driver가 없으니 직접 호출할 수밖에 없었죠. 이것이 바로 Ch04를 시작할 이유입니다"
+    로 응대하세요. 위반의 존재가 다음 챕터의 동기가 됩니다.
+  </aside>
+</section>
+
+
+<!-- ===== §3.4 FSM(유한 상태 머신) 맛보기 ===== -->
+<section id="sec-04">
+  <h2>§3.4 FSM(유한 상태 머신) 맛보기</h2>
+
+  <p>
+    레이어드 아키텍처가 코드를 "공간적으로" 나누는 도구라면,
+    <strong>FSM(Finite State Machine, 유한 상태 머신)</strong>은 코드를 "시간적으로" 나누는 도구입니다.
+    시스템이 어떤 "상태"에 있고, 어떤 "이벤트"가 발생하면 다른 "상태"로 전이하는지를 명시적으로 정의합니다.
+  </p>
+
+  <p>
+    이 절에서는 FSM의 기본 개념만 소개합니다.
+    실제로 FSM 코드를 작성하는 것은 Ch08(스톱워치)에서 처음 수행합니다.
+    지금은 "이런 도구가 있구나"를 알고, 기존 코드에서 FSM 패턴을 발견하는 눈을 기르는 것이 목표입니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기 — 자판기</strong><br>
+    자판기는 대표적인 FSM입니다.
+    <ul>
+      <li><strong>상태(State)</strong>: 대기 중, 금액 투입됨, 음료 선택됨, 배출 중</li>
+      <li><strong>이벤트(Event)</strong>: 동전 투입, 버튼 누름, 배출 완료</li>
+      <li><strong>전이(Transition)</strong>: "대기 중" + "동전 투입" → "금액 투입됨"</li>
+      <li><strong>액션(Action)</strong>: 잔액 표시, 음료 배출, 거스름돈 반환</li>
+    </ul>
+    자판기에서 "금액 투입됨" 상태가 아닌데 음료 버튼을 눌러도 아무 일도 안 일어나는 이유가
+    바로 FSM입니다. <strong>현재 상태에서 허용되지 않는 이벤트는 무시</strong>됩니다.
+    <br><small>※ 비유의 한계: 실제 임베디드 시스템의 FSM은 자판기보다 전이가 복잡하고, 동시에 여러 FSM이 병렬로 동작합니다. Ch08에서 이를 체험합니다.</small>
+  </div>
+
+  <h3>FSM의 4가지 구성 요소</h3>
+
+  <ul>
+    <li><strong>상태(State)</strong>: 시스템이 현재 놓인 조건. 예: IDLE, RUNNING, ERROR</li>
+    <li><strong>이벤트(Event)</strong>: 상태 전이를 유발하는 외부 자극. 예: 버튼 누름, 타이머 만료</li>
+    <li><strong>전이(Transition)</strong>: "현재 상태 + 이벤트 → 다음 상태" 규칙</li>
+    <li><strong>액션(Action)</strong>: 전이 시 수행하는 동작. 예: LED 토글, 카운트 증가</li>
+  </ul>
+
+  <h3>Ch01 디바운싱 = 이미 FSM이었다</h3>
+
+  <p>
+    Ch01에서 버튼 디바운싱 코드를 작성할 때, <code>if (now - last &gt;= 50ms)</code> 패턴을 사용했습니다.
+    이 코드를 FSM 관점으로 다시 보면:
+  </p>
+
+  <ul>
+    <li><strong>IDLE 상태</strong>: 버튼 입력 대기 중</li>
+    <li><strong>이벤트</strong>: EXTI 하강 에지 감지</li>
+    <li><strong>PRESSED 상태</strong>: 디바운싱 타이머 동작 중 (50ms 미만 재트리거 무시)</li>
+    <li><strong>DEBOUNCED 상태</strong>: 50ms 경과 확인 → LED 토글 + 카운트 증가 (액션)</li>
+    <li><strong>전이</strong>: DEBOUNCED → IDLE (처리 완료, 다음 입력 대기)</li>
+  </ul>
+
+  <p>
+    <code>if-else</code>로 구현했지만, 본질은 FSM입니다.
+    상태를 명시적으로 <code>enum</code>으로 선언하지 않았을 뿐, "상태에 따라 다르게 동작하는" 패턴은 이미 사용하고 있었습니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch03_sec04_button_fsm.svg" alt="버튼 디바운싱 FSM 상태 전이 다이어그램">
+    <figcaption>그림 03-5. Ch01 버튼 디바운싱을 FSM 상태 전이 다이어그램으로 표현. IDLE → PRESSED → DEBOUNCED → IDLE 순환.</figcaption>
+  </figure>
+
+  <p>
+    이 다이어그램을 읽는 방법:
+  </p>
+  <ul>
+    <li><strong>원</strong> = 상태 (시스템이 현재 놓인 조건)</li>
+    <li><strong>화살표</strong> = 전이 (상태가 바뀌는 경로)</li>
+    <li><strong>화살표 위의 텍스트</strong> = 이벤트 (전이를 유발하는 조건)</li>
+    <li><strong>검은 점 → 첫 번째 상태</strong> = 초기 상태</li>
+  </ul>
+
+  <p>
+    Ch08(스톱워치)에서는 IDLE / RUNNING / PAUSED / RESET 4개 상태를 가진 FSM을 직접 코드로 구현합니다.
+    지금은 위 다이어그램을 "읽을 수 있으면" 충분합니다.
+  </p>
+
+  <aside class="tip">
+    💡 <strong>실무 팁 — FSM 도입 기준</strong><br>
+    <code>if-else</code> 체인에서 상태가 3개 이상이면 FSM 도입을 고려하세요.
+    상태가 2개일 때는 <code>if-else</code>로 충분하지만, 3개부터는 조합 폭발이 시작됩니다.
+    Ch08~Ch13에서 이 규칙을 직접 체험하게 됩니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    <strong>"FSM을 실무에서 어디에 적용했는가?"</strong><br>
+    답변 프레임: "버튼 디바운싱, UART TX/RX 상태 관리, 모터 위치 제어, UI 화면 전환 등에 FSM을 적용했습니다.
+    상태를 명시적으로 관리하면 <code>if-else</code> 중첩보다 코드가 읽기 쉽고 버그를 격리하기 쉽습니다."
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> FSM이 어려운데, 지금 당장 코드로 작성해야 하나요?<br>
+    <strong>A.</strong> 아닙니다. 지금은 개념만 이해하면 됩니다.
+    실제 FSM 코드 작성은 Ch08(스톱워치)에서 처음 합니다.
+    그때가 되면 "아, Ch03에서 배운 게 이거였구나"라는 연결이 자연스럽게 이루어집니다.
+  </aside>
+</section>
+
+
+<!-- ===== §3.5 프로젝트 아키텍처 v0.3 설계 ===== -->
+<section id="sec-05">
+  <h2>§3.5 프로젝트 아키텍처 v0.3 설계</h2>
+
+  <p>
+    이제 이 교재의 핵심 산출물을 만들 시간입니다.
+    Ch01~02에서 구현한 코드를 4계층에 배치하고,
+    Ch04~Ch16에서 추가될 컴포넌트를 미리 표시한
+    <strong>프로젝트 아키텍처 설계도 v0.3</strong>을 작성합니다.
+  </p>
+
+  <p>
+    이 설계도는 "살아있는 문서"입니다.
+    Ch04에서 <code>uart_driver</code>를 만들면 회색 블록이 초록색으로 바뀝니다.
+    Ch10에서 <code>clock_service</code>를 만들면 노란 블록이 추가됩니다.
+    매 챕터의 도입부에서 이 설계도를 갱신하며 시스템이 성장하는 과정을 직접 체험합니다.
+  </p>
+
+  <h3>시퀀스 다이어그램 읽기</h3>
+
+  <p>
+    아키텍처 설계도를 그리기 전에, 컴포넌트 간 메시지 흐름을 표현하는 <strong>시퀀스 다이어그램(Sequence Diagram, 순서 다이어그램)</strong>을 소개합니다.
+    Ch01의 버튼 → LED 토글 흐름을 시퀀스로 표현하면 이렇습니다:
+  </p>
+
+  <figure>
+    <img src="../../figures/ch03_sec05_sequence.svg" alt="버튼 → LED 토글 시퀀스 다이어그램">
+    <figcaption>그림 03-7. Ch01 버튼 → LED 토글 시퀀스 다이어그램. 사용자 → EXTI/HAL → App Callback → LED/HAL 순서로 메시지가 전달된다.</figcaption>
+  </figure>
+
+  <p>
+    시퀀스 다이어그램을 읽는 방법:
+  </p>
+  <ul>
+    <li><strong>세로 선</strong>: 각 컴포넌트의 생명선(시간 흐름, 위에서 아래로)</li>
+    <li><strong>가로 화살표</strong>: 함수 호출 또는 메시지 전달</li>
+    <li><strong>위에서 아래</strong>: 시간순서</li>
+  </ul>
+
+  <p>
+    Ch04부터는 이 시퀀스 다이어그램을 직접 작성하게 됩니다. 지금은 "읽을 수 있으면" 충분합니다.
+  </p>
+
+  <h3>아키텍처 설계도 v0.3</h3>
+
+  <p>
+    아래 다이어그램이 이 교재의 전체 아키텍처 설계도입니다.
+    <strong>색칠된 블록</strong>은 현재(v0.3) 구현 완료된 컴포넌트,
+    <strong>회색 블록</strong>은 향후 챕터에서 추가될 컴포넌트입니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch03_sec05_architecture_v03.svg" alt="프로젝트 아키텍처 v0.3 전체 설계도">
+    <figcaption>그림 03-6. 프로젝트 아키텍처 v0.3 — 현재 구현(색상)과 미래 계획(회색). 매 챕터에서 회색 블록이 하나씩 색칠된다.</figcaption>
+  </figure>
+
+  <p>현재(v0.3) 상태:</p>
+  <ul>
+    <li><span class="layer-app">App</span>: <code>main()</code> — 초기화 + 메인 루프 + EXTI 콜백</li>
+    <li><span class="layer-service">Service</span>: 아직 없음 (Ch10부터 등장)</li>
+    <li><span class="layer-driver">Driver</span>: <code>logger</code> — LOG_E/W/I/D 매크로 + SWO/RTT 출력</li>
+    <li><span class="layer-hal">HAL</span>: ST HAL 라이브러리 — GPIO, NVIC, SystemTick</li>
+  </ul>
+
+  <p>다음 챕터(Ch04)에서 추가될 것:</p>
+  <ul>
+    <li><span class="layer-driver">Driver</span>: <code>uart_driver</code> — 시리얼 통신, <code>UART_Send()</code> 인터페이스</li>
+  </ul>
+
+  <h3>디버깅 계층 판단 가이드</h3>
+
+  <p>
+    아키텍처의 실전 가치는 디버깅에서 빛납니다.
+    버그 증상을 보고 어느 레이어를 먼저 확인할지 판단하는 가이드입니다.
+  </p>
+
+  <table style="width:100%; border-collapse:collapse; margin:1rem 0;">
+    <thead>
+      <tr style="background:#F5F5F5;">
+        <th style="border:1px solid #DDD; padding:8px; text-align:left;">증상</th>
+        <th style="border:1px solid #DDD; padding:8px; text-align:center;">의심 레이어</th>
+        <th style="border:1px solid #DDD; padding:8px; text-align:left;">확인 방법</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="border:1px solid #DDD; padding:8px;">전송 자체가 시작 안 됨</td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"><span class="layer-hal">HAL</span></td>
+        <td style="border:1px solid #DDD; padding:8px;">레지스터 값, 클럭 활성화, 핀 설정 확인</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #DDD; padding:8px;">전송은 되지만 데이터가 깨짐</td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"><span class="layer-driver">Driver</span></td>
+        <td style="border:1px solid #DDD; padding:8px;">버퍼 주소, 크기, 정렬(Alignment) 확인</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #DDD; padding:8px;">데이터 정상이지만 타이밍 맞지 않음</td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"><span class="layer-service">Service</span></td>
+        <td style="border:1px solid #DDD; padding:8px;">콜백 처리 순서, 상태 전이 확인</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #DDD; padding:8px;">화면 표시 값이 이상함</td>
+        <td style="border:1px solid #DDD; padding:8px; text-align:center;"><span class="layer-app">App</span></td>
+        <td style="border:1px solid #DDD; padding:8px;">데이터 변환, 포맷 로직 확인</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    <strong>"DMA 오류 발생 시 어느 계층에서 디버깅해야 하는가?"</strong><br>
+    모범 답변: "먼저 증상을 분류합니다. DMA 전송 자체의 문제인지(HAL — 레지스터 확인), 데이터 처리 문제인지(Driver — 버퍼/콜백 점검), 비즈니스 로직 문제인지(Service/App)를 구분합니다. 레이어를 알면 3,000줄 중 해당 레이어 200줄만 확인하면 됩니다."
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>아키텍처 설계도 v0.3에서 현재 구현된 컴포넌트를 3개 이상 나열할 수 있는가?</li>
+      <li>Ch04에서 추가될 컴포넌트가 어느 레이어인지 알고 있는가?</li>
+      <li>지금 그리는 이 다이어그램이 v0.3이라는 것을 인지하고 있는가? Ch16에서 완성됩니다. 매 챕터에서 직접 갱신하세요.</li>
+    </ul>
+  </aside>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    아키텍처 설계도를 A3 용지에 출력하여 수강생에게 배포하면,
+    매 챕터에서 직접 색칠하는 물리적 경험이 기억 정착에 효과적입니다.
+    "오늘은 어떤 블록이 색칠될까요?"로 각 챕터를 시작하면 기대감이 생깁니다.
+  </aside>
+</section>
+
+
+<!-- ===== 실습 ===== -->
+<section id="lab">
+  <h2>실습: 프로젝트 아키텍처 v0.3 설계도 작성</h2>
+  <p><strong>목표</strong>: Ch01~02 코드를 4계층에 배치하고, 향후 컴포넌트를 포함한 아키텍처 설계도를 완성한다.</p>
+  <p><strong>환경</strong>: 종이/화이트보드 또는 그림 도구</p>
+
+  <h3>Step 1. 4계층 프레임 그리기</h3>
+  <p>
+    가로로 긴 직사각형 4개를 위에서 아래로 그립니다.
+    위에서부터 <span class="layer-app">App</span>,
+    <span class="layer-service">Service</span>,
+    <span class="layer-driver">Driver</span>,
+    <span class="layer-hal">HAL</span> 순서입니다.
+    각 레이어에 색상을 지정합니다(빨강, 노랑, 초록, 파랑).
+  </p>
+
+  <h3>Step 2. 현재 컴포넌트 배치 (색칠)</h3>
+  <p>
+    v0.2에서 구현된 컴포넌트를 해당 레이어에 배치합니다:
+  </p>
+  <ul>
+    <li><span class="layer-app">App</span>에 <code>main()</code> 블록</li>
+    <li><span class="layer-driver">Driver</span>에 <code>logger</code> 블록</li>
+    <li><span class="layer-hal">HAL</span>에 <code>HAL_GPIO</code>, <code>HAL_NVIC</code> 블록</li>
+  </ul>
+
+  <h3>Step 3. 미래 컴포넌트 배치 (회색)</h3>
+  <p>
+    TABLE_OF_CONTENTS.md를 참고하여 향후 추가될 컴포넌트를 회색으로 미리 배치합니다:
+  </p>
+  <ul>
+    <li><span class="layer-driver">Driver</span>: uart(Ch04), tim(Ch07), rtc(Ch09), stepper(Ch10), sht31(Ch11), ili9341(Ch12)</li>
+    <li><span class="layer-service">Service</span>: clock(Ch10), sensor(Ch11), gfx(Ch13), ui(Ch13)</li>
+    <li><span class="layer-app">App</span>: cli(Ch15), protocol(Ch16)</li>
+  </ul>
+
+  <h3>Step 4. 의존 화살표 그리기</h3>
+  <p>
+    App → Service → Driver → HAL 방향으로만 화살표를 그립니다.
+    횡단 관심사(Logger)는 점선으로 모든 레이어에 연결합니다.
+  </p>
+
+  <p><strong>예상 결과</strong>: 그림 03-6과 유사한 설계도가 완성됩니다.</p>
+
+  <aside class="tip">
+    💡 <strong>실습이 안 될 때</strong><br>
+    "Service 레이어에 뭘 넣어야 할지 모르겠다"는 흔한 고민입니다.
+    Service는 Ch10부터 등장하므로 지금은 빈 칸으로 두세요.
+    빈 칸을 남겨두는 것이 이 실습의 핵심입니다 — "앞으로 채울 공간이 있다"는 기대감이 학습 동기가 됩니다.
+  </aside>
+</section>
+
+
+<!-- ===== 핵심 정리 ===== -->
+<section class="chapter-summary-section">
+  <h2>핵심 정리</h2>
+  <ul>
+    <li><strong>4계층 아키텍처</strong>: App → Service → Driver → HAL. 각 계층은 바로 아래 계층만 호출한다.</li>
+    <li><strong>단방향 의존</strong>: 역방향 호출 금지, 계층 건너뛰기 금지. 이 원칙이 변경 영향을 최소화한다.</li>
+    <li><strong>인터페이스</strong>: 각 레이어가 상위에 노출하는 함수 시그니처. .h 파일에 선언, .c 파일에 구현을 숨긴다.</li>
+    <li><strong>FSM</strong>: 상태/이벤트/전이/액션 4요소. Ch01 디바운싱이 이미 FSM이었다.</li>
+    <li><strong>아키텍처 설계도</strong>: v0.3 초안 작성 완료. 이후 매 챕터에서 컴포넌트를 추가하며 갱신한다.</li>
+  </ul>
+
+  <h3>아키텍처 업데이트</h3>
+  <p>
+    이 챕터에서 프로젝트 아키텍처 설계도 <strong>v0.3</strong>이 작성되었습니다.
+    현재 구현된 컴포넌트: <code>main()</code>(App), <code>logger</code>(Driver), ST HAL(HAL).
+    Ch04부터 매 챕터 도입부에서 이 설계도에 새 컴포넌트를 추가합니다.
+  </p>
+</section>
+
+
+<!-- ===== 연습문제 ===== -->
+<section class="exercises">
+  <h2>연습문제</h2>
+
+  <div class="exercise">
+    <span class="level">기억</span>
+    <strong>1.</strong> 4계층의 이름과 각 계층의 한 줄 정의를 작성하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">이해</span>
+    <strong>2.</strong> <code>HAL_GPIO_WritePin()</code>, <code>led_driver_toggle()</code>, <code>LOG_I()</code>, <code>main()</code> 루프를 각각 어느 레이어에 매핑하시오. <code>LOG_I()</code>가 특정 레이어에 속하지 않는 이유를 설명하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">적용</span>
+    <strong>3.</strong> 다음 코드에서 계층 위반을 찾고 수정 방향을 제시하시오.
+    <pre><code class="language-c">/* cli_app.c — App 레이어 */
+void cli_handle_command(const char *cmd)
+{
+    if (strcmp(cmd, "led on") == 0) {
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+    }
+}</code></pre>
+  </div>
+
+  <div class="exercise">
+    <span class="level">분석</span>
+    <strong>4.</strong> 아래 시나리오에서 버그를 격리할 때 먼저 확인해야 할 레이어를 제시하고 근거를 설명하시오.
+    "UART로 온도 데이터를 PC에 전송하는데, 값이 항상 0.0으로 나온다."
+  </div>
+
+  <div class="exercise">
+    <span class="level">창조</span>
+    <strong>5.</strong> 온습도 센서(SHT31) + LCD 디스플레이 시스템의 아키텍처 설계도를 4계층으로 설계하시오.
+    각 레이어에 포함될 모듈명과 인터페이스 함수 시그니처 1개씩을 작성하시오.
+    (힌트: Ch11~13 목차를 참고)
+  </div>
+</section>
+
+
+<!-- ===== 다음 챕터 예고 ===== -->
+<section class="next-chapter">
+  <h2>다음 챕터 예고</h2>
+  <p>
+    현재 프로젝트는 <strong>v0.3</strong> 상태로,
+    LED/Button 기본 I/O(v0.1) + 로그 인프라(v0.2) + 아키텍처 설계도(v0.3)까지 구축되었습니다.
+  </p>
+  <p>
+    다음 <strong>Ch04. UART 기초</strong>에서는
+    시리얼 통신을 구현하여 PC와 데이터를 주고받습니다.
+    <code>uart_driver.c</code>를 만들면서 여러분의 아키텍처 설계도 Driver 레이어에
+    <strong>첫 번째 통신 블록</strong>이 추가됩니다.
+    회색이 초록색으로 바뀌는 첫 순간입니다.
+    프로젝트는 <strong>v0.4</strong>로 업그레이드됩니다.
+  </p>
+</section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 400" font-family="'Noto Sans KR', sans-serif" font-size="13">
+  <defs>
+    <marker id="seqArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+    </marker>
+    <marker id="seqArrGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#34A853"/>
+    </marker>
+    <marker id="seqArrBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1A73E8"/>
+    </marker>
+  </defs>
+
+  <text x="375" y="24" text-anchor="middle" font-size="16" font-weight="700" fill="#212121">UART 송신 시퀀스 — App → Driver → HAL → Hardware</text>
+
+  <!-- 참여자 헤더 -->
+  <rect x="30" y="45" width="110" height="35" rx="6" fill="#EA4335" opacity="0.15" stroke="#EA4335"/>
+  <text x="85" y="67" text-anchor="middle" font-size="12" font-weight="600" fill="#EA4335">App (main)</text>
+
+  <rect x="210" y="45" width="120" height="35" rx="6" fill="#34A853" opacity="0.15" stroke="#34A853" stroke-width="2"/>
+  <text x="270" y="67" text-anchor="middle" font-size="12" font-weight="700" fill="#34A853">uart_driver</text>
+
+  <rect x="410" y="45" width="120" height="35" rx="6" fill="#1A73E8" opacity="0.15" stroke="#1A73E8"/>
+  <text x="470" y="67" text-anchor="middle" font-size="12" font-weight="600" fill="#1A73E8">HAL_UART</text>
+
+  <rect x="600" y="45" width="110" height="35" rx="6" fill="#F5F5F5" stroke="#999"/>
+  <text x="655" y="67" text-anchor="middle" font-size="12" font-weight="600" fill="#333">USART2 HW</text>
+
+  <!-- 생명선 -->
+  <line x1="85" y1="80" x2="85" y2="360" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="270" y1="80" x2="270" y2="360" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="470" y1="80" x2="470" y2="360" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="655" y1="80" x2="655" y2="360" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+
+  <!-- 메시지 1: App → uart_driver -->
+  <line x1="85" y1="110" x2="264" y2="110" stroke="#333" stroke-width="2" marker-end="url(#seqArr)"/>
+  <text x="175" y="103" text-anchor="middle" font-size="11" fill="#333" font-weight="600">uart_send("Hello", 5)</text>
+
+  <!-- 활성 박스: uart_driver -->
+  <rect x="264" y="108" width="12" height="100" fill="#34A853" opacity="0.3"/>
+
+  <!-- 내부 처리: 파라미터 검증 -->
+  <rect x="285" y="122" width="100" height="20" rx="3" fill="#E8F5E9" stroke="#34A853"/>
+  <text x="335" y="136" text-anchor="middle" font-size="10" fill="#1B5E20">파라미터 검증</text>
+
+  <!-- 메시지 2: uart_driver → HAL -->
+  <line x1="276" y1="155" x2="464" y2="155" stroke="#34A853" stroke-width="2" marker-end="url(#seqArrGreen)"/>
+  <text x="370" y="148" text-anchor="middle" font-size="11" fill="#34A853" font-weight="600">HAL_UART_Transmit(&huart2, buf, 5, 100)</text>
+
+  <!-- 활성 박스: HAL -->
+  <rect x="464" y="153" width="12" height="70" fill="#1A73E8" opacity="0.3"/>
+
+  <!-- 메시지 3: HAL → HW -->
+  <line x1="476" y1="175" x2="649" y2="175" stroke="#1A73E8" stroke-width="2" marker-end="url(#seqArrBlue)"/>
+  <text x="562" y="168" text-anchor="middle" font-size="11" fill="#1A73E8" font-weight="600">USART2→DR = byte</text>
+
+  <!-- 활성 박스: HW -->
+  <rect x="649" y="173" width="12" height="40" fill="#999" opacity="0.3"/>
+
+  <!-- HW TX 표시 -->
+  <rect x="670" y="180" width="60" height="20" rx="4" fill="#FFF8E1" stroke="#FFB300"/>
+  <text x="700" y="194" text-anchor="middle" font-size="9" fill="#E65100">TX 핀 송신</text>
+
+  <!-- 반환 4: HW → HAL (완료) -->
+  <line x1="649" y1="215" x2="476" y2="215" stroke="#999" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#seqArr)"/>
+  <text x="562" y="230" text-anchor="middle" font-size="10" fill="#888">전송 완료 (TXE flag)</text>
+
+  <!-- 반환 5: HAL → uart_driver -->
+  <line x1="464" y1="240" x2="276" y2="240" stroke="#999" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#seqArr)"/>
+  <text x="370" y="255" text-anchor="middle" font-size="10" fill="#888">HAL_OK</text>
+
+  <!-- 반환 6: uart_driver → App -->
+  <line x1="264" y1="260" x2="91" y2="260" stroke="#999" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#seqArr)"/>
+  <text x="175" y="275" text-anchor="middle" font-size="10" fill="#888">UART_OK</text>
+
+  <!-- PC 표시 -->
+  <rect x="610" y="290" width="100" height="25" rx="4" fill="#34A853" opacity="0.2" stroke="#34A853"/>
+  <text x="660" y="307" text-anchor="middle" font-size="10" fill="#34A853" font-weight="600">PC 터미널 출력</text>
+
+  <!-- 범례 -->
+  <rect x="30" y="330" width="690" height="30" rx="6" fill="#F9F9F9" stroke="#E0E0E0"/>
+  <rect x="50" y="339" width="12" height="12" fill="#EA4335" opacity="0.3"/>
+  <text x="70" y="349" font-size="10" fill="#666">App</text>
+  <rect x="120" y="339" width="12" height="12" fill="#34A853" opacity="0.3"/>
+  <text x="140" y="349" font-size="10" fill="#666">Driver</text>
+  <rect x="200" y="339" width="12" height="12" fill="#1A73E8" opacity="0.3"/>
+  <text x="220" y="349" font-size="10" fill="#666">HAL</text>
+  <text x="320" y="349" font-size="10" fill="#666">인터페이스 경계에서 HAL 상세가 숨겨진다</text>
+</svg>

@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" font-family="'Noto Sans KR', sans-serif" font-size="13">
+  <text x="400" y="24" text-anchor="middle" font-size="16" font-weight="700" fill="#212121">Baud Rate 불일치 시 데이터 깨짐</text>
+
+  <!-- 송신측: 115200bps -->
+  <text x="50" y="60" font-size="12" font-weight="700" fill="#34A853">송신측 (MCU): 115200 bps</text>
+  <text x="50" y="78" font-size="10" fill="#888">전송 데이터: 0x41 ('A') — 비트 간격 8.68us</text>
+
+  <!-- 송신 파형 -->
+  <line x1="50" y1="100" x2="100" y2="100" stroke="#34A853" stroke-width="2.5"/>
+  <line x1="100" y1="100" x2="100" y2="130" stroke="#333" stroke-width="1.5"/>
+  <line x1="100" y1="130" x2="145" y2="130" stroke="#EA4335" stroke-width="2.5"/>
+  <line x1="145" y1="130" x2="145" y2="100" stroke="#333" stroke-width="1.5"/>
+  <line x1="145" y1="100" x2="190" y2="100" stroke="#1A73E8" stroke-width="2.5"/>
+  <line x1="190" y1="100" x2="190" y2="130" stroke="#333" stroke-width="1.5"/>
+  <line x1="190" y1="130" x2="460" y2="130" stroke="#1A73E8" stroke-width="2.5"/>
+  <line x1="460" y1="130" x2="460" y2="100" stroke="#333" stroke-width="1.5"/>
+  <line x1="460" y1="100" x2="505" y2="100" stroke="#1A73E8" stroke-width="2.5"/>
+  <line x1="505" y1="100" x2="505" y2="130" stroke="#333" stroke-width="1.5"/>
+  <line x1="505" y1="130" x2="550" y2="130" stroke="#1A73E8" stroke-width="2.5"/>
+  <line x1="550" y1="130" x2="550" y2="100" stroke="#333" stroke-width="1.5"/>
+  <line x1="550" y1="100" x2="640" y2="100" stroke="#34A853" stroke-width="2.5"/>
+
+  <!-- 샘플링 포인트 (정상) -->
+  <text x="122" y="148" text-anchor="middle" font-size="9" fill="#34A853">S</text>
+  <text x="167" y="148" text-anchor="middle" font-size="9" fill="#34A853">D0</text>
+  <text x="212" y="148" text-anchor="middle" font-size="9" fill="#34A853">D1</text>
+  <text x="257" y="148" text-anchor="middle" font-size="9" fill="#34A853">D2~5</text>
+  <text x="482" y="148" text-anchor="middle" font-size="9" fill="#34A853">D6</text>
+  <text x="527" y="148" text-anchor="middle" font-size="9" fill="#34A853">D7</text>
+  <text x="572" y="148" text-anchor="middle" font-size="9" fill="#34A853">Stop</text>
+
+  <!-- 수신측: 9600bps -->
+  <text x="50" y="190" font-size="12" font-weight="700" fill="#EA4335">수신측 (PC): 9600 bps</text>
+  <text x="50" y="208" font-size="10" fill="#888">샘플링 간격: 104us (115200의 12배!) — 한 비트를 읽는 동안 12비트가 지나감</text>
+
+  <!-- 수신 파형 (같은 신호를 잘못된 타이밍으로 샘플링) -->
+  <line x1="50" y1="230" x2="640" y2="230" stroke="#EA4335" stroke-width="2" stroke-dasharray="3,3"/>
+
+  <!-- 잘못된 샘플링 포인트들 -->
+  <circle cx="122" cy="230" r="5" fill="#EA4335" opacity="0.8"/>
+  <text x="122" y="256" text-anchor="middle" font-size="9" fill="#EA4335" font-weight="600">Start?</text>
+
+  <circle cx="226" cy="230" r="5" fill="#EA4335" opacity="0.8"/>
+  <text x="226" y="256" text-anchor="middle" font-size="9" fill="#EA4335" font-weight="600">D0?</text>
+
+  <circle cx="330" cy="230" r="5" fill="#EA4335" opacity="0.8"/>
+  <text x="330" y="256" text-anchor="middle" font-size="9" fill="#EA4335" font-weight="600">D1?</text>
+
+  <circle cx="434" cy="230" r="5" fill="#EA4335" opacity="0.8"/>
+  <text x="434" y="256" text-anchor="middle" font-size="9" fill="#EA4335" font-weight="600">D2?</text>
+
+  <circle cx="538" cy="230" r="5" fill="#EA4335" opacity="0.8"/>
+  <text x="538" y="256" text-anchor="middle" font-size="9" fill="#EA4335" font-weight="600">D3?</text>
+
+  <!-- 결과 -->
+  <rect x="50" y="275" width="700" height="60" rx="8" fill="#FFEBEE" stroke="#EA4335" stroke-width="1.5"/>
+  <text x="400" y="298" text-anchor="middle" font-size="13" fill="#C62828" font-weight="700">결과: 수신 데이터 = 0xFF (쓰레기값) — 터미널에 "???" 또는 깨진 문자 출력</text>
+  <text x="400" y="318" text-anchor="middle" font-size="11" fill="#C62828">해결: 양쪽 Baud Rate를 동일하게 설정 (115200-8-N-1)</text>
+</svg>
