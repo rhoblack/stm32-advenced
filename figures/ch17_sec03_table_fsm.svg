@@ -4,7 +4,7 @@
   <text x="430" y="56" text-anchor="middle" font-size="12" fill="#666">DISPLAY FSM 리팩토링 예시</text>
 
   <!-- ===== 왼쪽: switch-case 방식 ===== -->
-  <rect x="30" y="75" width="380" height="360" fill="white" stroke="#AAAAAA" stroke-width="1.5" rx="8"/>
+  <rect x="30" y="75" width="380" height="380" fill="white" stroke="#AAAAAA" stroke-width="1.5" rx="8"/>
   <rect x="30" y="75" width="380" height="30" fill="#CFD8DC" rx="8"/>
   <text x="220" y="96" text-anchor="middle" font-size="13" font-weight="bold" fill="#37474F">switch-case FSM (기존 방식)</text>
 
@@ -36,7 +36,7 @@
   <text x="640" y="96" text-anchor="middle" font-size="13" font-weight="bold" fill="#1A73E8">테이블 기반 FSM (v2.0)</text>
 
   <!-- 구조체 정의 -->
-  <rect x="465" y="115" width="350" height="100" fill="#F5F5F5" rx="4"/>
+  <rect x="465" y="115" width="350" height="135" fill="#F5F5F5" rx="4"/>
   <text x="640" y="130" text-anchor="middle" font-size="10" fill="#666">전이 테이블 구조체</text>
   <text x="475" y="147" font-size="9.5" fill="#455A64" font-family="monospace">typedef struct {</text>
   <text x="475" y="163" font-size="9.5" fill="#455A64" font-family="monospace">  display_state_t  current;</text>
@@ -44,6 +44,7 @@
   <text x="475" y="195" font-size="9.5" fill="#455A64" font-family="monospace">  bool (*guard)(void);  /* 조건 (NULL = 무조건) */</text>
   <text x="475" y="210" font-size="9.5" fill="#1A73E8" font-family="monospace">  void (*action)(void); /* 액션 함수 포인터 */</text>
   <text x="475" y="226" font-size="9.5" fill="#455A64" font-family="monospace">  display_state_t  next;</text>
+  <text x="475" y="242" font-size="9.5" fill="#455A64" font-family="monospace">} display_transition_t;</text>
 
   <!-- 전이 테이블 -->
   <text x="640" y="258" text-anchor="middle" font-size="10" fill="#666">전이 테이블 (배열)</text>
@@ -51,43 +52,43 @@
 
   <!-- 헤더 -->
   <rect x="465" y="265" width="350" height="18" fill="#1A73E8" rx="4"/>
-  <text x="510" y="278" font-size="9" fill="white">현재 상태</text>
-  <text x="580" y="278" font-size="9" fill="white">이벤트</text>
-  <text x="640" y="278" font-size="9" fill="white">조건</text>
-  <text x="690" y="278" font-size="9" fill="white">액션</text>
-  <text x="770" y="278" font-size="9" fill="white">다음 상태</text>
+  <text x="500" y="278" text-anchor="middle" font-size="9" fill="white">현재 상태</text>
+  <text x="567" y="278" text-anchor="middle" font-size="9" fill="white">이벤트</text>
+  <text x="627" y="278" text-anchor="middle" font-size="9" fill="white">조건</text>
+  <text x="690" y="278" text-anchor="middle" font-size="9" fill="white">액션</text>
+  <text x="770" y="278" text-anchor="middle" font-size="9" fill="white">다음 상태</text>
 
   <!-- 행 1 -->
   <line x1="465" y1="283" x2="815" y2="283" stroke="#E0E0E0"/>
-  <text x="510" y="296" font-size="9" fill="#455A64">TIME_VIEW</text>
-  <text x="580" y="296" font-size="9" fill="#455A64">BTN_SHORT</text>
-  <text x="640" y="296" font-size="9" fill="#666">NULL</text>
-  <text x="690" y="296" font-size="9" fill="#1A73E8">show_sensor</text>
-  <text x="770" y="296" font-size="9" fill="#455A64">SENSOR_VIEW</text>
+  <text x="468" y="296" font-size="8" fill="#455A64">TIME_VIEW</text>
+  <text x="538" y="296" font-size="8" fill="#455A64">BTN_SHORT</text>
+  <text x="603" y="296" font-size="8" fill="#666">NULL</text>
+  <text x="658" y="296" font-size="8" fill="#1A73E8">show_sensor</text>
+  <text x="728" y="296" font-size="8" fill="#455A64">SENSOR_VIEW</text>
 
   <!-- 행 2 -->
   <line x1="465" y1="301" x2="815" y2="301" stroke="#E0E0E0"/>
-  <text x="510" y="314" font-size="9" fill="#455A64">TIME_VIEW</text>
-  <text x="580" y="314" font-size="9" fill="#455A64">BTN_LONG</text>
-  <text x="640" y="314" font-size="9" fill="#666">NULL</text>
-  <text x="690" y="314" font-size="9" fill="#1A73E8">show_stopwatch</text>
-  <text x="770" y="314" font-size="9" fill="#455A64">STOPWATCH_VIEW</text>
+  <text x="468" y="314" font-size="8" fill="#455A64">TIME_VIEW</text>
+  <text x="538" y="314" font-size="8" fill="#455A64">BTN_LONG</text>
+  <text x="603" y="314" font-size="8" fill="#666">NULL</text>
+  <text x="658" y="314" font-size="8" fill="#1A73E8">show_stopwatch</text>
+  <text x="728" y="314" font-size="8" fill="#455A64">STOPWATCH_VIEW</text>
 
   <!-- 행 3 -->
   <line x1="465" y1="319" x2="815" y2="319" stroke="#E0E0E0"/>
-  <text x="510" y="332" font-size="9" fill="#455A64">SENSOR_VIEW</text>
-  <text x="580" y="332" font-size="9" fill="#455A64">BTN_SHORT</text>
-  <text x="640" y="332" font-size="9" fill="#666">NULL</text>
-  <text x="690" y="332" font-size="9" fill="#1A73E8">show_time</text>
-  <text x="770" y="332" font-size="9" fill="#455A64">TIME_VIEW</text>
+  <text x="468" y="332" font-size="8" fill="#455A64">SENSOR_VIEW</text>
+  <text x="538" y="332" font-size="8" fill="#455A64">BTN_SHORT</text>
+  <text x="603" y="332" font-size="8" fill="#666">NULL</text>
+  <text x="658" y="332" font-size="8" fill="#1A73E8">show_time</text>
+  <text x="728" y="332" font-size="8" fill="#455A64">TIME_VIEW</text>
 
   <!-- 행 4 -->
   <line x1="465" y1="337" x2="815" y2="337" stroke="#E0E0E0"/>
-  <text x="510" y="350" font-size="9" fill="#455A64">STOPWATCH_VIEW</text>
-  <text x="580" y="350" font-size="9" fill="#455A64">ALARM_TRIGGER</text>
-  <text x="640" y="350" font-size="9" fill="#34A853">is_alarm_on</text>
-  <text x="690" y="350" font-size="9" fill="#1A73E8">show_alarm</text>
-  <text x="770" y="350" font-size="9" fill="#455A64">ALARM_VIEW*</text>
+  <text x="468" y="350" font-size="8" fill="#455A64">STOPWATCH_VIEW</text>
+  <text x="538" y="350" font-size="8" fill="#455A64">ALARM_TRIGGER</text>
+  <text x="603" y="350" font-size="8" fill="#34A853">is_alarm_on</text>
+  <text x="658" y="350" font-size="8" fill="#1A73E8">show_alarm</text>
+  <text x="728" y="350" font-size="8" fill="#455A64">ALARM_VIEW*</text>
 
   <text x="640" y="378" text-anchor="middle" font-size="9" fill="#1A73E8">* 새 상태 추가 = 테이블에 행 추가만!</text>
 

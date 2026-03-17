@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 640" width="820" height="640" font-family="'Noto Sans KR', sans-serif">
-  <rect width="820" height="640" fill="#F8F9FA" rx="8"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 710" width="820" height="710" font-family="'Noto Sans KR', sans-serif">
+  <defs>
+    <marker id="arrDown" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>
+    </marker>
+    <marker id="arrPurple" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#9C27B0"/>
+    </marker>
+  </defs>
+  <rect width="820" height="710" fill="#F8F9FA" rx="8"/>
 
   <!-- 제목 -->
   <text x="410" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#202124">v1.6 전체 아키텍처 완성본 (마일스톤 ②)</text>
   <text x="410" y="46" text-anchor="middle" font-size="11" fill="#555">Ch03 초안 대비: HAL → Driver(7개) → Service(4개) → App(2개) + PC 대시보드 추가</text>
 
-  <!-- ── App Layer ── -->
+  <!-- ── App Layer ── y=62~150 -->
   <rect x="20" y="62" width="780" height="88" fill="#EA4335" fill-opacity="0.08" rx="6" stroke="#EA4335" stroke-width="2"/>
   <text x="36" y="82" font-size="12" font-weight="bold" fill="#EA4335">App Layer</text>
 
@@ -30,105 +38,97 @@
   <line x1="432" y1="114" x2="558" y2="106" stroke="#9C27B0" stroke-width="2" stroke-dasharray="8,4" marker-end="url(#arrPurple)"/>
   <text x="495" y="103" text-anchor="middle" font-size="9" fill="#9C27B0">UART DMA</text>
 
-  <!-- ── Service Layer ── -->
-  <rect x="20" y="165" width="780" height="80" fill="#FBBC04" fill-opacity="0.08" rx="6" stroke="#FBBC04" stroke-width="1.5"/>
-  <text x="36" y="183" font-size="12" font-weight="bold" fill="#B8860B">Service Layer</text>
-  <rect x="50" y="193" width="155" height="42" fill="#FBBC04" fill-opacity="0.3" rx="4"/>
-  <text x="127" y="212" text-anchor="middle" font-size="10" fill="#7A5C00">clock_service.c</text>
-  <text x="127" y="227" text-anchor="middle" font-size="9" fill="#7A5C00">시각 관리 + 스텝모터</text>
-  <rect x="215" y="193" width="155" height="42" fill="#FBBC04" fill-opacity="0.3" rx="4"/>
-  <text x="292" y="212" text-anchor="middle" font-size="10" fill="#7A5C00">sensor_service.c</text>
-  <text x="292" y="227" text-anchor="middle" font-size="9" fill="#7A5C00">SHT31 주기 측정</text>
-  <rect x="380" y="193" width="155" height="42" fill="#FBBC04" fill-opacity="0.3" rx="4"/>
-  <text x="457" y="212" text-anchor="middle" font-size="10" fill="#7A5C00">gfx_service.c</text>
-  <text x="457" y="227" text-anchor="middle" font-size="9" fill="#7A5C00">LCD 그래픽 서비스</text>
-  <rect x="545" y="193" width="155" height="42" fill="#FBBC04" fill-opacity="0.3" rx="4"/>
-  <text x="622" y="212" text-anchor="middle" font-size="10" fill="#7A5C00">ui_service.c</text>
-  <text x="622" y="227" text-anchor="middle" font-size="9" fill="#7A5C00">화면 레이아웃 관리</text>
+  <!-- App → Service 화살표 (gap: y=150~180, 30px) -->
+  <line x1="410" y1="152" x2="410" y2="178" stroke="#888" stroke-width="1.5" marker-end="url(#arrDown)"/>
 
-  <!-- ── Driver Layer ── -->
-  <rect x="20" y="260" width="780" height="110" fill="#34A853" fill-opacity="0.08" rx="6" stroke="#34A853" stroke-width="1.5"/>
-  <text x="36" y="278" font-size="12" font-weight="bold" fill="#1B5E20">Driver Layer</text>
-  <rect x="50" y="286" width="99" height="72" fill="#34A853" fill-opacity="0.25" rx="4"/>
-  <text x="99" y="305" text-anchor="middle" font-size="10" font-weight="bold" fill="#1B5E20">uart_driver.c</text>
-  <text x="99" y="320" text-anchor="middle" font-size="9" fill="#1B5E20">UART DMA</text>
-  <text x="99" y="333" text-anchor="middle" font-size="9" fill="#1B5E20">링 버퍼</text>
-  <text x="99" y="348" text-anchor="middle" font-size="9" fill="#1B5E20">TX FSM</text>
+  <!-- ── Service Layer ── y=180~260 -->
+  <rect x="20" y="180" width="780" height="80" fill="#FBBC04" fill-opacity="0.08" rx="6" stroke="#FBBC04" stroke-width="1.5"/>
+  <text x="36" y="198" font-size="12" font-weight="bold" fill="#B8860B">Service Layer</text>
+  <rect x="50" y="208" width="155" height="42" fill="#FBBC04" fill-opacity="0.3" rx="4"/>
+  <text x="127" y="227" text-anchor="middle" font-size="10" fill="#7A5C00">clock_service.c</text>
+  <text x="127" y="242" text-anchor="middle" font-size="9" fill="#7A5C00">시각 관리 + 스텝모터</text>
+  <rect x="215" y="208" width="155" height="42" fill="#FBBC04" fill-opacity="0.3" rx="4"/>
+  <text x="292" y="227" text-anchor="middle" font-size="10" fill="#7A5C00">sensor_service.c</text>
+  <text x="292" y="242" text-anchor="middle" font-size="9" fill="#7A5C00">SHT31 주기 측정</text>
+  <rect x="380" y="208" width="155" height="42" fill="#FBBC04" fill-opacity="0.3" rx="4"/>
+  <text x="457" y="227" text-anchor="middle" font-size="10" fill="#7A5C00">gfx_service.c</text>
+  <text x="457" y="242" text-anchor="middle" font-size="9" fill="#7A5C00">LCD 그래픽 서비스</text>
+  <rect x="545" y="208" width="155" height="42" fill="#FBBC04" fill-opacity="0.3" rx="4"/>
+  <text x="622" y="227" text-anchor="middle" font-size="10" fill="#7A5C00">ui_service.c</text>
+  <text x="622" y="242" text-anchor="middle" font-size="9" fill="#7A5C00">화면 레이아웃 관리</text>
 
-  <rect x="158" y="286" width="99" height="72" fill="#34A853" fill-opacity="0.25" rx="4"/>
-  <text x="207" y="305" text-anchor="middle" font-size="10" font-weight="bold" fill="#1B5E20">tim_driver.c</text>
-  <text x="207" y="320" text-anchor="middle" font-size="9" fill="#1B5E20">GP TIM + ADV</text>
-  <text x="207" y="333" text-anchor="middle" font-size="9" fill="#1B5E20">PWM / 캡처</text>
-  <text x="207" y="348" text-anchor="middle" font-size="9" fill="#1B5E20">스톱워치 FSM</text>
+  <!-- Service → Driver 화살표 (gap: y=260~290, 30px) -->
+  <line x1="410" y1="262" x2="410" y2="288" stroke="#888" stroke-width="1.5" marker-end="url(#arrDown)"/>
 
-  <rect x="266" y="286" width="99" height="72" fill="#34A853" fill-opacity="0.25" rx="4"/>
-  <text x="315" y="305" text-anchor="middle" font-size="10" font-weight="bold" fill="#1B5E20">rtc_driver.c</text>
-  <text x="315" y="320" text-anchor="middle" font-size="9" fill="#1B5E20">RTC 시각/날짜</text>
-  <text x="315" y="333" text-anchor="middle" font-size="9" fill="#1B5E20">AlarmA/B</text>
-  <text x="315" y="348" text-anchor="middle" font-size="9" fill="#1B5E20">Alarm FSM</text>
+  <!-- ── Driver Layer ── y=290~400 -->
+  <rect x="20" y="290" width="780" height="110" fill="#34A853" fill-opacity="0.08" rx="6" stroke="#34A853" stroke-width="1.5"/>
+  <text x="36" y="308" font-size="12" font-weight="bold" fill="#1B5E20">Driver Layer</text>
+  <rect x="50" y="316" width="99" height="72" fill="#34A853" fill-opacity="0.25" rx="4"/>
+  <text x="99" y="335" text-anchor="middle" font-size="10" font-weight="bold" fill="#1B5E20">uart_driver.c</text>
+  <text x="99" y="350" text-anchor="middle" font-size="9" fill="#1B5E20">UART DMA</text>
+  <text x="99" y="363" text-anchor="middle" font-size="9" fill="#1B5E20">링 버퍼</text>
+  <text x="99" y="376" text-anchor="middle" font-size="9" fill="#1B5E20">TX FSM</text>
 
-  <rect x="374" y="286" width="99" height="72" fill="#34A853" fill-opacity="0.25" rx="4"/>
-  <text x="423" y="305" text-anchor="middle" font-size="10" font-weight="bold" fill="#1B5E20">stepper_driver.c</text>
-  <text x="423" y="320" text-anchor="middle" font-size="9" fill="#1B5E20">28BYJ-48</text>
-  <text x="423" y="333" text-anchor="middle" font-size="9" fill="#1B5E20">하프스텝</text>
-  <text x="423" y="348" text-anchor="middle" font-size="9" fill="#1B5E20">Motor FSM</text>
+  <rect x="158" y="316" width="99" height="72" fill="#34A853" fill-opacity="0.25" rx="4"/>
+  <text x="207" y="335" text-anchor="middle" font-size="10" font-weight="bold" fill="#1B5E20">tim_driver.c</text>
+  <text x="207" y="350" text-anchor="middle" font-size="9" fill="#1B5E20">GP TIM + ADV</text>
+  <text x="207" y="363" text-anchor="middle" font-size="9" fill="#1B5E20">PWM / 캡처</text>
+  <text x="207" y="376" text-anchor="middle" font-size="9" fill="#1B5E20">스톱워치 FSM</text>
 
-  <rect x="482" y="286" width="99" height="72" fill="#34A853" fill-opacity="0.25" rx="4"/>
-  <text x="531" y="305" text-anchor="middle" font-size="10" font-weight="bold" fill="#1B5E20">sht31_driver.c</text>
-  <text x="531" y="320" text-anchor="middle" font-size="9" fill="#1B5E20">I2C DMA</text>
-  <text x="531" y="333" text-anchor="middle" font-size="9" fill="#1B5E20">CRC-8 검증</text>
-  <text x="531" y="348" text-anchor="middle" font-size="9" fill="#1B5E20">온습도 파싱</text>
+  <rect x="266" y="316" width="99" height="72" fill="#34A853" fill-opacity="0.25" rx="4"/>
+  <text x="315" y="335" text-anchor="middle" font-size="10" font-weight="bold" fill="#1B5E20">rtc_driver.c</text>
+  <text x="315" y="350" text-anchor="middle" font-size="9" fill="#1B5E20">RTC 시각/날짜</text>
+  <text x="315" y="363" text-anchor="middle" font-size="9" fill="#1B5E20">AlarmA/B</text>
+  <text x="315" y="376" text-anchor="middle" font-size="9" fill="#1B5E20">Alarm FSM</text>
 
-  <rect x="590" y="286" width="99" height="72" fill="#34A853" fill-opacity="0.25" rx="4"/>
-  <text x="639" y="305" text-anchor="middle" font-size="10" font-weight="bold" fill="#1B5E20">spi_driver.c</text>
-  <text x="639" y="320" text-anchor="middle" font-size="9" fill="#1B5E20">SPI DMA</text>
-  <text x="639" y="333" text-anchor="middle" font-size="9" fill="#1B5E20">ili9341_driver.c</text>
-  <text x="639" y="348" text-anchor="middle" font-size="9" fill="#1B5E20">Display FSM</text>
+  <rect x="374" y="316" width="99" height="72" fill="#34A853" fill-opacity="0.25" rx="4"/>
+  <text x="423" y="335" text-anchor="middle" font-size="10" font-weight="bold" fill="#1B5E20">stepper_driver.c</text>
+  <text x="423" y="350" text-anchor="middle" font-size="9" fill="#1B5E20">28BYJ-48</text>
+  <text x="423" y="363" text-anchor="middle" font-size="9" fill="#1B5E20">하프스텝</text>
+  <text x="423" y="376" text-anchor="middle" font-size="9" fill="#1B5E20">Motor FSM</text>
 
-  <!-- i2c_driver -->
-  <rect x="698" y="286" width="87" height="72" fill="#34A853" fill-opacity="0.25" rx="4"/>
-  <text x="741" y="305" text-anchor="middle" font-size="10" font-weight="bold" fill="#1B5E20">i2c_driver.c</text>
-  <text x="741" y="320" text-anchor="middle" font-size="9" fill="#1B5E20">I2C DMA</text>
-  <text x="741" y="333" text-anchor="middle" font-size="9" fill="#1B5E20">Write+Read</text>
-  <text x="741" y="348" text-anchor="middle" font-size="9" fill="#1B5E20">패턴</text>
+  <rect x="482" y="316" width="99" height="72" fill="#34A853" fill-opacity="0.25" rx="4"/>
+  <text x="531" y="335" text-anchor="middle" font-size="10" font-weight="bold" fill="#1B5E20">sht31_driver.c</text>
+  <text x="531" y="350" text-anchor="middle" font-size="9" fill="#1B5E20">I2C DMA</text>
+  <text x="531" y="363" text-anchor="middle" font-size="9" fill="#1B5E20">CRC-8 검증</text>
+  <text x="531" y="376" text-anchor="middle" font-size="9" fill="#1B5E20">온습도 파싱</text>
 
-  <!-- ── HAL Layer ── -->
-  <rect x="20" y="385" width="780" height="50" fill="#1A73E8" fill-opacity="0.08" rx="6" stroke="#1A73E8" stroke-width="1.5"/>
-  <text x="36" y="405" font-size="12" font-weight="bold" fill="#0D47A1">HAL Layer</text>
-  <text x="410" y="416" text-anchor="middle" font-size="11" fill="#0D47A1">STM32 HAL (CubeMX 자동 생성) — STM32F411RE</text>
+  <rect x="590" y="316" width="99" height="72" fill="#34A853" fill-opacity="0.25" rx="4"/>
+  <text x="639" y="335" text-anchor="middle" font-size="10" font-weight="bold" fill="#1B5E20">spi_driver.c</text>
+  <text x="639" y="350" text-anchor="middle" font-size="9" fill="#1B5E20">SPI DMA</text>
+  <text x="639" y="363" text-anchor="middle" font-size="9" fill="#1B5E20">ili9341_driver.c</text>
+  <text x="639" y="376" text-anchor="middle" font-size="9" fill="#1B5E20">Display FSM</text>
 
-  <!-- ── Hardware Layer ── -->
-  <rect x="20" y="448" width="780" height="50" fill="#607D8B" fill-opacity="0.12" rx="6" stroke="#607D8B" stroke-width="1"/>
-  <text x="36" y="468" font-size="12" font-weight="bold" fill="#37474F">Hardware</text>
-  <text x="410" y="479" text-anchor="middle" font-size="10" fill="#37474F">NUCLEO-F411RE | UART2 | I2C1 | SPI1 | TIM1/2/3/5 | GPIOA~E | DMA1/DMA2</text>
-  <text x="410" y="492" text-anchor="middle" font-size="10" fill="#37474F">SHT31 | ILI9341 TFT LCD | 28BYJ-48 스텝모터 | USB-Serial</text>
+  <rect x="698" y="316" width="87" height="72" fill="#34A853" fill-opacity="0.25" rx="4"/>
+  <text x="741" y="335" text-anchor="middle" font-size="10" font-weight="bold" fill="#1B5E20">i2c_driver.c</text>
+  <text x="741" y="350" text-anchor="middle" font-size="9" fill="#1B5E20">I2C DMA</text>
+  <text x="741" y="363" text-anchor="middle" font-size="9" fill="#1B5E20">Write+Read</text>
+  <text x="741" y="376" text-anchor="middle" font-size="9" fill="#1B5E20">패턴</text>
 
-  <!-- 주요 데이터 흐름 화살표 -->
-  <defs>
-    <marker id="arrDown" markerWidth="8" markerHeight="6" refX="4" refY="6" orient="auto">
-      <polygon points="0 0, 8 0, 4 6" fill="#888"/>
-    </marker>
-    <marker id="arrPurple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#9C27B0"/>
-    </marker>
-  </defs>
+  <!-- Driver → HAL 화살표 (gap: y=400~430, 30px) -->
+  <line x1="410" y1="402" x2="410" y2="428" stroke="#888" stroke-width="1.5" marker-end="url(#arrDown)"/>
 
-  <!-- App → Service -->
-  <line x1="260" y1="152" x2="260" y2="163" stroke="#888" stroke-width="1.5" marker-end="url(#arrDown)"/>
-  <!-- Service → Driver -->
-  <line x1="260" y1="247" x2="260" y2="258" stroke="#888" stroke-width="1.5" marker-end="url(#arrDown)"/>
-  <!-- Driver → HAL -->
-  <line x1="400" y1="360" x2="400" y2="383" stroke="#888" stroke-width="1.5" marker-end="url(#arrDown)"/>
-  <!-- HAL → HW -->
-  <line x1="400" y1="437" x2="400" y2="446" stroke="#888" stroke-width="1.5" marker-end="url(#arrDown)"/>
+  <!-- ── HAL Layer ── y=430~480 -->
+  <rect x="20" y="430" width="780" height="50" fill="#1A73E8" fill-opacity="0.08" rx="6" stroke="#1A73E8" stroke-width="1.5"/>
+  <text x="36" y="450" font-size="12" font-weight="bold" fill="#0D47A1">HAL Layer</text>
+  <text x="410" y="461" text-anchor="middle" font-size="11" fill="#0D47A1">STM32 HAL (CubeMX 자동 생성) — STM32F411RE</text>
+
+  <!-- HAL → HW 화살표 (gap: y=480~510, 30px) -->
+  <line x1="410" y1="482" x2="410" y2="508" stroke="#888" stroke-width="1.5" marker-end="url(#arrDown)"/>
+
+  <!-- ── Hardware Layer ── y=510~560 -->
+  <rect x="20" y="510" width="780" height="50" fill="#607D8B" fill-opacity="0.12" rx="6" stroke="#607D8B" stroke-width="1"/>
+  <text x="36" y="530" font-size="12" font-weight="bold" fill="#37474F">Hardware</text>
+  <text x="410" y="541" text-anchor="middle" font-size="10" fill="#37474F">NUCLEO-F411RE | UART2 | I2C1 | SPI1 | TIM1/2/3/5 | GPIOA~E | DMA1/DMA2</text>
+  <text x="410" y="554" text-anchor="middle" font-size="10" fill="#37474F">SHT31 | ILI9341 TFT LCD | 28BYJ-48 스텝모터 | USB-Serial</text>
 
   <!-- 범례 박스 -->
-  <rect x="20" y="510" width="780" height="118" fill="white" rx="4" stroke="#DDD" stroke-width="1"/>
-  <text x="36" y="528" font-size="11" font-weight="bold" fill="#202124">v1.6 완성 현황 체크리스트</text>
-  <text x="36" y="546" font-size="10" fill="#1B5E20">✓ Ch01: GPIO/EXTI   ✓ Ch02: 로그 시스템   ✓ Ch03: 아키텍처 설계   ✓ Ch04: UART Driver</text>
-  <text x="36" y="562" font-size="10" fill="#1B5E20">✓ Ch05: DMA 원리    ✓ Ch06: UART DMA+링버퍼  ✓ Ch07: GP TIM      ✓ Ch08: Advanced TIM</text>
-  <text x="36" y="578" font-size="10" fill="#1B5E20">✓ Ch09: RTC+Alarm   ✓ Ch10: 스텝모터 ★마일①  ✓ Ch11: I2C+SHT31  ✓ Ch12: SPI+ILI9341</text>
-  <text x="36" y="594" font-size="10" fill="#1B5E20">✓ Ch13: GFX+UI      ✓ Ch14: I2C DMA       ✓ Ch15: CLI         ✓ Ch16: PC 대시보드 ★마일②</text>
-  <text x="36" y="614" font-size="10" fill="#EA4335" font-weight="bold">★ 마일스톤 ②: CLI(텍스트) + Protocol(바이너리) 듀얼 채널 완성 → 실시간 PC 대시보드 동작</text>
-  <text x="36" y="630" font-size="9" fill="#888">다음 단계 → Ch17(아키텍처 심화) → Ch18(디버깅) → Ch19(품질 ★마일③)</text>
+  <rect x="20" y="575" width="780" height="118" fill="white" rx="4" stroke="#DDD" stroke-width="1"/>
+  <text x="36" y="593" font-size="11" font-weight="bold" fill="#202124">v1.6 완성 현황 체크리스트</text>
+  <text x="36" y="611" font-size="10" fill="#1B5E20">✓ Ch01: GPIO/EXTI   ✓ Ch02: 로그 시스템   ✓ Ch03: 아키텍처 설계   ✓ Ch04: UART Driver</text>
+  <text x="36" y="627" font-size="10" fill="#1B5E20">✓ Ch05: DMA 원리    ✓ Ch06: UART DMA+링버퍼  ✓ Ch07: GP TIM      ✓ Ch08: Advanced TIM</text>
+  <text x="36" y="643" font-size="10" fill="#1B5E20">✓ Ch09: RTC+Alarm   ✓ Ch10: 스텝모터 ★마일①  ✓ Ch11: I2C+SHT31  ✓ Ch12: SPI+ILI9341</text>
+  <text x="36" y="659" font-size="10" fill="#1B5E20">✓ Ch13: GFX+UI      ✓ Ch14: I2C DMA       ✓ Ch15: CLI         ✓ Ch16: PC 대시보드 ★마일②</text>
+  <text x="36" y="679" font-size="10" fill="#EA4335" font-weight="bold">★ 마일스톤 ②: CLI(텍스트) + Protocol(바이너리) 듀얼 채널 완성 → 실시간 PC 대시보드 동작</text>
+  <text x="36" y="695" font-size="9" fill="#888">다음 단계 → Ch17(아키텍처 심화) → Ch18(디버깅) → Ch19(품질 ★마일③)</text>
 </svg>

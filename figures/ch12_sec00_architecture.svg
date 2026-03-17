@@ -1,80 +1,67 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="800" height="500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="470" font-family="'Noto Sans KR', sans-serif" font-size="14" viewBox="0 0 800 470">
   <defs>
-    <style>
-      .hal { fill: #1A73E8; }
-      .driver { fill: #34A853; }
-      .service { fill: #FBBC04; }
-      .app { fill: #EA4335; }
-      .spi { fill: #4285F4; }
-      .text { fill: white; font-size: 14px; font-family: 'Noto Sans KR', sans-serif; text-anchor: middle; }
-      .label { fill: #333; font-size: 12px; font-family: 'Noto Sans KR', sans-serif; }
-      .line { stroke: #666; stroke-width: 2; }
-      .arrow { stroke: #666; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
-    </style>
-    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-      <polygon points="0 0, 10 3, 0 6" fill="#666" />
+    <marker id="arr12" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
     </marker>
   </defs>
 
-  <!-- Title -->
-  <text x="400" y="30" class="label" font-size="18" font-weight="bold" text-anchor="middle">
-    v1.2 아키텍처: SPI Driver + LCD Driver 추가
-  </text>
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">Ch12 아키텍처 위치 — SPI Driver + ILI9341 LCD (v1.1 → v1.2)</text>
 
-  <!-- Layer boxes -->
   <!-- App Layer -->
-  <rect x="150" y="80" width="500" height="60" class="app" rx="5"/>
-  <text x="400" y="115" class="text" font-size="16">App Layer: main.c (LCD 사용)</text>
+  <rect x="50" y="45" width="700" height="70" rx="8" fill="#EA4335" opacity="0.12" stroke="#EA4335" stroke-width="2"/>
+  <text x="80" y="67" font-size="11" fill="#EA4335" font-weight="bold">App Layer</text>
+  <rect x="100" y="75" width="170" height="30" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="185" y="95" text-anchor="middle" font-size="11" fill="#C62828">main.c (슈퍼루프)</text>
+  <rect x="310" y="75" width="170" height="30" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="395" y="95" text-anchor="middle" font-size="11" fill="#C62828">Button EXTI (PC13)</text>
+  <rect x="510" y="75" width="170" height="30" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="595" y="95" text-anchor="middle" font-size="11" fill="#C62828">Log 출력 (Ch02)</text>
+
+  <line x1="400" y1="115" x2="400" y2="145" stroke="#555" stroke-width="1.5" marker-end="url(#arr12)"/>
 
   <!-- Service Layer -->
-  <rect x="150" y="160" width="500" height="60" class="service" rx="5"/>
-  <text x="400" y="190" class="text" font-size="14">Service Layer: (Ch13 gfx_service 추가 예정)</text>
-  <text x="400" y="207" class="text" font-size="12">⚙ RTC Driver ⚙ Stepper Driver ⚙ Sensor Service</text>
+  <rect x="50" y="150" width="700" height="75" rx="8" fill="#FBBC04" opacity="0.12" stroke="#FBBC04" stroke-width="2"/>
+  <text x="80" y="172" font-size="11" fill="#E65100" font-weight="bold">Service Layer (Ch13에서 추가 예정)</text>
+  <rect x="190" y="182" width="185" height="35" rx="5" fill="none" stroke="#FBBC04" stroke-dasharray="5,3"/>
+  <text x="282" y="203" text-anchor="middle" font-size="10" fill="#999">gfx_service (Ch13 예정)</text>
+  <rect x="395" y="182" width="185" height="35" rx="5" fill="none" stroke="#FBBC04" stroke-dasharray="5,3"/>
+  <text x="487" y="203" text-anchor="middle" font-size="10" fill="#999">ui_service (Ch13 예정)</text>
 
-  <!-- Driver Layer (SPI + LCD) -->
-  <g>
-    <!-- SPI Driver -->
-    <rect x="150" y="240" width="230" height="70" class="driver" rx="5"/>
-    <text x="265" y="270" class="text" font-size="14">SPI Driver</text>
-    <text x="265" y="290" class="text" font-size="11">spi_driver.c/h</text>
-    <text x="265" y="305" class="text" font-size="10">DMA 제어, CS 관리</text>
+  <line x1="400" y1="225" x2="400" y2="255" stroke="#555" stroke-width="1.5" marker-end="url(#arr12)"/>
 
-    <!-- LCD Driver -->
-    <rect x="420" y="240" width="230" height="70" class="driver" rx="5"/>
-    <text x="535" y="270" class="text" font-size="14">LCD Driver (ILI9341)</text>
-    <text x="535" y="290" class="text" font-size="11">ili9341_driver.c/h</text>
-    <text x="535" y="305" class="text" font-size="10">초기화, 픽셀/도형/텍스트</text>
-  </g>
+  <!-- Driver Layer -->
+  <rect x="50" y="260" width="700" height="75" rx="8" fill="#34A853" opacity="0.12" stroke="#34A853" stroke-width="2"/>
+  <text x="80" y="282" font-size="11" fill="#1B5E20" font-weight="bold">Driver Layer</text>
+  <rect x="65" y="290" width="170" height="35" rx="5" fill="#A5D6A7" stroke="#34A853" stroke-width="2"/>
+  <text x="150" y="307" text-anchor="middle" font-size="12" font-weight="bold" fill="#1B5E20">spi_driver ★NEW</text>
+  <text x="150" y="320" text-anchor="middle" font-size="9" fill="#1B5E20">+DMA, CS, RESET 관리</text>
+  <rect x="250" y="290" width="170" height="35" rx="5" fill="#A5D6A7" stroke="#34A853" stroke-width="2"/>
+  <text x="335" y="307" text-anchor="middle" font-size="12" font-weight="bold" fill="#1B5E20">ili9341_driver ★NEW</text>
+  <text x="335" y="320" text-anchor="middle" font-size="9" fill="#1B5E20">+초기화, 픽셀/도형/텍스트</text>
+  <rect x="435" y="290" width="140" height="35" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="505" y="307" text-anchor="middle" font-size="11" fill="#1B5E20">rtc_driver</text>
+  <text x="505" y="320" text-anchor="middle" font-size="9" fill="#555">Ch09 기존</text>
+  <rect x="590" y="290" width="140" height="35" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="660" y="307" text-anchor="middle" font-size="11" fill="#1B5E20">tim_driver</text>
+  <text x="660" y="320" text-anchor="middle" font-size="9" fill="#555">Ch07 기존</text>
+
+  <line x1="400" y1="335" x2="400" y2="365" stroke="#555" stroke-width="1.5" marker-end="url(#arr12)"/>
 
   <!-- HAL Layer -->
-  <rect x="150" y="330" width="500" height="60" class="hal" rx="5"/>
-  <text x="400" y="360" class="text" font-size="14">HAL Layer: SPI1, GPIO, DMA, TIM</text>
-  <text x="400" y="378" class="text" font-size="11">(STM32CubeIDE 자동 생성)</text>
+  <rect x="50" y="370" width="700" height="55" rx="8" fill="#1A73E8" opacity="0.12" stroke="#1A73E8" stroke-width="2"/>
+  <text x="80" y="392" font-size="11" fill="#1A73E8" font-weight="bold">HAL Layer</text>
+  <rect x="70" y="398" width="110" height="22" rx="4" fill="#90CAF9" stroke="#1A73E8"/>
+  <text x="125" y="413" text-anchor="middle" font-size="10" font-weight="bold" fill="#0D47A1">HAL_SPI</text>
+  <rect x="195" y="398" width="100" height="22" rx="4" fill="#BBDEFB"/>
+  <text x="245" y="413" text-anchor="middle" font-size="10" fill="#0D47A1">HAL_DMA</text>
+  <rect x="310" y="398" width="100" height="22" rx="4" fill="#BBDEFB"/>
+  <text x="360" y="413" text-anchor="middle" font-size="10" fill="#0D47A1">HAL_GPIO</text>
+  <rect x="425" y="398" width="100" height="22" rx="4" fill="#BBDEFB"/>
+  <text x="475" y="413" text-anchor="middle" font-size="10" fill="#0D47A1">HAL_TIM</text>
+  <rect x="540" y="398" width="90" height="22" rx="4" fill="#BBDEFB"/>
+  <text x="585" y="413" text-anchor="middle" font-size="10" fill="#0D47A1">SWO/ITM</text>
 
-  <!-- Hardware -->
-  <rect x="150" y="410" width="500" height="60" class="spi" rx="5"/>
-  <text x="400" y="435" class="text" font-size="14">Hardware: NUCLEO-F411RE + ILI9341 LCD</text>
-  <text x="400" y="453" class="text" font-size="11">SPI1 (PB3/PB5) + GPIO (PA3/PA4/PA5)</text>
-
-  <!-- Arrows showing data flow -->
-  <path d="M 400 140 L 400 160" class="arrow"/>
-  <path d="M 265 220 L 265 240" class="arrow"/>
-  <path d="M 535 220 L 535 240" class="arrow"/>
-  <path d="M 400 310 L 400 330" class="arrow"/>
-  <path d="M 400 390 L 400 410" class="arrow"/>
-
-  <!-- Legend -->
-  <text x="50" y="480" class="label" font-size="11" font-weight="bold">범례:</text>
-  <rect x="30" y="490" width="15" height="15" class="app"/>
-  <text x="50" y="502" class="label" font-size="10">Application</text>
-  
-  <rect x="170" y="490" width="15" height="15" class="service"/>
-  <text x="190" y="502" class="label" font-size="10">Service</text>
-  
-  <rect x="290" y="490" width="15" height="15" class="driver"/>
-  <text x="310" y="502" class="label" font-size="10">Driver</text>
-  
-  <rect x="410" y="490" width="15" height="15" class="hal"/>
-  <text x="430" y="502" class="label" font-size="10">HAL</text>
+  <!-- 버전 뱃지 -->
+  <rect x="300" y="438" width="200" height="22" rx="11" fill="#1A73E8"/>
+  <text x="400" y="453" text-anchor="middle" font-size="12" font-weight="bold" fill="white">v1.2 — Ch12 완성</text>
 </svg>

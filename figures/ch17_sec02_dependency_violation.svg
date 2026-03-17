@@ -36,7 +36,7 @@
   <text x="220" y="435" text-anchor="middle" font-size="10" fill="#EA4335">② sht31_driver가 uart_driver_send() 호출 (역방향)</text>
 
   <!-- After (오른쪽) -->
-  <rect x="450" y="55" width="380" height="390" fill="white" stroke="#34A853" stroke-width="2" rx="8"/>
+  <rect x="450" y="55" width="380" height="435" fill="white" stroke="#34A853" stroke-width="2" rx="8"/>
   <rect x="450" y="55" width="380" height="32" fill="#34A853" rx="8"/>
   <text x="640" y="77" text-anchor="middle" font-size="14" font-weight="bold" fill="white">After (v2.0 — 단방향 의존)</text>
 

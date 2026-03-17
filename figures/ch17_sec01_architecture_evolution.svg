@@ -1,6 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="620"  font-family="'Noto Sans KR', sans-serif" viewBox="0 0 900 620">
-  <!-- 배경 -->
-  <rect width="900" height="620" fill="#F8F9FA" rx="12"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="580" font-family="'Noto Sans KR', sans-serif" font-size="14" viewBox="0 0 900 580">
+  <defs>
+    <marker id="arr17e" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#AAAAAA"/>
+    </marker>
+  </defs>
+
   <text x="450" y="38" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">아키텍처 진화 타임라인 (Ch03 v1 → v2.0)</text>
 
   <!-- 타임라인 축 -->
@@ -12,12 +16,12 @@
   <text x="100" y="80" text-anchor="middle" font-size="11" fill="#666">Ch03</text>
   <text x="100" y="68" text-anchor="middle" font-size="10" fill="#999">v0.3</text>
   <!-- 박스 -->
-  <rect x="30" y="120" width="140" height="200" fill="white" stroke="#CCCCCC" stroke-width="1.5" rx="6"/>
-  <rect x="30" y="120" width="140" height="28" fill="#E8F0FE" rx="6"/>
+  <rect x="30" y="120" width="140" height="200" rx="6" fill="white" stroke="#CCCCCC" stroke-width="1.5"/>
+  <rect x="30" y="120" width="140" height="28" rx="6" fill="#E8F0FE"/>
   <text x="100" y="139" text-anchor="middle" font-size="12" font-weight="bold" fill="#1A73E8">v1 초안</text>
-  <rect x="40" y="160" width="120" height="24" fill="#1A73E8" rx="4"/>
+  <rect x="40" y="160" width="120" height="24" rx="4" fill="#1A73E8"/>
   <text x="100" y="176" text-anchor="middle" font-size="11" fill="white">HAL 레이어</text>
-  <rect x="40" y="192" width="120" height="24" fill="#34A853" rx="4"/>
+  <rect x="40" y="192" width="120" height="24" rx="4" fill="#34A853"/>
   <text x="100" y="208" text-anchor="middle" font-size="11" fill="white">Driver 레이어</text>
   <text x="100" y="235" text-anchor="middle" font-size="10" fill="#999">GPIO, Log</text>
   <text x="100" y="252" text-anchor="middle" font-size="10" fill="#EA4335">Service/App 없음</text>
@@ -29,15 +33,15 @@
   <line x1="280" y1="90" x2="280" y2="110" stroke="#FBBC04" stroke-width="2"/>
   <text x="280" y="80" text-anchor="middle" font-size="11" fill="#666">Ch10</text>
   <text x="280" y="68" text-anchor="middle" font-size="10" fill="#999">v1.0 ①</text>
-  <rect x="210" y="120" width="140" height="230" fill="white" stroke="#FBBC04" stroke-width="2" rx="6"/>
-  <rect x="210" y="120" width="140" height="28" fill="#FFF8E1" rx="6"/>
-  <text x="280" y="139" text-anchor="middle" font-size="12" font-weight="bold" fill="#F57F17">마일스톤 ①</text>
-  <rect x="220" y="158" width="120" height="20" fill="#1A73E8" rx="3"/>
+  <rect x="210" y="120" width="140" height="230" rx="6" fill="white" stroke="#FBBC04" stroke-width="2"/>
+  <rect x="210" y="120" width="140" height="28" rx="6" fill="#FFF8E1"/>
+  <text x="280" y="139" text-anchor="middle" font-size="12" font-weight="bold" fill="#E65100">마일스톤 ①</text>
+  <rect x="220" y="158" width="120" height="20" rx="3" fill="#1A73E8"/>
   <text x="280" y="172" text-anchor="middle" font-size="10" fill="white">HAL</text>
-  <rect x="220" y="182" width="120" height="20" fill="#34A853" rx="3"/>
-  <text x="280" y="196" text-anchor="middle" font-size="10" fill="white">Driver (UART/TIM/RTC/Motor)</text>
-  <rect x="220" y="206" width="120" height="20" fill="#FBBC04" rx="3"/>
-  <text x="280" y="220" text-anchor="middle" font-size="10" fill="#333">Service (clock_service)</text>
+  <rect x="215" y="182" width="130" height="20" rx="3" fill="#34A853"/>
+  <text x="280" y="196" text-anchor="middle" font-size="8" fill="white">Driver (UART/TIM/RTC/Motor)</text>
+  <rect x="220" y="206" width="120" height="20" rx="3" fill="#FBBC04"/>
+  <text x="280" y="220" text-anchor="middle" font-size="8" fill="#333">Service (clock_service)</text>
   <text x="280" y="248" text-anchor="middle" font-size="10" fill="#666">컴포넌트 8개</text>
   <text x="280" y="265" text-anchor="middle" font-size="10" fill="#666">FSM 3개</text>
   <text x="280" y="282" text-anchor="middle" font-size="10" fill="#666">(Stopwatch/Alarm/Motor)</text>
@@ -48,16 +52,16 @@
   <line x1="480" y1="90" x2="480" y2="110" stroke="#34A853" stroke-width="2"/>
   <text x="480" y="80" text-anchor="middle" font-size="11" fill="#666">Ch16</text>
   <text x="480" y="68" text-anchor="middle" font-size="10" fill="#999">v1.6 ②</text>
-  <rect x="410" y="120" width="140" height="270" fill="white" stroke="#34A853" stroke-width="2" rx="6"/>
-  <rect x="410" y="120" width="140" height="28" fill="#E8F5E9" rx="6"/>
+  <rect x="410" y="120" width="140" height="270" rx="6" fill="white" stroke="#34A853" stroke-width="2"/>
+  <rect x="410" y="120" width="140" height="28" rx="6" fill="#E8F5E9"/>
   <text x="480" y="139" text-anchor="middle" font-size="12" font-weight="bold" fill="#2E7D32">마일스톤 ②</text>
-  <rect x="420" y="158" width="120" height="18" fill="#1A73E8" rx="3"/>
+  <rect x="420" y="158" width="120" height="18" rx="3" fill="#1A73E8"/>
   <text x="480" y="171" text-anchor="middle" font-size="10" fill="white">HAL</text>
-  <rect x="420" y="180" width="120" height="18" fill="#34A853" rx="3"/>
+  <rect x="420" y="180" width="120" height="18" rx="3" fill="#34A853"/>
   <text x="480" y="193" text-anchor="middle" font-size="10" fill="white">Driver (전 주변장치)</text>
-  <rect x="420" y="202" width="120" height="18" fill="#FBBC04" rx="3"/>
+  <rect x="420" y="202" width="120" height="18" rx="3" fill="#FBBC04"/>
   <text x="480" y="215" text-anchor="middle" font-size="10" fill="#333">Service (4개)</text>
-  <rect x="420" y="224" width="120" height="18" fill="#EA4335" rx="3"/>
+  <rect x="420" y="224" width="120" height="18" rx="3" fill="#EA4335"/>
   <text x="480" y="237" text-anchor="middle" font-size="10" fill="white">App (CLI + Protocol)</text>
   <text x="480" y="258" text-anchor="middle" font-size="10" fill="#666">컴포넌트 18개</text>
   <text x="480" y="275" text-anchor="middle" font-size="10" fill="#666">FSM 5개</text>
@@ -72,16 +76,16 @@
   <line x1="720" y1="90" x2="720" y2="110" stroke="#EA4335" stroke-width="2"/>
   <text x="720" y="80" text-anchor="middle" font-size="11" fill="#666">Ch17</text>
   <text x="720" y="68" text-anchor="middle" font-size="10" fill="#999">v2.0</text>
-  <rect x="650" y="120" width="160" height="310" fill="white" stroke="#EA4335" stroke-width="2.5" rx="6"/>
-  <rect x="650" y="120" width="160" height="28" fill="#FEECE9" rx="6"/>
+  <rect x="650" y="120" width="160" height="310" rx="6" fill="white" stroke="#EA4335" stroke-width="2.5"/>
+  <rect x="650" y="120" width="160" height="28" rx="6" fill="#FFCDD2"/>
   <text x="730" y="139" text-anchor="middle" font-size="12" font-weight="bold" fill="#C62828">v2.0 최종</text>
-  <rect x="660" y="158" width="140" height="18" fill="#1A73E8" rx="3"/>
+  <rect x="660" y="158" width="140" height="18" rx="3" fill="#1A73E8"/>
   <text x="730" y="171" text-anchor="middle" font-size="10" fill="white">HAL (변경 없음)</text>
-  <rect x="660" y="180" width="140" height="18" fill="#34A853" rx="3"/>
+  <rect x="660" y="180" width="140" height="18" rx="3" fill="#34A853"/>
   <text x="730" y="193" text-anchor="middle" font-size="10" fill="white">Driver (의존성 정제)</text>
-  <rect x="660" y="202" width="140" height="18" fill="#FBBC04" rx="3"/>
+  <rect x="660" y="202" width="140" height="18" rx="3" fill="#FBBC04"/>
   <text x="730" y="215" text-anchor="middle" font-size="10" fill="#333">Service (ISP 적용)</text>
-  <rect x="660" y="224" width="140" height="18" fill="#EA4335" rx="3"/>
+  <rect x="660" y="224" width="140" height="18" rx="3" fill="#EA4335"/>
   <text x="730" y="237" text-anchor="middle" font-size="10" fill="white">App (DIP 적용)</text>
   <text x="730" y="260" text-anchor="middle" font-size="10" fill="#2E7D32" font-weight="bold">✓ 의존성 위반 0건</text>
   <text x="730" y="278" text-anchor="middle" font-size="10" fill="#2E7D32" font-weight="bold">✓ 테이블 기반 FSM</text>
@@ -94,34 +98,27 @@
   <text x="730" y="404" text-anchor="middle" font-size="10" fill="#666">HFSM 1개 (신규)</text>
 
   <!-- 화살표 연결 -->
-  <line x1="170" y1="230" x2="210" y2="230" stroke="#AAAAAA" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
-  <line x1="350" y1="235" x2="410" y2="235" stroke="#AAAAAA" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
-  <line x1="550" y1="235" x2="650" y2="235" stroke="#AAAAAA" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+  <line x1="170" y1="230" x2="210" y2="230" stroke="#AAAAAA" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr17e)"/>
+  <line x1="350" y1="235" x2="410" y2="235" stroke="#AAAAAA" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr17e)"/>
+  <line x1="550" y1="235" x2="650" y2="235" stroke="#AAAAAA" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr17e)"/>
 
   <!-- 범례 -->
-  <rect x="30" y="440" width="840" height="60" fill="white" stroke="#EEEEEE" rx="6"/>
-  <text x="50" y="462" font-size="11" fill="#666">범례:</text>
-  <rect x="90" y="450" width="16" height="16" fill="#1A73E8" rx="2"/>
-  <text x="112" y="463" font-size="10" fill="#666">HAL 레이어</text>
-  <rect x="180" y="450" width="16" height="16" fill="#34A853" rx="2"/>
-  <text x="202" y="463" font-size="10" fill="#666">Driver 레이어</text>
-  <rect x="280" y="450" width="16" height="16" fill="#FBBC04" rx="2"/>
-  <text x="302" y="463" font-size="10" fill="#666">Service 레이어</text>
-  <rect x="390" y="450" width="16" height="16" fill="#EA4335" rx="2"/>
-  <text x="412" y="463" font-size="10" fill="#666">App 레이어</text>
-  <rect x="90" y="472" width="16" height="16" fill="#FFF8E1" stroke="#FBBC04" stroke-width="1.5" rx="2"/>
-  <text x="112" y="485" font-size="10" fill="#666">마일스톤</text>
-  <text x="470" y="477" font-size="10" fill="#EA4335">빨간 텍스트 = 리팩토링 대상</text>
-  <text x="650" y="477" font-size="10" fill="#2E7D32">초록 텍스트 = 개선 완료</text>
-
-  <!-- 화살표 마커 -->
-  <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L8,3 z" fill="#AAAAAA"/>
-    </marker>
-  </defs>
+  <rect x="30" y="450" width="840" height="55" rx="6" fill="white" stroke="#EEEEEE"/>
+  <text x="50" y="472" font-size="11" fill="#666">범례:</text>
+  <rect x="90" y="460" width="16" height="16" rx="2" fill="#1A73E8"/>
+  <text x="112" y="473" font-size="10" fill="#666">HAL 레이어</text>
+  <rect x="180" y="460" width="16" height="16" rx="2" fill="#34A853"/>
+  <text x="202" y="473" font-size="10" fill="#666">Driver 레이어</text>
+  <rect x="280" y="460" width="16" height="16" rx="2" fill="#FBBC04"/>
+  <text x="302" y="473" font-size="10" fill="#666">Service 레이어</text>
+  <rect x="390" y="460" width="16" height="16" rx="2" fill="#EA4335"/>
+  <text x="412" y="473" font-size="10" fill="#666">App 레이어</text>
+  <rect x="90" y="480" width="16" height="16" rx="2" fill="#FFF8E1" stroke="#FBBC04" stroke-width="1.5"/>
+  <text x="112" y="493" font-size="10" fill="#666">마일스톤</text>
+  <text x="470" y="491" font-size="10" fill="#EA4335">빨간 텍스트 = 리팩토링 대상</text>
+  <text x="650" y="491" font-size="10" fill="#2E7D32">초록 텍스트 = 개선 완료</text>
 
   <!-- 하단 설명 -->
-  <text x="450" y="560" text-anchor="middle" font-size="12" fill="#555">Ch17은 v1.6의 "동작하는 코드"를 "설계 원칙이 검증된 코드"로 격상시키는 리팩토링 챕터입니다.</text>
-  <text x="450" y="582" text-anchor="middle" font-size="11" fill="#888">기능 추가 없이 아키텍처 품질만 향상 — 이것이 v2.0의 의미입니다.</text>
+  <text x="450" y="530" text-anchor="middle" font-size="12" fill="#555">Ch17은 v1.6의 "동작하는 코드"를 "설계 원칙이 검증된 코드"로 격상시키는 리팩토링 챕터입니다.</text>
+  <text x="450" y="552" text-anchor="middle" font-size="11" fill="#888">기능 추가 없이 아키텍처 품질만 향상 — 이것이 v2.0의 의미입니다.</text>
 </svg>

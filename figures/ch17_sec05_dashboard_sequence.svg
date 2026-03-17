@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="860" height="420"  font-family="'Noto Sans KR', sans-serif" viewBox="0 0 860 420">
-  <rect width="860" height="420" fill="#F8F9FA" rx="12"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="460" font-family="'Noto Sans KR', sans-serif" viewBox="0 0 860 460">
+  <rect width="860" height="460" fill="#F8F9FA" rx="12"/>
   <text x="430" y="32" text-anchor="middle" font-size="16" font-weight="bold" fill="#1A1A2E">시나리오 3: 대시보드 갱신(Dashboard Update) 시퀀스 다이어그램</text>
   <text x="430" y="52" text-anchor="middle" font-size="11" fill="#666">TIM2 1초 UEV → 전체 데이터 수집 → LCD + PC 대시보드 동기 갱신</text>
 
@@ -33,71 +33,73 @@
   <text x="780" y="98" text-anchor="middle" font-size="9" fill="white">(pyserial)</text>
 
   <!-- 생명선 -->
-  <line x1="60" y1="106" x2="60" y2="390" stroke="#607D8B" stroke-width="1" stroke-dasharray="5,3"/>
-  <line x1="180" y1="106" x2="180" y2="390" stroke="#EA4335" stroke-width="1" stroke-dasharray="5,3"/>
-  <line x1="300" y1="106" x2="300" y2="390" stroke="#34A853" stroke-width="1" stroke-dasharray="5,3"/>
-  <line x1="420" y1="106" x2="420" y2="390" stroke="#34A853" stroke-width="1" stroke-dasharray="5,3"/>
-  <line x1="540" y1="106" x2="540" y2="390" stroke="#FBBC04" stroke-width="1" stroke-dasharray="5,3"/>
-  <line x1="660" y1="106" x2="660" y2="390" stroke="#EA4335" stroke-width="1" stroke-dasharray="5,3"/>
-  <line x1="780" y1="106" x2="780" y2="390" stroke="#9C27B0" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="60"  y1="106" x2="60"  y2="415" stroke="#607D8B" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="180" y1="106" x2="180" y2="415" stroke="#EA4335" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="300" y1="106" x2="300" y2="415" stroke="#34A853" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="420" y1="106" x2="420" y2="415" stroke="#34A853" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="540" y1="106" x2="540" y2="415" stroke="#FBBC04" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="660" y1="106" x2="660" y2="415" stroke="#EA4335" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="780" y1="106" x2="780" y2="415" stroke="#9C27B0" stroke-width="1" stroke-dasharray="5,3"/>
 
-  <!-- Step 1: TIM2 UEV -->
+  <!-- Step 1: TIM2 UEV (y=130) -->
+  <rect x="60" y="115" width="120" height="15" fill="#ECEFF1" rx="2"/>
+  <text x="120" y="126" text-anchor="middle" font-size="9" fill="#455A64">TIM2 UEV IRQ (1s)</text>
   <line x1="60" y1="130" x2="175" y2="130" stroke="#607D8B" stroke-width="1.5" marker-end="url(#arr3)"/>
-  <rect x="60" y="116" width="115" height="14" fill="#ECEFF1" rx="2"/>
-  <text x="117" y="126" text-anchor="middle" font-size="9" fill="#455A64">TIM2 UEV IRQ (1s)</text>
 
-  <!-- Step 2: RTC 시각 읽기 -->
-  <line x1="180" y1="150" x2="295" y2="150" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr3)"/>
-  <rect x="180" y="137" width="115" height="13" fill="#FFEBEE" rx="2"/>
-  <text x="237" y="147" text-anchor="middle" font-size="9" fill="#C62828">RTC_GetTime(&amp;time)</text>
+  <!-- Step 2a: RTC 시각 요청 (y=152) -->
+  <rect x="180" y="137" width="120" height="15" fill="#FFEBEE" rx="2"/>
+  <text x="240" y="148" text-anchor="middle" font-size="9" fill="#C62828">RTC_GetTime(&amp;time)</text>
+  <line x1="180" y1="152" x2="295" y2="152" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr3)"/>
 
-  <line x1="300" y1="163" x2="180" y2="163" stroke="#34A853" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr3)"/>
-  <rect x="180" y="150" width="115" height="13" fill="#E8F5E9" rx="2"/>
-  <text x="237" y="160" text-anchor="middle" font-size="9" fill="#2E7D32">return: {hh,mm,ss}</text>
+  <!-- Step 2b: RTC 반환 (y=172) — 20px 간격으로 겹침 방지 -->
+  <rect x="180" y="157" width="120" height="15" fill="#E8F5E9" rx="2"/>
+  <text x="240" y="168" text-anchor="middle" font-size="9" fill="#2E7D32">return: {hh,mm,ss}</text>
+  <line x1="300" y1="172" x2="185" y2="172" stroke="#34A853" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr3)"/>
 
-  <!-- Step 3: 센서 읽기 (비동기 DMA 완료 확인) -->
-  <line x1="180" y1="185" x2="415" y2="185" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr3)"/>
-  <rect x="180" y="172" width="235" height="13" fill="#FFEBEE" rx="2"/>
-  <text x="297" y="182" text-anchor="middle" font-size="9" fill="#C62828">sensor_svc_get_latest(&amp;temp, &amp;humi)</text>
+  <!-- Step 3a: 센서 요청 (y=198) -->
+  <rect x="180" y="183" width="240" height="15" fill="#FFEBEE" rx="2"/>
+  <text x="300" y="194" text-anchor="middle" font-size="9" fill="#C62828">sensor_svc_get_latest(&amp;temp, &amp;humi)</text>
+  <line x1="180" y1="198" x2="415" y2="198" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr3)"/>
 
-  <line x1="420" y1="198" x2="180" y2="198" stroke="#34A853" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr3)"/>
-  <rect x="180" y="185" width="235" height="13" fill="#E8F5E9" rx="2"/>
-  <text x="297" y="195" text-anchor="middle" font-size="9" fill="#2E7D32">return: {25.3°C, 60.1%} (DMA 캐시값)</text>
+  <!-- Step 3b: 센서 반환 (y=218) — 20px 간격으로 겹침 방지 -->
+  <rect x="180" y="203" width="240" height="15" fill="#E8F5E9" rx="2"/>
+  <text x="300" y="214" text-anchor="middle" font-size="9" fill="#2E7D32">return: {25.3°C, 60.1%} (DMA 캐시값)</text>
+  <line x1="420" y1="218" x2="185" y2="218" stroke="#34A853" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr3)"/>
 
-  <!-- Step 4: LCD 갱신 -->
-  <line x1="180" y1="220" x2="535" y2="220" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr3)"/>
-  <rect x="180" y="207" width="355" height="13" fill="#FFEBEE" rx="2"/>
-  <text x="357" y="217" text-anchor="middle" font-size="9" fill="#C62828">ui_update_main_screen(time, temp, humi)</text>
+  <!-- Step 4: LCD 갱신 (y=246) -->
+  <rect x="180" y="231" width="360" height="15" fill="#FFEBEE" rx="2"/>
+  <text x="360" y="242" text-anchor="middle" font-size="9" fill="#C62828">ui_update_main_screen(time, temp, humi)</text>
+  <line x1="180" y1="246" x2="535" y2="246" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr3)"/>
 
-  <line x1="540" y1="233" x2="540" y2="247" stroke="#FBBC04" stroke-width="1.5"/>
-  <rect x="500" y="233" width="80" height="22" fill="#FFF9C4" stroke="#F9A825" rx="3"/>
-  <text x="540" y="245" text-anchor="middle" font-size="9" fill="#F57F17">LCD SPI DMA</text>
-  <text x="540" y="256" text-anchor="middle" font-size="9" fill="#F57F17">프레임 전송</text>
+  <!-- LCD SPI DMA 노트 — 다음 화살표와 충분한 간격 확보 -->
+  <rect x="502" y="252" width="82" height="24" fill="#FFF9C4" stroke="#F9A825" rx="3"/>
+  <text x="543" y="264" text-anchor="middle" font-size="9" fill="#F57F17">LCD SPI DMA</text>
+  <text x="543" y="274" text-anchor="middle" font-size="9" fill="#F57F17">프레임 전송</text>
 
-  <!-- Step 5: Protocol 프레임 생성 + UART DMA 전송 -->
-  <line x1="180" y1="275" x2="655" y2="275" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr3)"/>
-  <rect x="180" y="262" width="475" height="13" fill="#FFEBEE" rx="2"/>
-  <text x="417" y="272" text-anchor="middle" font-size="9" fill="#C62828">protocol_send_frame(SENSOR_DATA, {time, temp, humi})</text>
+  <!-- Step 5: Protocol 프레임 생성 + UART DMA (y=302) -->
+  <rect x="180" y="287" width="480" height="15" fill="#FFEBEE" rx="2"/>
+  <text x="420" y="298" text-anchor="middle" font-size="9" fill="#C62828">protocol_send_frame(SENSOR_DATA, {time, temp, humi})</text>
+  <line x1="180" y1="302" x2="655" y2="302" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr3)"/>
 
-  <line x1="660" y1="293" x2="660" y2="305" stroke="#EA4335" stroke-width="1.5"/>
-  <rect x="615" y="280" width="90" height="25" fill="#FFEBEE" stroke="#EA4335" rx="3"/>
-  <text x="660" y="292" text-anchor="middle" font-size="9" fill="#C62828">UART DMA</text>
-  <text x="660" y="303" text-anchor="middle" font-size="9" fill="#C62828">프레임 전송</text>
+  <!-- UART DMA 노트 -->
+  <rect x="618" y="308" width="86" height="24" fill="#FFEBEE" stroke="#EA4335" rx="3"/>
+  <text x="661" y="320" text-anchor="middle" font-size="9" fill="#C62828">UART DMA</text>
+  <text x="661" y="330" text-anchor="middle" font-size="9" fill="#C62828">프레임 전송</text>
 
-  <!-- Step 6: PC 수신 -->
-  <line x1="660" y1="320" x2="775" y2="320" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arr3)"/>
-  <rect x="660" y="307" width="115" height="13" fill="#F3E5F5" rx="2"/>
-  <text x="717" y="317" text-anchor="middle" font-size="9" fill="#6A1B9A">serial.read() → parse</text>
+  <!-- Step 6: PC 수신 (y=352) -->
+  <rect x="660" y="337" width="120" height="15" fill="#F3E5F5" rx="2"/>
+  <text x="720" y="348" text-anchor="middle" font-size="9" fill="#6A1B9A">serial.read() → parse</text>
+  <line x1="660" y1="352" x2="775" y2="352" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arr3)"/>
 
-  <line x1="780" y1="337" x2="780" y2="351" stroke="#9C27B0" stroke-width="1.5"/>
-  <rect x="735" y="327" width="90" height="24" fill="#F3E5F5" stroke="#9C27B0" rx="3"/>
-  <text x="780" y="339" text-anchor="middle" font-size="9" fill="#6A1B9A">PyQt5 UI</text>
-  <text x="780" y="350" text-anchor="middle" font-size="9" fill="#6A1B9A">실시간 갱신</text>
+  <!-- PC 갱신 노트 -->
+  <rect x="738" y="358" width="86" height="24" fill="#F3E5F5" stroke="#9C27B0" rx="3"/>
+  <text x="781" y="370" text-anchor="middle" font-size="9" fill="#6A1B9A">PyQt5 UI</text>
+  <text x="781" y="380" text-anchor="middle" font-size="9" fill="#6A1B9A">실시간 갱신</text>
 
   <!-- 로그 -->
-  <rect x="20" y="372" width="820" height="28" fill="#263238" rx="4"/>
-  <text x="40" y="383" font-size="9" fill="#80CBC4" font-family="monospace">[DEBUG] main_app: 1s tick — time=14:32:05  temp=25.3  humi=60.1  →  LCD+UART 갱신 완료</text>
-  <text x="40" y="395" font-size="9" fill="#80CBC4" font-family="monospace">[DEBUG] protocol_app: frame TX DMA 시작 len=18</text>
+  <rect x="20" y="400" width="820" height="40" fill="#263238" rx="4"/>
+  <text x="40" y="415" font-size="9" fill="#80CBC4" font-family="monospace">[DEBUG] main_app: 1s tick — time=14:32:05  temp=25.3  humi=60.1  →  LCD+UART 갱신 완료</text>
+  <text x="40" y="431" font-size="9" fill="#80CBC4" font-family="monospace">[DEBUG] protocol_app: frame TX DMA 시작 len=18</text>
 
   <defs>
     <marker id="arr3" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">

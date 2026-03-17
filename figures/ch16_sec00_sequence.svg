@@ -111,8 +111,8 @@
     <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="#555"/>
     </marker>
-    <marker id="arr2" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto">
-      <polygon points="8 0, 0 3, 8 6" fill="#1B5E20"/>
+    <marker id="arr2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#1B5E20"/>
     </marker>
   </defs>
 </svg>

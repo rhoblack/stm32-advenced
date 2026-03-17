@@ -15,7 +15,7 @@
   <text x="20" y="58" font-size="13" font-weight="bold" fill="#EA4335">■ Repeated Start 방식 (폴링 HAL 내부 동작 — DMA 미지원)</text>
 
   <!-- I2C 버스 신호 타임라인 -->
-  <rect x="20" y="65" width="780" height="50" rx="4" fill="#FFF9C4" stroke="#F9A825"/>
+  <rect x="20" y="65" width="780" height="70" rx="4" fill="#FFF9C4" stroke="#F9A825"/>
 
   <!-- START -->
   <rect x="30" y="72" width="38" height="36" rx="3" fill="#E53935"/>
@@ -37,7 +37,7 @@
   <text x="216" y="101" text-anchor="middle" font-size="9" fill="white">[LOW]</text>
 
   <!-- REPEATED START (강조) -->
-  <rect x="246" y="68" width="68" height="44" rx="3" fill="#E53935" stroke="#B71C1C" stroke-width="2"/>
+  <rect x="246" y="68" width="68" height="66" rx="3" fill="#E53935" stroke="#B71C1C" stroke-width="2"/>
   <text x="280" y="86" text-anchor="middle" font-size="10" fill="white" font-weight="bold">REPEATED</text>
   <text x="280" y="100" text-anchor="middle" font-size="10" fill="white" font-weight="bold">START</text>
   <text x="280" y="113" text-anchor="middle" font-size="9" fill="#FFCDD2">★ HAL DMA</text>

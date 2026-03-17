@@ -1,102 +1,70 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" width="800" height="520" font-family="'Noto Sans KR', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="470" font-family="'Noto Sans KR', sans-serif" font-size="14" viewBox="0 0 800 470">
   <defs>
-    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <marker id="arr14" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
       <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
     </marker>
-    <filter id="shadow">
-      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="#00000033"/>
-    </filter>
   </defs>
 
-  <!-- 배경 -->
-  <rect width="800" height="520" fill="#F8F9FA" rx="8"/>
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">Ch14 아키텍처 위치 — I2C DMA 심화</text>
 
-  <!-- 제목 -->
-  <text x="400" y="32" text-anchor="middle" font-size="16" font-weight="bold" fill="#333">Ch14. I2C DMA 심화 — 레이어 아키텍처 위치</text>
+  <!-- App Layer -->
+  <rect x="50" y="45" width="700" height="70" rx="8" fill="#EA4335" opacity="0.12" stroke="#EA4335" stroke-width="2"/>
+  <text x="80" y="67" font-size="11" fill="#EA4335" font-weight="bold">App Layer</text>
+  <rect x="65" y="75" width="195" height="30" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="162" y="92" text-anchor="middle" font-size="11" fill="#C62828">sensor_app.c</text>
+  <text x="162" y="103" text-anchor="middle" font-size="9" fill="#C62828">측정 요청/UI 갱신</text>
+  <rect x="278" y="75" width="195" height="30" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="375" y="92" text-anchor="middle" font-size="11" fill="#C62828">ui_service.c</text>
+  <text x="375" y="103" text-anchor="middle" font-size="9" fill="#C62828">화면 데이터 소비</text>
+  <rect x="490" y="75" width="240" height="30" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="610" y="92" text-anchor="middle" font-size="11" fill="#C62828">cli_handler.c</text>
+  <text x="610" y="103" text-anchor="middle" font-size="9" fill="#C62828">sensor read 명령</text>
 
-  <!-- ===== 레이어 박스 ===== -->
+  <line x1="400" y1="115" x2="400" y2="145" stroke="#555" stroke-width="1.5" marker-end="url(#arr14)"/>
 
-  <!-- App 레이어 -->
-  <rect x="40" y="55" width="720" height="70" rx="8" fill="#EA433522" stroke="#EA4335" stroke-width="2"/>
-  <text x="60" y="80" font-size="13" font-weight="bold" fill="#EA4335">App 레이어</text>
-  <rect x="120" y="65" width="160" height="45" rx="6" fill="#EA433544" stroke="#EA4335" stroke-width="1.5"/>
-  <text x="200" y="86" text-anchor="middle" font-size="12" fill="#B71C1C">sensor_app.c</text>
-  <text x="200" y="102" text-anchor="middle" font-size="11" fill="#B71C1C">측정 요청 / UI 갱신</text>
-  <rect x="310" y="65" width="160" height="45" rx="6" fill="#EA433544" stroke="#EA4335" stroke-width="1.5"/>
-  <text x="390" y="86" text-anchor="middle" font-size="12" fill="#B71C1C">ui_service.c</text>
-  <text x="390" y="102" text-anchor="middle" font-size="11" fill="#B71C1C">화면 데이터 소비</text>
-  <rect x="500" y="65" width="160" height="45" rx="6" fill="#EA433544" stroke="#EA4335" stroke-width="1.5"/>
-  <text x="580" y="86" text-anchor="middle" font-size="12" fill="#B71C1C">cli_handler.c</text>
-  <text x="580" y="102" text-anchor="middle" font-size="11" fill="#B71C1C">sensor read 명령</text>
+  <!-- Service Layer -->
+  <rect x="50" y="150" width="700" height="75" rx="8" fill="#FBBC04" opacity="0.12" stroke="#FBBC04" stroke-width="2"/>
+  <text x="80" y="172" font-size="11" fill="#E65100" font-weight="bold">Service Layer</text>
+  <rect x="130" y="182" width="230" height="35" rx="5" fill="#FFF8E1" stroke="#FBBC04"/>
+  <text x="245" y="200" text-anchor="middle" font-size="11" fill="#E65100">sensor_service</text>
+  <text x="245" y="213" text-anchor="middle" font-size="9" fill="#E65100">온습도 데이터 집계/알람</text>
+  <rect x="380" y="182" width="230" height="35" rx="5" fill="#FFF8E1" stroke="#FBBC04"/>
+  <text x="495" y="200" text-anchor="middle" font-size="11" fill="#E65100">gfx_service</text>
+  <text x="495" y="213" text-anchor="middle" font-size="9" fill="#E65100">LCD 화면 구성</text>
 
-  <!-- Service 레이어 -->
-  <rect x="40" y="145" width="720" height="70" rx="8" fill="#FBBC0422" stroke="#FBBC04" stroke-width="2"/>
-  <text x="60" y="170" font-size="13" font-weight="bold" fill="#B8860B">Service 레이어</text>
-  <rect x="120" y="155" width="200" height="45" rx="6" fill="#FBBC0444" stroke="#FBBC04" stroke-width="1.5"/>
-  <text x="220" y="176" text-anchor="middle" font-size="12" fill="#795500">sensor_service.c</text>
-  <text x="220" y="192" text-anchor="middle" font-size="11" fill="#795500">온습도 데이터 집계/알람</text>
-  <rect x="360" y="155" width="200" height="45" rx="6" fill="#FBBC0444" stroke="#FBBC04" stroke-width="1.5"/>
-  <text x="460" y="176" text-anchor="middle" font-size="12" fill="#795500">gfx_service.c</text>
-  <text x="460" y="192" text-anchor="middle" font-size="11" fill="#795500">LCD 화면 구성</text>
+  <line x1="400" y1="225" x2="400" y2="255" stroke="#555" stroke-width="1.5" marker-end="url(#arr14)"/>
 
-  <!-- Driver 레이어 (강조) -->
-  <rect x="40" y="235" width="720" height="130" rx="8" fill="#34A85322" stroke="#34A853" stroke-width="3" filter="url(#shadow)"/>
-  <text x="60" y="260" font-size="13" font-weight="bold" fill="#34A853">Driver 레이어  ← Ch14 업그레이드 영역</text>
+  <!-- Driver Layer -->
+  <rect x="50" y="260" width="700" height="75" rx="8" fill="#34A853" opacity="0.12" stroke="#34A853" stroke-width="2"/>
+  <text x="80" y="282" font-size="11" fill="#1B5E20" font-weight="bold">Driver Layer</text>
+  <rect x="65" y="290" width="185" height="35" rx="5" fill="#A5D6A7" stroke="#34A853" stroke-width="2"/>
+  <text x="157" y="306" text-anchor="middle" font-size="11" font-weight="bold" fill="#1B5E20">i2c_driver ★Ch14 업그레이드</text>
+  <text x="157" y="319" text-anchor="middle" font-size="9" fill="#1B5E20">폴링→DMA 전환 ★ Ch14 핵심</text>
+  <rect x="265" y="290" width="155" height="35" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="342" y="307" text-anchor="middle" font-size="11" fill="#1B5E20">sht31_driver</text>
+  <text x="342" y="320" text-anchor="middle" font-size="9" fill="#555">비동기 측정 루프/콜백 체인</text>
+  <rect x="435" y="290" width="140" height="35" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="505" y="307" text-anchor="middle" font-size="11" fill="#1B5E20">spi_driver</text>
+  <text x="505" y="320" text-anchor="middle" font-size="9" fill="#555">SPI DMA (Ch12)</text>
+  <rect x="590" y="290" width="140" height="35" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="660" y="307" text-anchor="middle" font-size="11" fill="#1B5E20">uart_driver</text>
+  <text x="660" y="320" text-anchor="middle" font-size="9" fill="#555">UART DMA (Ch06)</text>
 
-  <!-- i2c_driver (강조) -->
-  <rect x="60" y="270" width="180" height="80" rx="8" fill="#34A85388" stroke="#34A853" stroke-width="3" filter="url(#shadow)"/>
-  <text x="150" y="293" text-anchor="middle" font-size="13" font-weight="bold" fill="#1B5E20">i2c_driver.c</text>
-  <text x="150" y="311" text-anchor="middle" font-size="11" fill="#1B5E20">폴링 → DMA 모드 전환</text>
-  <text x="150" y="328" text-anchor="middle" font-size="11" fill="#1B5E20">★ Ch14 핵심 변경</text>
+  <line x1="400" y1="335" x2="400" y2="365" stroke="#555" stroke-width="1.5" marker-end="url(#arr14)"/>
 
-  <rect x="260" y="270" width="140" height="80" rx="6" fill="#34A85344" stroke="#34A853" stroke-width="1.5"/>
-  <text x="330" y="293" text-anchor="middle" font-size="12" fill="#1B5E20">sht31_driver.c</text>
-  <text x="330" y="311" text-anchor="middle" font-size="11" fill="#1B5E20">비동기 측정 루프</text>
-  <text x="330" y="328" text-anchor="middle" font-size="11" fill="#1B5E20">콜백 체인 패턴</text>
+  <!-- HAL Layer -->
+  <rect x="50" y="370" width="700" height="55" rx="8" fill="#1A73E8" opacity="0.12" stroke="#1A73E8" stroke-width="2"/>
+  <text x="80" y="392" font-size="11" fill="#1A73E8" font-weight="bold">HAL Layer</text>
+  <rect x="70" y="398" width="130" height="22" rx="4" fill="#90CAF9" stroke="#1A73E8"/>
+  <text x="135" y="413" text-anchor="middle" font-size="10" font-weight="bold" fill="#0D47A1">HAL_I2C_DMA</text>
+  <rect x="215" y="398" width="110" height="22" rx="4" fill="#BBDEFB"/>
+  <text x="270" y="413" text-anchor="middle" font-size="10" fill="#0D47A1">HAL_DMA</text>
+  <rect x="340" y="398" width="100" height="22" rx="4" fill="#BBDEFB"/>
+  <text x="390" y="413" text-anchor="middle" font-size="10" fill="#0D47A1">HAL_SPI</text>
+  <rect x="455" y="398" width="100" height="22" rx="4" fill="#BBDEFB"/>
+  <text x="505" y="413" text-anchor="middle" font-size="10" fill="#0D47A1">HAL_UART</text>
 
-  <rect x="420" y="270" width="140" height="80" rx="6" fill="#34A85344" stroke="#34A853" stroke-width="1.5"/>
-  <text x="490" y="293" text-anchor="middle" font-size="12" fill="#1B5E20">spi_driver.c</text>
-  <text x="490" y="311" text-anchor="middle" font-size="11" fill="#1B5E20">SPI DMA 운용</text>
-  <text x="490" y="328" text-anchor="middle" font-size="11" fill="#1B5E20">(Ch12 기존)</text>
-
-  <rect x="580" y="270" width="160" height="80" rx="6" fill="#34A85344" stroke="#34A853" stroke-width="1.5"/>
-  <text x="660" y="293" text-anchor="middle" font-size="12" fill="#1B5E20">uart_driver.c</text>
-  <text x="660" y="311" text-anchor="middle" font-size="11" fill="#1B5E20">UART DMA 운용</text>
-  <text x="660" y="328" text-anchor="middle" font-size="11" fill="#1B5E20">(Ch06 기존)</text>
-
-  <!-- HAL 레이어 -->
-  <rect x="40" y="385" width="720" height="70" rx="8" fill="#1A73E822" stroke="#1A73E8" stroke-width="2"/>
-  <text x="60" y="410" font-size="13" font-weight="bold" fill="#1A73E8">HAL 레이어 (STM32 HAL Library)</text>
-  <rect x="120" y="398" width="140" height="45" rx="6" fill="#1A73E844" stroke="#1A73E8" stroke-width="1.5"/>
-  <text x="190" y="419" text-anchor="middle" font-size="12" fill="#0D47A1">HAL_I2C_*</text>
-  <text x="190" y="435" text-anchor="middle" font-size="11" fill="#0D47A1">_DMA (신규)</text>
-  <rect x="280" y="398" width="140" height="45" rx="6" fill="#1A73E844" stroke="#1A73E8" stroke-width="1.5"/>
-  <text x="350" y="419" text-anchor="middle" font-size="12" fill="#0D47A1">HAL_DMA_*</text>
-  <text x="350" y="435" text-anchor="middle" font-size="11" fill="#0D47A1">스트림 관리</text>
-  <rect x="440" y="398" width="140" height="45" rx="6" fill="#1A73E844" stroke="#1A73E8" stroke-width="1.5"/>
-  <text x="510" y="419" text-anchor="middle" font-size="12" fill="#0D47A1">HAL_SPI_*</text>
-  <text x="510" y="435" text-anchor="middle" font-size="11" fill="#0D47A1">DMA</text>
-  <rect x="600" y="398" width="140" height="45" rx="6" fill="#1A73E844" stroke="#1A73E8" stroke-width="1.5"/>
-  <text x="670" y="419" text-anchor="middle" font-size="12" fill="#0D47A1">HAL_UART_*</text>
-  <text x="670" y="435" text-anchor="middle" font-size="11" fill="#0D47A1">DMA</text>
-
-  <!-- Hardware -->
-  <rect x="40" y="475" width="720" height="35" rx="6" fill="#607D8B22" stroke="#607D8B" stroke-width="1.5"/>
-  <text x="400" y="497" text-anchor="middle" font-size="12" fill="#607D8B">Hardware: STM32F411RE — I2C1(SHT31) / SPI1(ILI9341) / USART2(PC) / DMA1 / DMA2</text>
-
-  <!-- 화살표 (레이어 간) -->
-  <line x1="400" y1="125" x2="400" y2="143" stroke="#555" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-  <line x1="400" y1="215" x2="400" y2="233" stroke="#555" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-  <line x1="400" y1="365" x2="400" y2="383" stroke="#555" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-  <line x1="400" y1="455" x2="400" y2="473" stroke="#555" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-
-  <!-- 범례 -->
-  <rect x="40" y="512" width="14" height="8" fill="#34A853" rx="2"/>
-  <text x="58" y="520" font-size="10" fill="#333">Ch14 업그레이드 영역</text>
-  <rect x="160" y="512" width="14" height="8" fill="#EA4335" rx="2"/>
-  <text x="178" y="520" font-size="10" fill="#333">App</text>
-  <rect x="210" y="512" width="14" height="8" fill="#FBBC04" rx="2"/>
-  <text x="228" y="520" font-size="10" fill="#333">Service</text>
-  <rect x="275" y="512" width="14" height="8" fill="#1A73E8" rx="2"/>
-  <text x="293" y="520" font-size="10" fill="#333">HAL</text>
+  <!-- 버전 뱃지 -->
+  <rect x="270" y="438" width="260" height="22" rx="11" fill="#1A73E8"/>
+  <text x="400" y="453" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Ch14 — I2C DMA 업그레이드</text>
 </svg>

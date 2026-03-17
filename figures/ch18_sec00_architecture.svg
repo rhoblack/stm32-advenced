@@ -1,40 +1,57 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 360" width="700" height="360" font-family="'Noto Sans KR', sans-serif" font-size="13">
-  <rect width="700" height="360" fill="#F8F9FA" rx="8"/>
-  <text x="350" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#1A1A1A">Ch18 아키텍처 위치 — 디버깅 인프라는 전 레이어에 적용</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" font-family="'Noto Sans KR', sans-serif" font-size="14" viewBox="0 0 800 430">
+  <defs>
+    <marker id="arr18" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">Ch18 아키텍처 — 디버깅 인프라 (전 레이어 적용)</text>
 
   <!-- App Layer -->
-  <rect x="40" y="50" width="620" height="55" rx="6" fill="#EA4335" fill-opacity="0.15" stroke="#EA4335" stroke-width="2"/>
-  <text x="80" y="80" font-size="14" font-weight="bold" fill="#C62828">App Layer</text>
-  <text x="80" y="97" font-size="11" fill="#555">cli_app.c · protocol_app.c · ui_service.c</text>
+  <rect x="50" y="45" width="490" height="60" rx="8" fill="#EA4335" opacity="0.12" stroke="#EA4335" stroke-width="2"/>
+  <text x="80" y="65" font-size="11" fill="#EA4335" font-weight="bold">App Layer</text>
+  <text x="280" y="82" text-anchor="middle" font-size="12" fill="#C62828">cli_app.c · protocol_app.c · ui_service.c</text>
+
+  <line x1="280" y1="105" x2="280" y2="130" stroke="#555" stroke-width="1.5" marker-end="url(#arr18)"/>
 
   <!-- Service Layer -->
-  <rect x="40" y="115" width="620" height="55" rx="6" fill="#FBBC04" fill-opacity="0.2" stroke="#FBBC04" stroke-width="2"/>
-  <text x="80" y="145" font-size="14" font-weight="bold" fill="#E37400">Service Layer</text>
-  <text x="80" y="162" font-size="11" fill="#555">clock_service.c · sensor_service.c · gfx_service.c</text>
+  <rect x="50" y="135" width="490" height="60" rx="8" fill="#FBBC04" opacity="0.12" stroke="#FBBC04" stroke-width="2"/>
+  <text x="80" y="155" font-size="11" fill="#E65100" font-weight="bold">Service Layer</text>
+  <text x="280" y="172" text-anchor="middle" font-size="12" fill="#E65100">clock_service.c · sensor_service.c · gfx_service.c</text>
+
+  <line x1="280" y1="195" x2="280" y2="220" stroke="#555" stroke-width="1.5" marker-end="url(#arr18)"/>
 
   <!-- Driver Layer -->
-  <rect x="40" y="180" width="620" height="55" rx="6" fill="#34A853" fill-opacity="0.15" stroke="#34A853" stroke-width="2"/>
-  <text x="80" y="210" font-size="14" font-weight="bold" fill="#256429">Driver Layer</text>
-  <text x="80" y="227" font-size="11" fill="#555">uart_driver.c · spi_driver.c · i2c_driver.c · rtc_driver.c · stepper_driver.c</text>
+  <rect x="50" y="225" width="490" height="60" rx="8" fill="#34A853" opacity="0.12" stroke="#34A853" stroke-width="2"/>
+  <text x="80" y="245" font-size="11" fill="#1B5E20" font-weight="bold">Driver Layer</text>
+  <text x="280" y="262" text-anchor="middle" font-size="11" fill="#1B5E20">uart_driver.c · spi_driver.c · i2c_driver.c · rtc_driver.c · stepper_driver.c</text>
+
+  <line x1="280" y1="285" x2="280" y2="310" stroke="#555" stroke-width="1.5" marker-end="url(#arr18)"/>
 
   <!-- HAL Layer -->
-  <rect x="40" y="245" width="620" height="55" rx="6" fill="#1A73E8" fill-opacity="0.15" stroke="#1A73E8" stroke-width="2"/>
-  <text x="80" y="275" font-size="14" font-weight="bold" fill="#1558B0">HAL Layer</text>
-  <text x="80" y="292" font-size="11" fill="#555">STM32 HAL Library (ST 제공) · DMA · NVIC · Peripheral 레지스터</text>
+  <rect x="50" y="315" width="490" height="55" rx="8" fill="#1A73E8" opacity="0.12" stroke="#1A73E8" stroke-width="2"/>
+  <text x="80" y="337" font-size="11" fill="#1A73E8" font-weight="bold">HAL Layer</text>
+  <text x="280" y="355" text-anchor="middle" font-size="11" fill="#0D47A1">STM32 HAL Library · DMA Controller · NVIC · Peripheral 레지스터</text>
 
-  <!-- Ch18 디버깅 인프라 — 오버레이 표시 -->
-  <rect x="490" y="50" width="170" height="250" rx="6" fill="none" stroke="#FF6D00" stroke-width="2.5" stroke-dasharray="8,4"/>
-  <text x="575" y="44" text-anchor="middle" font-size="12" font-weight="bold" fill="#FF6D00">Ch18</text>
-  <text x="575" y="315" text-anchor="middle" font-size="11" fill="#FF6D00">디버깅 인프라</text>
-  <text x="575" y="330" text-anchor="middle" font-size="11" fill="#FF6D00">(전 레이어 적용)</text>
+  <!-- 오버레이: 디버깅 인프라 점선 박스 -->
+  <rect x="555" y="45" width="210" height="325" rx="8" fill="none" stroke="#FF6D00" stroke-width="2.5" stroke-dasharray="8,4"/>
+  <text x="660" y="40" text-anchor="middle" font-size="12" font-weight="bold" fill="#FF6D00">Ch18</text>
+  <text x="660" y="382" text-anchor="middle" font-size="10" fill="#FF6D00">디버깅 인프라 (전 레이어 적용)</text>
 
-  <!-- 디버깅 툴 목록 -->
-  <text x="500" y="75" font-size="10" fill="#FF6D00">Watch / Live Expr</text>
-  <text x="500" y="90" font-size="10" fill="#FF6D00">Memory View</text>
-  <text x="500" y="140" font-size="10" fill="#FF6D00">FSM 상태 로그</text>
-  <text x="500" y="155" font-size="10" fill="#FF6D00">서비스 반환값</text>
-  <text x="500" y="205" font-size="10" fill="#FF6D00">HAL 반환코드</text>
-  <text x="500" y="220" font-size="10" fill="#FF6D00">DMA 상태 확인</text>
-  <text x="500" y="270" font-size="10" fill="#FF6D00">HardFault Handler</text>
-  <text x="500" y="285" font-size="10" fill="#FF6D00">CFSR / 레지스터</text>
+  <!-- 오버레이 내 각 레벨 디버깅 도구 -->
+  <text x="575" y="75" font-size="10" fill="#FF6D00" font-weight="bold">App 레벨:</text>
+  <text x="575" y="90" font-size="9" fill="#555">Watch / Live Expr / Memory View</text>
+
+  <text x="575" y="165" font-size="10" fill="#FF6D00" font-weight="bold">Service 레벨:</text>
+  <text x="575" y="180" font-size="9" fill="#555">FSM 상태 로그 / 서비스 반환값</text>
+
+  <text x="575" y="255" font-size="10" fill="#FF6D00" font-weight="bold">Driver 레벨:</text>
+  <text x="575" y="270" font-size="9" fill="#555">HAL 반환코드 / DMA 상태 확인</text>
+
+  <text x="575" y="340" font-size="10" fill="#FF6D00" font-weight="bold">HAL 레벨:</text>
+  <text x="575" y="355" font-size="9" fill="#555">HardFault Handler / CFSR / 레지스터</text>
+
+  <!-- 버전 뱃지 -->
+  <rect x="270" y="393" width="230" height="22" rx="11" fill="#1A73E8"/>
+  <text x="385" y="408" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Ch18 — 디버깅 인프라</text>
 </svg>

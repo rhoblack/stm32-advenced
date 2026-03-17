@@ -1,84 +1,99 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="900" height="400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400">
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="500" font-family="'Noto Sans KR', sans-serif" font-size="13" viewBox="0 0 820 500">
   <defs>
-    <style>
-      .title { fill: #333; font-size: 16px; font-weight: bold; }
-      .label { fill: #333; font-size: 12px; font-family: 'Noto Sans KR', sans-serif; }
-      .box { stroke: #333; stroke-width: 1; }
-      .app-box { fill: #EA4335; }
-      .drv-box { fill: #34A853; }
-      .hal-box { fill: #1A73E8; }
-      .hw-box { fill: #4285F4; }
-      .text { fill: white; font-size: 12px; text-anchor: middle; }
-    </style>
-  </defs>
-
-  <text x="450" y="30" class="title" text-anchor="middle">LCD 초기화 시퀀스 다이어그램</text>
-
-  <!-- Layer headers -->
-  <text x="100" y="70" class="label" font-weight="bold">App</text>
-  <text x="250" y="70" class="label" font-weight="bold">LCD Driver</text>
-  <text x="450" y="70" class="label" font-weight="bold">SPI Driver</text>
-  <text x="650" y="70" class="label" font-weight="bold">HAL</text>
-
-  <!-- Vertical timeline -->
-  <line x1="100" y1="80" x2="100" y2="380" stroke="#ddd" stroke-width="1"/>
-  <line x1="250" y1="80" x2="250" y2="380" stroke="#ddd" stroke-width="1"/>
-  <line x1="450" y1="80" x2="450" y2="380" stroke="#ddd" stroke-width="1"/>
-  <line x1="650" y1="80" x2="650" y2="380" stroke="#ddd" stroke-width="1"/>
-
-  <!-- Step 1: ILI9341_Init() -->
-  <rect x="70" y="90" width="60" height="30" class="app-box box"/>
-  <text x="100" y="110" class="text">Init()</text>
-  <path d="M 100 120 L 100 140" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
-
-  <!-- Step 2: LCD_Reset() -->
-  <rect x="220" y="140" width="60" height="30" class="drv-box box"/>
-  <text x="250" y="160" class="text">Reset</text>
-  <path d="M 250 170 L 250 190" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
-
-  <!-- Step 3: SPI TX (CMD) -->
-  <rect x="420" y="190" width="60" height="30" class="drv-box box"/>
-  <text x="450" y="210" class="text">Cmd</text>
-  <path d="M 450 220 L 450 240" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
-
-  <!-- Step 4: HAL_SPI_Transmit -->
-  <rect x="620" y="240" width="60" height="30" class="hal-box box"/>
-  <text x="650" y="260" class="text" font-size="11">Transmit</text>
-  <path d="M 650 270 L 650 290" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
-
-  <!-- Step 5: Hardware -->
-  <rect x="620" y="290" width="60" height="30" class="hw-box box"/>
-  <text x="650" y="310" class="text" font-size="11">SPI1 TX</text>
-  <path d="M 620 305 L 450 305" stroke="#333" stroke-width="1" marker-end="url(#arrow)"/>
-
-  <!-- Parallel callbacks -->
-  <text x="550" y="330" class="label" font-size="10">완료 콜백</text>
-  <path d="M 450 305 L 450 340" stroke="#666" stroke-width="1" stroke-dasharray="3,3"/>
-
-  <!-- Step 6: Delay -->
-  <rect x="420" y="340" width="60" height="30" class="drv-box box"/>
-  <text x="450" y="360" class="text" font-size="11">Delay</text>
-  <path d="M 450 370 L 250 370" stroke="#333" stroke-width="1" marker-end="url(#arrow)"/>
-
-  <!-- Repeat -->
-  <text x="100" y="395" class="label" font-size="10">반복... 다음 명령어</text>
-  <path d="M 250 370 L 100 370 L 100 140" stroke="#666" stroke-width="1" stroke-dasharray="3,3"/>
-
-  <!-- Message boxes -->
-  <rect x="50" y="200" width="150" height="30" fill="none" stroke="#ddd" stroke-width="1"/>
-  <text x="55" y="220" class="label" font-size="10">D/C=0, CS=0</text>
-
-  <rect x="50" y="245" width="150" height="30" fill="none" stroke="#ddd" stroke-width="1"/>
-  <text x="55" y="265" class="label" font-size="10">Cmd byte</text>
-
-  <rect x="50" y="290" width="150" height="30" fill="none" stroke="#ddd" stroke-width="1"/>
-  <text x="55" y="310" class="label" font-size="10">D/C=1, Data bytes</text>
-
-  <!-- Marker -->
-  <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-      <polygon points="0 0, 10 3, 0 6" fill="#333"/>
+    <marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#444"/>
+    </marker>
+    <marker id="arr-ret" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#888"/>
     </marker>
   </defs>
+
+  <!-- 제목 -->
+  <text x="410" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#1A1A2E">LCD 초기화 시퀀스 다이어그램</text>
+
+  <!-- ===== 참여자 헤더 박스 ===== -->
+  <!-- App -->
+  <rect x="45" y="45" width="90" height="32" rx="5" fill="#EA4335" opacity="0.15" stroke="#EA4335" stroke-width="1.5"/>
+  <text x="90" y="66" text-anchor="middle" font-size="13" font-weight="bold" fill="#C62828">App</text>
+
+  <!-- LCD Driver -->
+  <rect x="215" y="45" width="110" height="32" rx="5" fill="#34A853" opacity="0.15" stroke="#34A853" stroke-width="1.5"/>
+  <text x="270" y="66" text-anchor="middle" font-size="13" font-weight="bold" fill="#1B5E20">LCD Driver</text>
+
+  <!-- SPI Driver -->
+  <rect x="430" y="45" width="110" height="32" rx="5" fill="#34A853" opacity="0.15" stroke="#34A853" stroke-width="1.5"/>
+  <text x="485" y="66" text-anchor="middle" font-size="13" font-weight="bold" fill="#1B5E20">SPI Driver</text>
+
+  <!-- HAL -->
+  <rect x="655" y="45" width="90" height="32" rx="5" fill="#1A73E8" opacity="0.15" stroke="#1A73E8" stroke-width="1.5"/>
+  <text x="700" y="66" text-anchor="middle" font-size="13" font-weight="bold" fill="#0D47A1">HAL</text>
+
+  <!-- ===== 수직 생명선 ===== -->
+  <line x1="90"  y1="77" x2="90"  y2="470" stroke="#CCC" stroke-width="1" stroke-dasharray="5,4"/>
+  <line x1="270" y1="77" x2="270" y2="470" stroke="#CCC" stroke-width="1" stroke-dasharray="5,4"/>
+  <line x1="485" y1="77" x2="485" y2="470" stroke="#CCC" stroke-width="1" stroke-dasharray="5,4"/>
+  <line x1="700" y1="77" x2="700" y2="470" stroke="#CCC" stroke-width="1" stroke-dasharray="5,4"/>
+
+  <!-- ===== 활성화 박스 (Activation Boxes) ===== -->
+  <!-- App: 초기화 호출 구간 -->
+  <rect x="84" y="100" width="12" height="340" rx="2" fill="#EA4335" opacity="0.3"/>
+  <!-- LCD Driver: 전체 처리 구간 -->
+  <rect x="264" y="120" width="12" height="300" rx="2" fill="#34A853" opacity="0.3"/>
+  <!-- SPI Driver: 명령/데이터 전송 구간 -->
+  <rect x="479" y="220" width="12" height="200" rx="2" fill="#34A853" opacity="0.3"/>
+  <!-- HAL: SPI 전송 구간 -->
+  <rect x="694" y="260" width="12" height="100" rx="2" fill="#1A73E8" opacity="0.3"/>
+
+  <!-- ===== 메시지 화살표 ===== -->
+
+  <!-- 1. App → LCD Driver: ili9341_init() -->
+  <line x1="96" y1="112" x2="264" y2="112" stroke="#444" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="180" y="108" text-anchor="middle" font-size="11" fill="#333">ili9341_init()</text>
+
+  <!-- 2. LCD Driver self: GPIO Reset (D/C, CS, RESET 초기화) -->
+  <path d="M 276 140 Q 330 140 330 152 Q 330 164 276 164" stroke="#1B5E20" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+  <text x="338" y="150" font-size="10" fill="#1B5E20">GPIO Reset</text>
+  <text x="338" y="163" font-size="10" fill="#666">(D/C, CS, RESET 핀)</text>
+
+  <!-- ===== 루프 박스 ===== -->
+  <rect x="155" y="185" width="565" height="235" rx="4" fill="none" stroke="#888" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <rect x="155" y="185" width="42" height="18" rx="2" fill="#888"/>
+  <text x="176" y="198" text-anchor="middle" font-size="10" fill="white" font-weight="bold">loop</text>
+  <text x="450" y="200" text-anchor="middle" font-size="10" fill="#888">[ 명령어 순서대로 반복 전송 ]</text>
+
+  <!-- 3. LCD Driver → SPI Driver: spi_write_cmd(D/C=0) -->
+  <line x1="276" y1="220" x2="479" y2="220" stroke="#444" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="377" y="215" text-anchor="middle" font-size="11" fill="#333">spi_write_cmd(cmd)</text>
+  <rect x="155" y="226" width="100" height="18" rx="3" fill="#FFF3E0" stroke="#FB8C00" stroke-width="1"/>
+  <text x="205" y="239" text-anchor="middle" font-size="10" fill="#E65100">D/C=0, CS=0</text>
+
+  <!-- 4. SPI Driver → HAL: HAL_SPI_Transmit() -->
+  <line x1="491" y1="262" x2="694" y2="262" stroke="#444" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="592" y="257" text-anchor="middle" font-size="11" fill="#333">HAL_SPI_Transmit()</text>
+
+  <!-- 5. HAL → SPI Driver: SPI1 TX 완료 (점선 반환) -->
+  <line x1="694" y1="295" x2="491" y2="295" stroke="#888" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-ret)"/>
+  <text x="592" y="310" text-anchor="middle" font-size="10" fill="#888">SPI1 TX 완료 콜백</text>
+
+  <!-- 6. LCD Driver → SPI Driver: spi_write_data(D/C=1) -->
+  <line x1="276" y1="338" x2="479" y2="338" stroke="#444" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="377" y="333" text-anchor="middle" font-size="11" fill="#333">spi_write_data(data)</text>
+  <rect x="155" y="344" width="100" height="18" rx="3" fill="#E8F5E9" stroke="#43A047" stroke-width="1"/>
+  <text x="205" y="357" text-anchor="middle" font-size="10" fill="#1B5E20">D/C=1, CS=0</text>
+
+  <!-- 7. SPI Driver → HAL: HAL_SPI_Transmit() (데이터) -->
+  <line x1="491" y1="380" x2="694" y2="380" stroke="#444" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="592" y="375" text-anchor="middle" font-size="11" fill="#333">HAL_SPI_Transmit()</text>
+
+  <!-- ===== 루프 종료 후 ===== -->
+
+  <!-- 8. LCD Driver → App: 초기화 완료 반환 (점선) -->
+  <line x1="264" y1="445" x2="96" y2="445" stroke="#888" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-ret)"/>
+  <text x="180" y="440" text-anchor="middle" font-size="11" fill="#888">초기화 완료 반환</text>
+
+  <!-- 하단 생명선 종료 표시 -->
+  <line x1="84"  y1="458" x2="96"  y2="458" stroke="#888" stroke-width="2"/>
+  <line x1="264" y1="458" x2="276" y2="458" stroke="#888" stroke-width="2"/>
+  <line x1="479" y1="440" x2="491" y2="440" stroke="#888" stroke-width="2"/>
+  <line x1="694" y1="395" x2="706" y2="395" stroke="#888" stroke-width="2"/>
 </svg>

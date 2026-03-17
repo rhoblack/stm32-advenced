@@ -1,119 +1,85 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="620"  font-family="'Noto Sans KR', sans-serif" viewBox="0 0 900 620">
-  <rect width="900" height="620" fill="#F8F9FA" rx="12"/>
-  <text x="450" y="36" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">v2.0 최종 시스템 아키텍처 다이어그램</text>
-  <text x="450" y="56" text-anchor="middle" font-size="12" fill="#666">STM32 스마트 시계 &amp; 환경 모니터링 시스템 — HAL → Driver → Service → App</text>
-
-  <!-- App 레이어 -->
-  <rect x="30" y="75" width="840" height="90" fill="#FEECE9" stroke="#EA4335" stroke-width="2" rx="8"/>
-  <text x="55" y="100" font-size="13" font-weight="bold" fill="#C62828">App 레이어</text>
-  <text x="55" y="116" font-size="10" fill="#555">[ DIP 준수: Service 인터페이스만 의존 ]</text>
-
-  <rect x="160" y="85" width="130" height="70" fill="white" stroke="#EA4335" rx="5"/>
-  <text x="225" y="106" text-anchor="middle" font-size="11" font-weight="bold" fill="#C62828">main_app.c</text>
-  <text x="225" y="121" text-anchor="middle" font-size="9" fill="#555">시스템 루프</text>
-  <text x="225" y="135" text-anchor="middle" font-size="9" fill="#555">1초 주기 갱신</text>
-  <text x="225" y="148" text-anchor="middle" font-size="9" fill="#555">초기화 시퀀스</text>
-
-  <rect x="310" y="85" width="130" height="70" fill="white" stroke="#EA4335" rx="5"/>
-  <text x="375" y="106" text-anchor="middle" font-size="11" font-weight="bold" fill="#C62828">cli_app.c</text>
-  <text x="375" y="121" text-anchor="middle" font-size="9" fill="#555">명령어 파서</text>
-  <text x="375" y="135" text-anchor="middle" font-size="9" fill="#555">cmd_table.c</text>
-  <text x="375" y="148" text-anchor="middle" font-size="9" fill="#555">링버퍼 기반</text>
-
-  <rect x="460" y="85" width="130" height="70" fill="white" stroke="#EA4335" rx="5"/>
-  <text x="525" y="106" text-anchor="middle" font-size="11" font-weight="bold" fill="#C62828">protocol_app.c</text>
-  <text x="525" y="121" text-anchor="middle" font-size="9" fill="#555">PC 프레임 설계</text>
-  <text x="525" y="135" text-anchor="middle" font-size="9" fill="#555">직렬화/역직렬화</text>
-  <text x="525" y="148" text-anchor="middle" font-size="9" fill="#555">체크섬 검증</text>
-
-  <!-- Service 레이어 -->
-  <rect x="30" y="185" width="840" height="90" fill="#FFF8E1" stroke="#FBBC04" stroke-width="2" rx="8"/>
-  <text x="55" y="210" font-size="13" font-weight="bold" fill="#F57F17">Service 레이어</text>
-  <text x="55" y="226" font-size="10" fill="#555">[ ISP 준수: 필요한 인터페이스만 노출 ]</text>
-
-  <rect x="160" y="195" width="120" height="70" fill="white" stroke="#FBBC04" rx="5"/>
-  <text x="220" y="215" text-anchor="middle" font-size="10" font-weight="bold" fill="#F57F17">clock_service.c</text>
-  <text x="220" y="230" text-anchor="middle" font-size="9" fill="#555">RTC→침 각도 변환</text>
-  <text x="220" y="244" text-anchor="middle" font-size="9" fill="#555">시각 포맷팅</text>
-
-  <rect x="295" y="195" width="120" height="70" fill="white" stroke="#FBBC04" rx="5"/>
-  <text x="355" y="215" text-anchor="middle" font-size="10" font-weight="bold" fill="#F57F17">sensor_service.c</text>
-  <text x="355" y="230" text-anchor="middle" font-size="9" fill="#555">SHT31 추상화</text>
-  <text x="355" y="244" text-anchor="middle" font-size="9" fill="#555">임계값 알람 로직</text>
-
-  <rect x="430" y="195" width="120" height="70" fill="white" stroke="#FBBC04" rx="5"/>
-  <text x="490" y="215" text-anchor="middle" font-size="10" font-weight="bold" fill="#F57F17">gfx_service.c</text>
-  <text x="490" y="230" text-anchor="middle" font-size="9" fill="#555">폰트 렌더링</text>
-  <text x="490" y="244" text-anchor="middle" font-size="9" fill="#555">픽셀/도형 추상화</text>
-
-  <rect x="565" y="195" width="120" height="70" fill="white" stroke="#FBBC04" rx="5"/>
-  <text x="625" y="215" text-anchor="middle" font-size="10" font-weight="bold" fill="#F57F17">ui_service.c</text>
-  <text x="625" y="230" text-anchor="middle" font-size="9" fill="#555">화면 레이아웃</text>
-  <text x="625" y="244" text-anchor="middle" font-size="9" fill="#555">DISPLAY HFSM</text>
-
-  <!-- Driver 레이어 -->
-  <rect x="30" y="295" width="840" height="120" fill="#E8F5E9" stroke="#34A853" stroke-width="2" rx="8"/>
-  <text x="55" y="322" font-size="13" font-weight="bold" fill="#1B5E20">Driver 레이어</text>
-  <text x="55" y="338" font-size="10" fill="#555">[ SRP 준수: 1 Driver = 1 주변장치 ]</text>
-
-  <rect x="55" y="348" width="90" height="55" fill="white" stroke="#34A853" rx="4"/>
-  <text x="100" y="368" text-anchor="middle" font-size="9" font-weight="bold" fill="#1B5E20">uart_driver.c</text>
-  <text x="100" y="382" text-anchor="middle" font-size="8" fill="#555">TX/RX DMA</text>
-  <text x="100" y="394" text-anchor="middle" font-size="8" fill="#555">링버퍼</text>
-
-  <rect x="160" y="348" width="90" height="55" fill="white" stroke="#34A853" rx="4"/>
-  <text x="205" y="368" text-anchor="middle" font-size="9" font-weight="bold" fill="#1B5E20">tim_driver.c</text>
-  <text x="205" y="382" text-anchor="middle" font-size="8" fill="#555">GP TIM / Adv TIM</text>
-  <text x="205" y="394" text-anchor="middle" font-size="8" fill="#555">PWM / IC / OC</text>
-
-  <rect x="265" y="348" width="90" height="55" fill="white" stroke="#34A853" rx="4"/>
-  <text x="310" y="368" text-anchor="middle" font-size="9" font-weight="bold" fill="#1B5E20">rtc_driver.c</text>
-  <text x="310" y="382" text-anchor="middle" font-size="8" fill="#555">시각/날짜</text>
-  <text x="310" y="394" text-anchor="middle" font-size="8" fill="#555">AlarmA/B</text>
-
-  <rect x="370" y="348" width="90" height="55" fill="white" stroke="#34A853" rx="4"/>
-  <text x="415" y="368" text-anchor="middle" font-size="9" font-weight="bold" fill="#1B5E20">stepper_drv.c</text>
-  <text x="415" y="382" text-anchor="middle" font-size="8" fill="#555">풀/하프 스텝</text>
-  <text x="415" y="394" text-anchor="middle" font-size="8" fill="#555">MOTOR FSM</text>
-
-  <rect x="475" y="348" width="90" height="55" fill="white" stroke="#34A853" rx="4"/>
-  <text x="520" y="368" text-anchor="middle" font-size="9" font-weight="bold" fill="#1B5E20">i2c_driver.c</text>
-  <text x="520" y="382" text-anchor="middle" font-size="8" fill="#555">폴링/DMA</text>
-  <text x="520" y="394" text-anchor="middle" font-size="8" fill="#555">W/R 시퀀스</text>
-
-  <rect x="580" y="348" width="90" height="55" fill="white" stroke="#34A853" rx="4"/>
-  <text x="625" y="368" text-anchor="middle" font-size="9" font-weight="bold" fill="#1B5E20">sht31_driver.c</text>
-  <text x="625" y="382" text-anchor="middle" font-size="8" fill="#555">측정 명령</text>
-  <text x="625" y="394" text-anchor="middle" font-size="8" fill="#555">CRC-8 검증</text>
-
-  <rect x="685" y="348" width="90" height="55" fill="white" stroke="#34A853" rx="4"/>
-  <text x="730" y="368" text-anchor="middle" font-size="9" font-weight="bold" fill="#1B5E20">spi_driver.c</text>
-  <text x="730" y="382" text-anchor="middle" font-size="8" fill="#555">SPI DMA</text>
-  <text x="730" y="394" text-anchor="middle" font-size="8" fill="#555">ili9341_driver.c</text>
-
-  <!-- HAL 레이어 -->
-  <rect x="30" y="435" width="840" height="60" fill="#E3F2FD" stroke="#1A73E8" stroke-width="2" rx="8"/>
-  <text x="55" y="460" font-size="13" font-weight="bold" fill="#0D47A1">HAL 레이어 (STM32 HAL Library)</text>
-  <text x="55" y="480" font-size="10" fill="#555">HAL_GPIO_* / HAL_UART_* / HAL_TIM_* / HAL_RTC_* / HAL_I2C_* / HAL_SPI_* / HAL_DMA_*</text>
-
-  <!-- 하드웨어 레이어 -->
-  <rect x="30" y="515" width="840" height="50" fill="#ECEFF1" stroke="#90A4AE" stroke-width="2" rx="8"/>
-  <text x="450" y="540" text-anchor="middle" font-size="12" font-weight="bold" fill="#37474F">Hardware (NUCLEO-F411RE)</text>
-  <text x="450" y="557" text-anchor="middle" font-size="10" fill="#666">STM32F411RE · UART2 · TIM1/2/3/4/5 · RTC · I2C1 · SPI1 · DMA1/2 · EXTI · GPIO</text>
-
-  <!-- 레이어 간 화살표 -->
-  <line x1="450" y1="165" x2="450" y2="185" stroke="#888" stroke-width="1.5" marker-end="url(#arr4)"/>
-  <line x1="450" y1="275" x2="450" y2="295" stroke="#888" stroke-width="1.5" marker-end="url(#arr4)"/>
-  <line x1="450" y1="415" x2="450" y2="435" stroke="#888" stroke-width="1.5" marker-end="url(#arr4)"/>
-  <line x1="450" y1="495" x2="450" y2="515" stroke="#888" stroke-width="1.5" marker-end="url(#arr4)"/>
-
-  <!-- v2.0 배지 -->
-  <rect x="800" y="75" width="65" height="30" fill="#EA4335" rx="15"/>
-  <text x="832" y="95" text-anchor="middle" font-size="12" font-weight="bold" fill="white">v2.0</text>
-
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="550" font-family="'Noto Sans KR', sans-serif" font-size="14" viewBox="0 0 900 550">
   <defs>
-    <marker id="arr4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L8,3 z" fill="#888"/>
+    <marker id="arr17f" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
     </marker>
   </defs>
+
+  <!-- v2.0 뱃지 우상단 -->
+  <rect x="808" y="12" width="72" height="30" rx="15" fill="#EA4335"/>
+  <text x="844" y="31" text-anchor="middle" font-size="14" font-weight="bold" fill="white">v2.0</text>
+
+  <text x="430" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">v2.0 최종 시스템 아키텍처 — HAL → Driver → Service → App</text>
+
+  <!-- App Layer -->
+  <rect x="30" y="45" width="840" height="90" rx="8" fill="#EA4335" opacity="0.12" stroke="#EA4335" stroke-width="2"/>
+  <text x="65" y="67" font-size="11" fill="#EA4335" font-weight="bold">App Layer</text>
+  <text x="430" y="62" text-anchor="middle" font-size="9" fill="#C62828">[ DIP 준수: Service 인터페이스만 의존 ]</text>
+  <rect x="50" y="72" width="245" height="50" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="172" y="91" text-anchor="middle" font-size="12" font-weight="bold" fill="#C62828">main_app.c</text>
+  <text x="172" y="105" text-anchor="middle" font-size="9" fill="#C62828">시스템 루프 / 1초 갱신 / 초기화</text>
+  <rect x="315" y="72" width="245" height="50" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="437" y="91" text-anchor="middle" font-size="12" font-weight="bold" fill="#C62828">cli_app.c</text>
+  <text x="437" y="105" text-anchor="middle" font-size="9" fill="#C62828">명령어 파서 / cmd_table</text>
+  <rect x="580" y="72" width="265" height="50" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="712" y="91" text-anchor="middle" font-size="12" font-weight="bold" fill="#C62828">protocol_app.c</text>
+  <text x="712" y="105" text-anchor="middle" font-size="9" fill="#C62828">PC 프레임 / 직렬화 / 체크섬</text>
+
+  <line x1="450" y1="135" x2="450" y2="163" stroke="#555" stroke-width="1.5" marker-end="url(#arr17f)"/>
+
+  <!-- Service Layer -->
+  <rect x="30" y="168" width="840" height="90" rx="8" fill="#FBBC04" opacity="0.12" stroke="#FBBC04" stroke-width="2"/>
+  <text x="65" y="190" font-size="11" fill="#E65100" font-weight="bold">Service Layer</text>
+  <text x="450" y="185" text-anchor="middle" font-size="9" fill="#E65100">[ ISP 준수: 필요한 인터페이스만 노출 ]</text>
+  <rect x="50" y="196" width="185" height="50" rx="5" fill="#FFF8E1" stroke="#FBBC04"/>
+  <text x="142" y="215" text-anchor="middle" font-size="11" fill="#E65100">clock_service.c</text>
+  <text x="142" y="229" text-anchor="middle" font-size="9" fill="#E65100">RTC→침 각도 변환</text>
+  <rect x="250" y="196" width="185" height="50" rx="5" fill="#FFF8E1" stroke="#FBBC04"/>
+  <text x="342" y="215" text-anchor="middle" font-size="11" fill="#E65100">sensor_service.c</text>
+  <text x="342" y="229" text-anchor="middle" font-size="9" fill="#E65100">SHT31 추상화 / 임계값</text>
+  <rect x="450" y="196" width="185" height="50" rx="5" fill="#FFF8E1" stroke="#FBBC04"/>
+  <text x="542" y="215" text-anchor="middle" font-size="11" fill="#E65100">gfx_service.c</text>
+  <text x="542" y="229" text-anchor="middle" font-size="9" fill="#E65100">폰트 렌더링 / 픽셀 추상화</text>
+  <rect x="650" y="196" width="200" height="50" rx="5" fill="#FFF8E1" stroke="#FBBC04"/>
+  <text x="750" y="215" text-anchor="middle" font-size="11" fill="#E65100">ui_service.c</text>
+  <text x="750" y="229" text-anchor="middle" font-size="9" fill="#E65100">화면 레이아웃 / DISPLAY HFSM</text>
+
+  <line x1="450" y1="258" x2="450" y2="285" stroke="#555" stroke-width="1.5" marker-end="url(#arr17f)"/>
+
+  <!-- Driver Layer -->
+  <rect x="30" y="290" width="840" height="90" rx="8" fill="#34A853" opacity="0.12" stroke="#34A853" stroke-width="2"/>
+  <text x="65" y="312" font-size="11" fill="#1B5E20" font-weight="bold">Driver Layer</text>
+  <text x="450" y="307" text-anchor="middle" font-size="9" fill="#1B5E20">[ SRP 준수: 1 Driver = 1 주변장치 ]</text>
+  <rect x="42" y="318" width="108" height="50" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="96" y="336" text-anchor="middle" font-size="10" fill="#1B5E20">uart_driver.c</text>
+  <text x="96" y="350" text-anchor="middle" font-size="8" fill="#555">TX/RX DMA/링버퍼</text>
+  <rect x="160" y="318" width="108" height="50" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="214" y="336" text-anchor="middle" font-size="10" fill="#1B5E20">tim_driver.c</text>
+  <text x="214" y="350" text-anchor="middle" font-size="8" fill="#555">GP/Adv/PWM/IC/OC</text>
+  <rect x="278" y="318" width="108" height="50" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="332" y="336" text-anchor="middle" font-size="10" fill="#1B5E20">rtc_driver.c</text>
+  <text x="332" y="350" text-anchor="middle" font-size="8" fill="#555">시각/날짜/AlarmA/B</text>
+  <rect x="396" y="318" width="108" height="50" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="450" y="336" text-anchor="middle" font-size="10" fill="#1B5E20">stepper_drv.c</text>
+  <text x="450" y="350" text-anchor="middle" font-size="8" fill="#555">풀/하프 스텝/MOTOR FSM</text>
+  <rect x="514" y="318" width="108" height="50" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="568" y="336" text-anchor="middle" font-size="10" fill="#1B5E20">i2c_driver.c</text>
+  <text x="568" y="350" text-anchor="middle" font-size="8" fill="#555">폴링/DMA/W-R 시퀀스</text>
+  <rect x="632" y="318" width="108" height="50" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="686" y="336" text-anchor="middle" font-size="10" fill="#1B5E20">sht31_driver.c</text>
+  <text x="686" y="350" text-anchor="middle" font-size="8" fill="#555">측정 명령/CRC-8</text>
+  <rect x="750" y="318" width="108" height="50" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="804" y="336" text-anchor="middle" font-size="10" fill="#1B5E20">spi_driver.c</text>
+  <text x="804" y="350" text-anchor="middle" font-size="8" fill="#555">+ili9341_driver</text>
+
+  <line x1="450" y1="380" x2="450" y2="408" stroke="#555" stroke-width="1.5" marker-end="url(#arr17f)"/>
+
+  <!-- HAL Layer -->
+  <rect x="30" y="413" width="840" height="55" rx="8" fill="#1A73E8" opacity="0.12" stroke="#1A73E8" stroke-width="2"/>
+  <text x="65" y="435" font-size="11" fill="#1A73E8" font-weight="bold">HAL Layer</text>
+  <text x="450" y="450" text-anchor="middle" font-size="12" fill="#0D47A1">HAL_GPIO / HAL_UART / HAL_TIM / HAL_RTC / HAL_I2C / HAL_SPI / HAL_DMA</text>
+
+  <!-- 하단 설명 -->
+  <text x="450" y="490" text-anchor="middle" font-size="11" fill="#555">STM32 스마트 시계 &amp; 환경 모니터링 시스템 — 소프트웨어 아키텍처 원칙 검증 완료</text>
+  <text x="450" y="510" text-anchor="middle" font-size="10" fill="#888">SRP / DIP / ISP 준수 · 의존성 위반 0건 · 테이블 기반 FSM · HFSM 적용</text>
 </svg>
