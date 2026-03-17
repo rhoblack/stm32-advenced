@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 380" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <text x="375" y="25" text-anchor="middle" font-size="18" font-weight="700" fill="#212121">STM32F411RE USART2 DMA 매핑</text>
+  <text x="375" y="45" text-anchor="middle" font-size="12" fill="#888">DMA1 컨트롤러 — Stream/Channel 할당</text>
+
+  <defs>
+    <marker id="mapArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#FFA500"/>
+    </marker>
+  </defs>
+
+  <!-- DMA1 컨트롤러 박스 -->
+  <rect x="30" y="65"  rx="10" fill="#FFF3E0" stroke="#FFA500" stroke-width="2"/>
+  <text x="180" y="90" text-anchor="middle" font-size="16" font-weight="700" fill="#E65100">DMA1 컨트롤러</text>
+
+  <!-- Stream 목록 -->
+  <rect x="50" y="105"  rx="4" fill="#E0E0E0" opacity="0.5" stroke="#BDBDBD"/>
+  <text x="180" y="124" text-anchor="middle" font-size="11" fill="#999">Stream 0~4 (다른 주변장치용)</text>
+
+  <!-- Stream 5: USART2_RX (강조) -->
+  <rect x="50" y="145"  rx="6" fill="#FFA500" opacity="0.85"/>
+  <text x="70" y="162" font-size="12" fill="white" font-weight="700">Stream 5</text>
+  <text x="70" y="178" font-size="10" fill="white">Channel 4 → USART2_RX</text>
+  <rect x="230" y="152"  rx="4" fill="white" opacity="0.3"/>
+  <text x="265" y="169" text-anchor="middle" font-size="10" fill="white" font-weight="600">Circular</text>
+
+  <!-- Stream 6: USART2_TX (강조) -->
+  <rect x="50" y="197"  rx="6" fill="#FFA500" opacity="0.85"/>
+  <text x="70" y="214" font-size="12" fill="white" font-weight="700">Stream 6</text>
+  <text x="70" y="230" font-size="10" fill="white">Channel 4 → USART2_TX</text>
+  <rect x="230" y="204"  rx="4" fill="white" opacity="0.3"/>
+  <text x="265" y="221" text-anchor="middle" font-size="10" fill="white" font-weight="600">Normal</text>
+
+  <!-- Stream 7 -->
+  <rect x="50" y="249"  rx="4" fill="#E0E0E0" opacity="0.5" stroke="#BDBDBD"/>
+  <text x="180" y="268" text-anchor="middle" font-size="11" fill="#999">Stream 7 (다른 주변장치용)</text>
+
+  <!-- USART2 주변장치 -->
+  <rect x="430" y="120"  rx="10" fill="#E8F5E9" stroke="#34A853" stroke-width="2"/>
+  <text x="570" y="150" text-anchor="middle" font-size="16" font-weight="700" fill="#2E7D32">USART2</text>
+  <text x="570" y="170" text-anchor="middle" font-size="11" fill="#555">115200-8-N-1</text>
+
+  <rect x="450" y="185"  rx="4" fill="#34A853" opacity="0.7"/>
+  <text x="500" y="205" text-anchor="middle" font-size="11" fill="white" font-weight="600">DR (데이터)</text>
+
+  <rect x="570" y="185"  rx="4" fill="#34A853" opacity="0.5"/>
+  <text x="600" y="205" text-anchor="middle" font-size="10" fill="white">PA2 TX</text>
+
+  <rect x="640" y="185"  rx="4" fill="#34A853" opacity="0.5"/>
+  <text x="670" y="205" text-anchor="middle" font-size="10" fill="white">PA3 RX</text>
+
+  <!-- 화살표: Stream5 → USART2 (RX: Periph→Mem) -->
+  <line x1="310" y1="165" x2="430" y2="165" stroke="#FFA500" stroke-width="2.5" marker-end="url(#mapArrow)"/>
+  <text x="370" y="155" text-anchor="middle" font-size="10" fill="#E65100" font-weight="600">Periph→Mem</text>
+
+  <!-- 화살표: Stream6 ← USART2 (TX: Mem→Periph) -->
+  <line x1="430" y1="217" x2="310" y2="217" stroke="#FFA500" stroke-width="2.5" marker-end="url(#mapArrow)"/>
+  <text x="370" y="240" text-anchor="middle" font-size="10" fill="#E65100" font-weight="600">Mem→Periph</text>
+
+  <!-- 메모리 -->
+  <rect x="430" y="290"  rx="10" fill="#E3F2FD" stroke="#1A73E8" stroke-width="2"/>
+  <text x="570" y="315" text-anchor="middle" font-size="14" font-weight="700" fill="#1565C0">SRAM (128KB)</text>
+  <text x="490" y="340" text-anchor="middle" font-size="10" fill="#555">dma_rx_buf[64]</text>
+  <text x="640" y="340" text-anchor="middle" font-size="10" fill="#555">tx_dma_buf[64]</text>
+
+  <!-- 범례 -->
+  <rect x="50" y="310"  rx="3" fill="#FFA500"/>
+  <text x="75" y="323" font-size="11" fill="#555">DMA Stream (활성)</text>
+  <rect x="50" y="335"  rx="3" fill="#E0E0E0" stroke="#BDBDBD"/>
+  <text x="75" y="348" font-size="11" fill="#555">DMA Stream (미사용)</text>
+</svg>

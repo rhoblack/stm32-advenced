@@ -47,7 +47,7 @@
   </p>
 
   <figure>
-    <img src="../../figures/ch04_sec01_swo_vs_uart.svg" alt="SWO 경로 vs UART 경로 비교">
+    <img src="../../figures/ch04_sec01_swo_vs_uart.svg" width="100%" height="auto" alt="SWO 경로 vs UART 경로 비교">
     <figcaption>그림 04-1. SWO(Ch02)와 UART(Ch04)의 경로 비교 — SWO는 디버거 전용, UART는 범용 통신</figcaption>
   </figure>
 
@@ -84,7 +84,7 @@
     Driver 레이어의 첫 번째 통신 모듈을 직접 구현하는 것입니다.
   </p>
   <figure>
-    <img src="../../figures/ch04_sec00_architecture.svg" alt="레이어 아키텍처에서 uart_driver 위치">
+    <img src="../../figures/ch04_sec00_architecture.svg" width="100%" height="auto" alt="레이어 아키텍처에서 uart_driver 위치">
     <figcaption>그림 04-2. uart_driver의 레이어 위치 — Driver 계층에서 HAL_UART를 감싸 상위에 깔끔한 인터페이스를 제공</figcaption>
   </figure>
 
@@ -119,7 +119,61 @@ uint8_t       uart_read_byte(void);</code></pre>
     Ch03에서는 시퀀스 다이어그램을 "읽었"지만, Ch04부터는 직접 "그릴" 수 있어야 합니다.
   </p>
   <figure>
-    <img src="../../figures/ch04_sec00_sequence.svg" alt="UART 송신 시퀀스 다이어그램">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 400" font-family="'Noto Sans KR', sans-serif" font-size="13" style="max-width: 100%; height: auto; display: block;">
+      <defs>
+        <marker id="seqArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+        </marker>
+        <marker id="seqArrGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#34A853"/>
+        </marker>
+        <marker id="seqArrBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#1A73E8"/>
+        </marker>
+      </defs>
+      <text x="375" y="24" text-anchor="middle" font-size="16" font-weight="700" fill="#212121">UART 송신 시퀀스 — App → Driver → HAL → Hardware</text>
+      <rect x="30" y="45" width="110" height="35" rx="6" fill="#EA4335" opacity="0.15" stroke="#EA4335"/>
+      <text x="85" y="67" text-anchor="middle" font-size="12" font-weight="600" fill="#EA4335">App (main)</text>
+      <rect x="210" y="45" width="120" height="35" rx="6" fill="#34A853" opacity="0.15" stroke="#34A853" stroke-width="2"/>
+      <text x="270" y="67" text-anchor="middle" font-size="12" font-weight="700" fill="#34A853">uart_driver</text>
+      <rect x="410" y="45" width="120" height="35" rx="6" fill="#1A73E8" opacity="0.15" stroke="#1A73E8"/>
+      <text x="470" y="67" text-anchor="middle" font-size="12" font-weight="600" fill="#1A73E8">HAL_UART</text>
+      <rect x="600" y="45" width="110" height="35" rx="6" fill="#F5F5F5" stroke="#999"/>
+      <text x="655" y="67" text-anchor="middle" font-size="12" font-weight="600" fill="#333">USART2 HW</text>
+      <line x1="85" y1="80" x2="85" y2="360" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <line x1="270" y1="80" x2="270" y2="360" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <line x1="470" y1="80" x2="470" y2="360" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <line x1="655" y1="80" x2="655" y2="360" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <line x1="85" y1="110" x2="264" y2="110" stroke="#333" stroke-width="2" marker-end="url(#seqArr)"/>
+      <text x="175" y="103" text-anchor="middle" font-size="11" fill="#333" font-weight="600">uart_send("Hello", 5)</text>
+      <rect x="264" y="108" width="12" height="100" fill="#34A853" opacity="0.3"/>
+      <rect x="285" y="122" width="100" height="20" rx="3" fill="#E8F5E9" stroke="#34A853"/>
+      <text x="335" y="136" text-anchor="middle" font-size="10" fill="#1B5E20">파라미터 검증</text>
+      <line x1="276" y1="155" x2="464" y2="155" stroke="#34A853" stroke-width="2" marker-end="url(#seqArrGreen)"/>
+      <text x="370" y="148" text-anchor="middle" font-size="11" fill="#34A853" font-weight="600">HAL_UART_Transmit(&amp;huart2, buf, 5, 100)</text>
+      <rect x="464" y="153" width="12" height="70" fill="#1A73E8" opacity="0.3"/>
+      <line x1="476" y1="175" x2="649" y2="175" stroke="#1A73E8" stroke-width="2" marker-end="url(#seqArrBlue)"/>
+      <text x="562" y="168" text-anchor="middle" font-size="11" fill="#1A73E8" font-weight="600">USART2→DR = byte</text>
+      <rect x="649" y="173" width="12" height="40" fill="#999" opacity="0.3"/>
+      <rect x="670" y="180" width="60" height="20" rx="4" fill="#FFF8E1" stroke="#FFB300"/>
+      <text x="700" y="194" text-anchor="middle" font-size="9" fill="#E65100">TX 핀 송신</text>
+      <line x1="649" y1="215" x2="476" y2="215" stroke="#999" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#seqArr)"/>
+      <text x="562" y="230" text-anchor="middle" font-size="10" fill="#888">전송 완료 (TXE flag)</text>
+      <line x1="464" y1="240" x2="276" y2="240" stroke="#999" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#seqArr)"/>
+      <text x="370" y="255" text-anchor="middle" font-size="10" fill="#888">HAL_OK</text>
+      <line x1="264" y1="260" x2="91" y2="260" stroke="#999" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#seqArr)"/>
+      <text x="175" y="275" text-anchor="middle" font-size="10" fill="#888">UART_OK</text>
+      <rect x="610" y="290" width="100" height="25" rx="4" fill="#34A853" opacity="0.2" stroke="#34A853"/>
+      <text x="660" y="307" text-anchor="middle" font-size="10" fill="#34A853" font-weight="600">PC 터미널 출력</text>
+      <rect x="30" y="330" width="690" height="30" rx="6" fill="#F9F9F9" stroke="#E0E0E0"/>
+      <rect x="50" y="339" width="12" height="12" fill="#EA4335" opacity="0.3"/>
+      <text x="70" y="349" font-size="10" fill="#666">App</text>
+      <rect x="120" y="339" width="12" height="12" fill="#34A853" opacity="0.3"/>
+      <text x="140" y="349" font-size="10" fill="#666">Driver</text>
+      <rect x="200" y="339" width="12" height="12" fill="#1A73E8" opacity="0.3"/>
+      <text x="220" y="349" font-size="10" fill="#666">HAL</text>
+      <text x="320" y="349" font-size="10" fill="#666">인터페이스 경계에서 HAL 상세가 숨겨진다</text>
+    </svg>
     <figcaption>그림 04-3. UART 송신 시퀀스 — App이 Driver 인터페이스만 알면 HAL 상세는 숨겨진다</figcaption>
   </figure>
 </section>
@@ -177,7 +231,7 @@ uint8_t       uart_read_byte(void);</code></pre>
   </ul>
 
   <figure>
-    <img src="../../figures/ch04_sec01_uart_frame.svg" alt="UART 프레임 타이밍 다이어그램">
+    <img src="../../figures/ch04_sec01_uart_frame.svg" width="100%" height="auto" alt="UART 프레임 타이밍 다이어그램">
     <figcaption>그림 04-4. UART 프레임 구조 — 0x41('A') 전송 시 타이밍. 115200bps에서 1프레임 = 10비트 = 86.8us</figcaption>
   </figure>
 
@@ -197,7 +251,7 @@ uint8_t       uart_read_byte(void);</code></pre>
   </p>
 
   <figure>
-    <img src="../../figures/ch04_sec01_baudrate_mismatch.svg" alt="Baud Rate 불일치 시 데이터 깨짐">
+    <img src="../../figures/ch04_sec01_baudrate_mismatch.svg" width="100%" height="auto" alt="Baud Rate 불일치 시 데이터 깨짐">
     <figcaption>그림 04-5. Baud Rate 불일치 — 송신 115200bps vs 수신 9600bps일 때 샘플링 타이밍 어긋남</figcaption>
   </figure>
 
@@ -399,7 +453,7 @@ while (1)
   </p>
 
   <figure>
-    <img src="../../figures/ch04_sec03_polling_timeline.svg" alt="폴링 UART 송신 CPU 타임라인">
+    <img src="../../figures/ch04_sec03_polling_timeline.svg" width="100%" height="auto" alt="폴링 UART 송신 CPU 타임라인">
     <figcaption>그림 04-6. 폴링 방식 CPU 타임라인 — HAL_UART_Transmit() 호출 구간에서 CPU가 블로킹된다</figcaption>
   </figure>
 
@@ -490,7 +544,67 @@ printf("uptime=%lus  LED=%s\r\n",
   </p>
 
   <figure>
-    <img src="../../figures/ch04_sec04_interrupt_sequence.svg" alt="1바이트 재등록 시퀀스 다이어그램">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 450" font-family="'Noto Sans KR', sans-serif" font-size="13" style="max-width: 100%; height: auto; display: block;">
+      <defs>
+        <marker id="iArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+        </marker>
+        <marker id="iArrRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#EA4335"/>
+        </marker>
+      </defs>
+      <text x="390" y="24" text-anchor="middle" font-size="16" font-weight="700" fill="#212121">인터럽트 1바이트 재등록 패턴 — 시퀀스 다이어그램</text>
+      <rect x="20" y="45" width="100" height="30" rx="6" fill="#F5F5F5" stroke="#999"/>
+      <text x="70" y="65" text-anchor="middle" font-size="11" font-weight="600" fill="#333">PC (송신)</text>
+      <rect x="180" y="45" width="100" height="30" rx="6" fill="#1A73E8" opacity="0.15" stroke="#1A73E8"/>
+      <text x="230" y="65" text-anchor="middle" font-size="11" font-weight="600" fill="#1A73E8">USART2 HW</text>
+      <rect x="340" y="45" width="80" height="30" rx="6" fill="#FBBC04" opacity="0.15" stroke="#FBBC04"/>
+      <text x="380" y="65" text-anchor="middle" font-size="11" font-weight="600" fill="#F57F17">NVIC</text>
+      <rect x="480" y="45" width="120" height="30" rx="6" fill="#34A853" opacity="0.15" stroke="#34A853" stroke-width="2"/>
+      <text x="540" y="65" text-anchor="middle" font-size="11" font-weight="700" fill="#34A853">RxCpltCallback</text>
+      <rect x="660" y="45" width="100" height="30" rx="6" fill="#EA4335" opacity="0.15" stroke="#EA4335"/>
+      <text x="710" y="65" text-anchor="middle" font-size="11" font-weight="600" fill="#EA4335">main loop</text>
+      <line x1="70" y1="75" x2="70" y2="420" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <line x1="230" y1="75" x2="230" y2="420" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <line x1="380" y1="75" x2="380" y2="420" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <line x1="540" y1="75" x2="540" y2="420" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <line x1="710" y1="75" x2="710" y2="420" stroke="#CCC" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <rect x="704" y="85" width="12" height="330" fill="#EA4335" opacity="0.15"/>
+      <text x="710" y="98" text-anchor="middle" font-size="9" fill="#EA4335">계속 동작</text>
+      <rect x="460" y="105" width="170" height="20" rx="3" fill="#E8F5E9" stroke="#34A853"/>
+      <text x="545" y="119" text-anchor="middle" font-size="10" fill="#1B5E20" font-weight="600">HAL_UART_Receive_IT(&amp;huart2, &amp;rx_byte, 1)</text>
+      <text x="400" y="102" text-anchor="end" font-size="9" fill="#34A853" font-weight="600">초기화 시 1회 등록</text>
+      <line x1="70" y1="145" x2="224" y2="145" stroke="#333" stroke-width="2" marker-end="url(#iArr)"/>
+      <text x="147" y="138" text-anchor="middle" font-size="10" fill="#333" font-weight="600">'A' 전송</text>
+      <rect x="224" y="143" width="12" height="20" fill="#1A73E8" opacity="0.3"/>
+      <line x1="236" y1="155" x2="374" y2="155" stroke="#1A73E8" stroke-width="2" marker-end="url(#iArr)"/>
+      <text x="305" y="148" text-anchor="middle" font-size="10" fill="#1A73E8">RXNE 인터럽트</text>
+      <rect x="374" y="153" width="12" height="15" fill="#FBBC04" opacity="0.3"/>
+      <line x1="386" y1="165" x2="534" y2="165" stroke="#333" stroke-width="2" marker-end="url(#iArr)"/>
+      <text x="460" y="158" text-anchor="middle" font-size="10" fill="#333">ISR 진입</text>
+      <rect x="534" y="163" width="12" height="70" fill="#34A853" opacity="0.3"/>
+      <rect x="555" y="172" width="100" height="18" rx="3" fill="#E8F5E9" stroke="#34A853"/>
+      <text x="605" y="185" text-anchor="middle" font-size="9" fill="#1B5E20">rx_buf[idx++] = 'A'</text>
+      <rect x="555" y="198" width="165" height="22" rx="3" fill="#FFF8E1" stroke="#FF6F00" stroke-width="2"/>
+      <text x="637" y="213" text-anchor="middle" font-size="10" fill="#E65100" font-weight="700">Receive_IT 재등록!</text>
+      <text x="710" y="195" text-anchor="middle" font-size="9" fill="#EA4335">LED 토글 중</text>
+      <line x1="70" y1="250" x2="224" y2="250" stroke="#333" stroke-width="2" marker-end="url(#iArr)"/>
+      <text x="147" y="243" text-anchor="middle" font-size="10" fill="#333" font-weight="600">'B' 전송</text>
+      <rect x="224" y="248" width="12" height="20" fill="#1A73E8" opacity="0.3"/>
+      <line x1="236" y1="260" x2="374" y2="260" stroke="#1A73E8" stroke-width="2" marker-end="url(#iArr)"/>
+      <text x="305" y="253" text-anchor="middle" font-size="10" fill="#1A73E8">RXNE 인터럽트</text>
+      <rect x="374" y="258" width="12" height="15" fill="#FBBC04" opacity="0.3"/>
+      <line x1="386" y1="270" x2="534" y2="270" stroke="#333" stroke-width="2" marker-end="url(#iArr)"/>
+      <rect x="534" y="268" width="12" height="70" fill="#34A853" opacity="0.3"/>
+      <rect x="555" y="278" width="100" height="18" rx="3" fill="#E8F5E9" stroke="#34A853"/>
+      <text x="605" y="291" text-anchor="middle" font-size="9" fill="#1B5E20">rx_buf[idx++] = 'B'</text>
+      <rect x="555" y="304" width="165" height="22" rx="3" fill="#FFF8E1" stroke="#FF6F00" stroke-width="2"/>
+      <text x="637" y="319" text-anchor="middle" font-size="10" fill="#E65100" font-weight="700">Receive_IT 재등록!</text>
+      <text x="710" y="300" text-anchor="middle" font-size="9" fill="#EA4335">LED 토글 중</text>
+      <text x="637" y="355" text-anchor="middle" font-size="11" fill="#34A853" font-weight="700">... 매 바이트마다 재등록 반복 ...</text>
+      <rect x="30" y="380" width="720" height="35" rx="8" fill="#FFF8E1" stroke="#FF6F00" stroke-width="1.5"/>
+      <text x="390" y="403" text-anchor="middle" font-size="12" fill="#E65100" font-weight="700">핵심: 콜백 마지막에 HAL_UART_Receive_IT()를 다시 호출해야 다음 바이트를 받을 수 있다!</text>
+    </svg>
     <figcaption>그림 04-7. 인터럽트 1바이트 재등록 시퀀스 — 콜백에서 다음 수신을 재등록해야 연속 수신이 가능하다</figcaption>
   </figure>
 
@@ -586,7 +700,7 @@ while (1)
   <h3>폴링 vs 인터럽트 — CPU 타임라인 비교</h3>
 
   <figure>
-    <img src="../../figures/ch04_sec04_polling_vs_interrupt.svg" alt="폴링 vs 인터럽트 CPU 타임라인 비교">
+    <img src="../../figures/ch04_sec04_polling_vs_interrupt.svg" width="100%" height="auto" alt="폴링 vs 인터럽트 CPU 타임라인 비교">
     <figcaption>그림 04-8. CPU 타임라인 비교 — 폴링은 대부분 블로킹, 인터럽트는 ISR 수 마이크로초만 소비</figcaption>
   </figure>
 
@@ -819,7 +933,7 @@ int main(void)
   </p>
 
   <figure>
-    <img src="../../figures/ch04_sec05_architecture_v04.svg" alt="v0.4 아키텍처 — uart_driver 추가">
+    <img src="../../figures/ch04_sec05_architecture_v04.svg" width="100%" height="auto" alt="v0.4 아키텍처 — uart_driver 추가">
     <figcaption>그림 04-9. 아키텍처 v0.4 — uart_driver가 Driver 레이어에 추가. Ch05에서 DMA 원리를, Ch06에서 UART DMA 전환을 다룬다.</figcaption>
   </figure>
 

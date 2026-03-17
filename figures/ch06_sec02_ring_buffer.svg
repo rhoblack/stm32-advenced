@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <text x="400" y="25" text-anchor="middle" font-size="18" font-weight="700" fill="#212121">링 버퍼 동작 — head/tail 4단계 진행</text>
+  <text x="400" y="45" text-anchor="middle" font-size="12" fill="#888">size=8, 실 저장 가능=7 | head=쓰기(초록) | tail=읽기(파랑)</text>
+
+  <!-- ===== Stage 1: 초기 상태 (비어있음) ===== -->
+  <text x="100" y="80" text-anchor="middle" font-size="13" font-weight="700" fill="#333">① 초기 상태</text>
+  <text x="100" y="95" text-anchor="middle" font-size="10" fill="#999">head=0, tail=0 (비어있음)</text>
+
+  <!-- 8칸 배열 -->
+  <g transform="translate(25, 105)">
+    <rect x="0" y="0"  rx="4" fill="white" stroke="#BDBDBD" stroke-width="1.5"/>
+    <!-- 인덱스 라벨 -->
+    <text x="9" y="-5" font-size="9" fill="#999">0</text>
+    <text x="28" y="-5" font-size="9" fill="#999">1</text>
+    <text x="47" y="-5" font-size="9" fill="#999">2</text>
+    <text x="66" y="-5" font-size="9" fill="#999">3</text>
+    <text x="85" y="-5" font-size="9" fill="#999">4</text>
+    <text x="103" y="-5" font-size="9" fill="#999">5</text>
+    <text x="122" y="-5" font-size="9" fill="#999">6</text>
+    <text x="141" y="-5" font-size="9" fill="#999">7</text>
+    <!-- 칸 구분선 -->
+    <line x1="18.75" y1="0" x2="18.75" y2="30" stroke="#E0E0E0"/>
+    <line x1="37.5" y1="0" x2="37.5" y2="30" stroke="#E0E0E0"/>
+    <line x1="56.25" y1="0" x2="56.25" y2="30" stroke="#E0E0E0"/>
+    <line x1="75" y1="0" x2="75" y2="30" stroke="#E0E0E0"/>
+    <line x1="93.75" y1="0" x2="93.75" y2="30" stroke="#E0E0E0"/>
+    <line x1="112.5" y1="0" x2="112.5" y2="30" stroke="#E0E0E0"/>
+    <line x1="131.25" y1="0" x2="131.25" y2="30" stroke="#E0E0E0"/>
+    <!-- head, tail 표시 (같은 위치) -->
+    <polygon points="9,35 5,45 13,45" fill="#34A853"/>
+    <text x="9" y="56" text-anchor="middle" font-size="9" fill="#34A853" font-weight="700">H</text>
+    <polygon points="9,35 5,45 13,45" fill="#1A73E8" transform="translate(8,0)"/>
+    <text x="22" y="56" text-anchor="middle" font-size="9" fill="#1A73E8" font-weight="700">T</text>
+  </g>
+
+  <!-- ===== Stage 2: 3바이트 쓰기 ===== -->
+  <text x="300" y="80" text-anchor="middle" font-size="13" font-weight="700" fill="#333">② 3바이트 쓰기</text>
+  <text x="300" y="95" text-anchor="middle" font-size="10" fill="#999">head=3, tail=0 (available=3)</text>
+
+  <g transform="translate(225, 105)">
+    <rect x="0" y="0"  rx="4" fill="white" stroke="#BDBDBD" stroke-width="1.5"/>
+    <line x1="18.75" y1="0" x2="18.75" y2="30" stroke="#E0E0E0"/>
+    <line x1="37.5" y1="0" x2="37.5" y2="30" stroke="#E0E0E0"/>
+    <line x1="56.25" y1="0" x2="56.25" y2="30" stroke="#E0E0E0"/>
+    <line x1="75" y1="0" x2="75" y2="30" stroke="#E0E0E0"/>
+    <line x1="93.75" y1="0" x2="93.75" y2="30" stroke="#E0E0E0"/>
+    <line x1="112.5" y1="0" x2="112.5" y2="30" stroke="#E0E0E0"/>
+    <line x1="131.25" y1="0" x2="131.25" y2="30" stroke="#E0E0E0"/>
+    <!-- 데이터 (0~2) -->
+    <rect x="0" y="0" width="18.75" height="30" rx="2" fill="#34A853" opacity="0.3"/>
+    <text x="9" y="20" text-anchor="middle" font-size="10" fill="#333">A</text>
+    <rect x="18.75" y="0" width="18.75" height="30" rx="2" fill="#34A853" opacity="0.3"/>
+    <text x="28" y="20" text-anchor="middle" font-size="10" fill="#333">B</text>
+    <rect x="37.5" y="0" width="18.75" height="30" rx="2" fill="#34A853" opacity="0.3"/>
+    <text x="47" y="20" text-anchor="middle" font-size="10" fill="#333">C</text>
+    <!-- head=3, tail=0 -->
+    <polygon points="56,35 52,45 60,45" fill="#34A853"/>
+    <text x="56" y="56" text-anchor="middle" font-size="9" fill="#34A853" font-weight="700">H</text>
+    <polygon points="9,35 5,45 13,45" fill="#1A73E8"/>
+    <text x="9" y="56" text-anchor="middle" font-size="9" fill="#1A73E8" font-weight="700">T</text>
+  </g>
+
+  <!-- ===== Stage 3: 2바이트 읽기 ===== -->
+  <text x="500" y="80" text-anchor="middle" font-size="13" font-weight="700" fill="#333">③ 2바이트 읽기</text>
+  <text x="500" y="95" text-anchor="middle" font-size="10" fill="#999">head=3, tail=2 (available=1)</text>
+
+  <g transform="translate(425, 105)">
+    <rect x="0" y="0"  rx="4" fill="white" stroke="#BDBDBD" stroke-width="1.5"/>
+    <line x1="18.75" y1="0" x2="18.75" y2="30" stroke="#E0E0E0"/>
+    <line x1="37.5" y1="0" x2="37.5" y2="30" stroke="#E0E0E0"/>
+    <line x1="56.25" y1="0" x2="56.25" y2="30" stroke="#E0E0E0"/>
+    <line x1="75" y1="0" x2="75" y2="30" stroke="#E0E0E0"/>
+    <line x1="93.75" y1="0" x2="93.75" y2="30" stroke="#E0E0E0"/>
+    <line x1="112.5" y1="0" x2="112.5" y2="30" stroke="#E0E0E0"/>
+    <line x1="131.25" y1="0" x2="131.25" y2="30" stroke="#E0E0E0"/>
+    <!-- 읽힌 칸 (희미) -->
+    <rect x="0" y="0" width="18.75" height="30" rx="2" fill="#E0E0E0" opacity="0.3"/>
+    <rect x="18.75" y="0" width="18.75" height="30" rx="2" fill="#E0E0E0" opacity="0.3"/>
+    <!-- 남은 데이터 -->
+    <rect x="37.5" y="0" width="18.75" height="30" rx="2" fill="#34A853" opacity="0.3"/>
+    <text x="47" y="20" text-anchor="middle" font-size="10" fill="#333">C</text>
+    <!-- head=3, tail=2 -->
+    <polygon points="56,35 52,45 60,45" fill="#34A853"/>
+    <text x="56" y="56" text-anchor="middle" font-size="9" fill="#34A853" font-weight="700">H</text>
+    <polygon points="47,35 43,45 51,45" fill="#1A73E8"/>
+    <text x="47" y="56" text-anchor="middle" font-size="9" fill="#1A73E8" font-weight="700">T</text>
+  </g>
+
+  <!-- ===== Stage 4: 순환 발생 ===== -->
+  <text x="700" y="80" text-anchor="middle" font-size="13" font-weight="700" fill="#333">④ 순환!</text>
+  <text x="700" y="95" text-anchor="middle" font-size="10" fill="#999">head=1, tail=5 (available=4)</text>
+
+  <g transform="translate(625, 105)">
+    <rect x="0" y="0"  rx="4" fill="white" stroke="#BDBDBD" stroke-width="1.5"/>
+    <line x1="18.75" y1="0" x2="18.75" y2="30" stroke="#E0E0E0"/>
+    <line x1="37.5" y1="0" x2="37.5" y2="30" stroke="#E0E0E0"/>
+    <line x1="56.25" y1="0" x2="56.25" y2="30" stroke="#E0E0E0"/>
+    <line x1="75" y1="0" x2="75" y2="30" stroke="#E0E0E0"/>
+    <line x1="93.75" y1="0" x2="93.75" y2="30" stroke="#E0E0E0"/>
+    <line x1="112.5" y1="0" x2="112.5" y2="30" stroke="#E0E0E0"/>
+    <line x1="131.25" y1="0" x2="131.25" y2="30" stroke="#E0E0E0"/>
+    <!-- 순환: 0번에 새 데이터 -->
+    <rect x="0" y="0" width="18.75" height="30" rx="2" fill="#FFA500" opacity="0.3"/>
+    <text x="9" y="20" text-anchor="middle" font-size="10" fill="#333">H</text>
+    <!-- 5~7번 데이터 -->
+    <rect x="93.75" y="0" width="18.75" height="30" rx="2" fill="#34A853" opacity="0.3"/>
+    <text x="103" y="20" text-anchor="middle" font-size="10" fill="#333">F</text>
+    <rect x="112.5" y="0" width="18.75" height="30" rx="2" fill="#34A853" opacity="0.3"/>
+    <text x="122" y="20" text-anchor="middle" font-size="10" fill="#333">G</text>
+    <rect x="131.25" y="0" width="18.75" height="30" rx="2" fill="#34A853" opacity="0.3"/>
+    <text x="141" y="20" text-anchor="middle" font-size="10" fill="#333">!</text>
+    <!-- head=1 (순환!) tail=5 -->
+    <polygon points="28,35 24,45 32,45" fill="#34A853"/>
+    <text x="28" y="56" text-anchor="middle" font-size="9" fill="#34A853" font-weight="700">H</text>
+    <polygon points="103,35 99,45 107,45" fill="#1A73E8"/>
+    <text x="103" y="56" text-anchor="middle" font-size="9" fill="#1A73E8" font-weight="700">T</text>
+  </g>
+
+  <!-- ===== 원형 시각화 ===== -->
+  <text x="400" y="200" text-anchor="middle" font-size="16" font-weight="700" fill="#333">원형 시각화 (size=8)</text>
+
+  <g transform="translate(400, 370)">
+    <!-- 원 -->
+    <circle cx="0" cy="0" r="120" fill="none" stroke="#E0E0E0" stroke-width="2"/>
+
+    <!-- 8개 슬롯 (원형 배치) -->
+    <g>
+      <!-- 슬롯 0 (12시) -->
+      <rect x="-15" y="-135"  rx="4" fill="#FFA500" opacity="0.4" stroke="#FFA500"/>
+      <text x="0" y="-117" text-anchor="middle" font-size="11" fill="#333" font-weight="600">0</text>
+
+      <!-- 슬롯 1 (1시30분) -->
+      <rect x="70" y="-110"  rx="4" fill="white" stroke="#BDBDBD"/>
+      <text x="85" y="-92" text-anchor="middle" font-size="11" fill="#999">1</text>
+
+      <!-- 슬롯 2 (3시) -->
+      <rect x="110" y="-15"  rx="4" fill="white" stroke="#BDBDBD"/>
+      <text x="125" y="3" text-anchor="middle" font-size="11" fill="#999">2</text>
+
+      <!-- 슬롯 3 (4시30분) -->
+      <rect x="70" y="85"  rx="4" fill="white" stroke="#BDBDBD"/>
+      <text x="85" y="103" text-anchor="middle" font-size="11" fill="#999">3</text>
+
+      <!-- 슬롯 4 (6시) -->
+      <rect x="-15" y="110"  rx="4" fill="white" stroke="#BDBDBD"/>
+      <text x="0" y="128" text-anchor="middle" font-size="11" fill="#999">4</text>
+
+      <!-- 슬롯 5 (7시30분) — tail -->
+      <rect x="-100" y="85"  rx="4" fill="#1A73E8" opacity="0.3" stroke="#1A73E8"/>
+      <text x="-85" y="103" text-anchor="middle" font-size="11" fill="#1565C0" font-weight="600">5</text>
+
+      <!-- 슬롯 6 (9시) — 데이터 -->
+      <rect x="-140" y="-15"  rx="4" fill="#34A853" opacity="0.3" stroke="#34A853"/>
+      <text x="-125" y="3" text-anchor="middle" font-size="11" fill="#2E7D32" font-weight="600">6</text>
+
+      <!-- 슬롯 7 (10시30분) — 데이터 -->
+      <rect x="-100" y="-110"  rx="4" fill="#34A853" opacity="0.3" stroke="#34A853"/>
+      <text x="-85" y="-92" text-anchor="middle" font-size="11" fill="#2E7D32" font-weight="600">7</text>
+    </g>
+
+    <!-- head 화살표 (슬롯 1 방향) -->
+    <text x="55" y="-125" font-size="11" fill="#34A853" font-weight="700">head</text>
+    <line x1="72" y1="-118" x2="80" y2="-105" stroke="#34A853" stroke-width="2"/>
+
+    <!-- tail 화살표 (슬롯 5 방향) -->
+    <text x="-130" y="78" font-size="11" fill="#1A73E8" font-weight="700">tail</text>
+    <line x1="-108" y1="80" x2="-95" y2="88" stroke="#1A73E8" stroke-width="2"/>
+
+    <!-- 데이터 방향 화살표 -->
+    <path d="M 30,-130 A 140,140 0 0,1 -70,-115" fill="none" stroke="#34A853" stroke-width="1.5" stroke-dasharray="4,2"/>
+    <text x="0" y="-145" text-anchor="middle" font-size="10" fill="#34A853">쓰기 방향 →</text>
+  </g>
+
+  <!-- 범례 -->
+  <rect x="30" y="490"  rx="3" fill="#34A853" opacity="0.3"/>
+  <text x="52" y="503" font-size="11" fill="#555">데이터 있음</text>
+  <rect x="160" y="490"  rx="3" fill="#FFA500" opacity="0.4"/>
+  <text x="182" y="503" font-size="11" fill="#555">순환 데이터</text>
+  <rect x="290" y="490"  rx="3" fill="white" stroke="#BDBDBD"/>
+  <text x="312" y="503" font-size="11" fill="#555">비어있음</text>
+</svg>

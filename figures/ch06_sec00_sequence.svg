@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <text x="400" y="25" text-anchor="middle" font-size="18" font-weight="700" fill="#212121">UART DMA 송수신 시퀀스 다이어그램</text>
+
+  <!-- 참여자 헤더 -->
+  <rect x="30" y="45"  rx="6" fill="#EA4335" opacity="0.85"/>
+  <text x="75" y="67" text-anchor="middle" font-size="12" fill="white" font-weight="600">App (main)</text>
+
+  <rect x="190" y="45"  rx="6" fill="#34A853" opacity="0.85"/>
+  <text x="240" y="67" text-anchor="middle" font-size="12" fill="white" font-weight="600">uart_driver</text>
+
+  <rect x="370" y="45"  rx="6" fill="#34A853" opacity="0.7"/>
+  <text x="415" y="67" text-anchor="middle" font-size="12" fill="white" font-weight="600">ring_buffer</text>
+
+  <rect x="530" y="45"  rx="6" fill="#1A73E8" opacity="0.85"/>
+  <text x="570" y="67" text-anchor="middle" font-size="12" fill="white" font-weight="600">HAL</text>
+
+  <rect x="680" y="45"  rx="6" fill="#FFA500" opacity="0.85"/>
+  <text x="725" y="67" text-anchor="middle" font-size="12" fill="white" font-weight="600">DMA + HW</text>
+
+  <!-- 생명선 -->
+  <line x1="75" y1="80" x2="75" y2="480" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="240" y1="80" x2="240" y2="480" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="415" y1="80" x2="415" y2="480" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="570" y1="80" x2="570" y2="480" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="725" y1="80" x2="725" y2="480" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <defs>
+    <marker id="seqArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+    </marker>
+    <marker id="seqArrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#FFA500"/>
+    </marker>
+  </defs>
+
+  <!-- === TX 시퀀스 === -->
+  <rect x="10" y="95"  rx="4" fill="#E8F5E9" opacity="0.3"/>
+  <text x="20" y="110" font-size="11" fill="#2E7D32" font-weight="700">TX (송신)</text>
+
+  <!-- 1) App → uart_driver: uart_send() -->
+  <line x1="75" y1="125" x2="240" y2="125" stroke="#333" stroke-width="1.5" marker-end="url(#seqArrow)"/>
+  <text x="155" y="120" text-anchor="middle" font-size="11" fill="#333">uart_send(buf, len)</text>
+
+  <!-- 2) uart_driver → ring_buffer: write -->
+  <line x1="240" y1="150" x2="415" y2="150" stroke="#333" stroke-width="1.5" marker-end="url(#seqArrow)"/>
+  <text x="325" y="145" text-anchor="middle" font-size="11" fill="#333">ring_buf_write()</text>
+
+  <!-- 3) uart_driver → HAL: DMA start -->
+  <line x1="240" y1="175" x2="570" y2="175" stroke="#FFA500" stroke-width="1.5" marker-end="url(#seqArrowOrange)"/>
+  <text x="405" y="170" text-anchor="middle" font-size="11" fill="#E65100">HAL_UART_Transmit_DMA()</text>
+
+  <!-- 4) HAL → DMA: 백그라운드 전송 -->
+  <line x1="570" y1="195" x2="725" y2="195" stroke="#FFA500" stroke-width="2" marker-end="url(#seqArrowOrange)"/>
+  <text x="645" y="190" text-anchor="middle" font-size="10" fill="#E65100">메모리→USART2 DR</text>
+
+  <!-- 5) DMA → HAL → uart_driver: TxCplt 콜백 -->
+  <line x1="725" y1="220" x2="570" y2="220" stroke="#FFA500" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#seqArrowOrange)"/>
+  <line x1="570" y1="235" x2="240" y2="235" stroke="#333" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#seqArrow)"/>
+  <text x="400" y="232" text-anchor="middle" font-size="10" fill="#333">TxCpltCallback → 연쇄 전송 또는 IDLE</text>
+
+  <!-- === RX 시퀀스 === -->
+  <rect x="10" y="260"  rx="4" fill="#E3F2FD" opacity="0.3"/>
+  <text x="20" y="275" font-size="11" fill="#1565C0" font-weight="700">RX (수신)</text>
+
+  <!-- 1) DMA: 자동 수신 -->
+  <line x1="725" y1="295" x2="570" y2="295" stroke="#FFA500" stroke-width="2" marker-end="url(#seqArrowOrange)"/>
+  <text x="645" y="290" text-anchor="middle" font-size="10" fill="#E65100">USART2 DR→메모리</text>
+  <text x="645" y="310" text-anchor="middle" font-size="9" fill="#999">(Circular, 자동)</text>
+
+  <!-- 2) IDLE 감지 → 콜백 -->
+  <line x1="725" y1="335" x2="570" y2="335" stroke="#FFA500" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#seqArrowOrange)"/>
+  <text x="645" y="330" text-anchor="middle" font-size="10" fill="#E65100">IDLE 감지</text>
+
+  <line x1="570" y1="350" x2="240" y2="350" stroke="#333" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#seqArrow)"/>
+  <text x="400" y="347" text-anchor="middle" font-size="10" fill="#333">RxEventCallback(Size)</text>
+
+  <!-- 3) uart_driver → ring_buffer: DMA버퍼 → 링버퍼 복사 -->
+  <line x1="240" y1="375" x2="415" y2="375" stroke="#333" stroke-width="1.5" marker-end="url(#seqArrow)"/>
+  <text x="325" y="370" text-anchor="middle" font-size="11" fill="#333">ring_buf_write() x N</text>
+
+  <!-- 4) App → ring_buffer: 읽기 -->
+  <line x1="75" y1="410" x2="240" y2="410" stroke="#333" stroke-width="1.5" marker-end="url(#seqArrow)"/>
+  <text x="155" y="405" text-anchor="middle" font-size="11" fill="#333">uart_read_byte()</text>
+
+  <line x1="240" y1="430" x2="415" y2="430" stroke="#333" stroke-width="1.5" marker-end="url(#seqArrow)"/>
+  <text x="325" y="425" text-anchor="middle" font-size="11" fill="#333">ring_buf_read()</text>
+
+  <line x1="415" y1="445" x2="240" y2="445" stroke="#999" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#seqArrow)"/>
+  <text x="325" y="460" text-anchor="middle" font-size="10" fill="#999">byte 반환</text>
+</svg>

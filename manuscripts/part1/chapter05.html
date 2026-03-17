@@ -95,7 +95,7 @@
   </p>
 
   <figure>
-    <img src="../../figures/ch05_sec00_architecture.svg" alt="v0.5 아키텍처 — DMA 레이어 추가">
+    <img src="../../figures/ch05_sec00_architecture.svg" width="100%" height="auto" alt="v0.5 아키텍처 — DMA 레이어 추가">
     <figcaption>그림 05-1. 아키텍처 v0.5 — DMA Controller가 HAL과 HW 사이에 추가. 모든 Driver가 공유하는 데이터 전송 인프라</figcaption>
   </figure>
 
@@ -134,7 +134,7 @@ hdma->XferErrorCallback = my_error_handler;
     완료 시 인터럽트로 알려줍니다.
   </p>
   <figure>
-    <img src="../../figures/ch05_sec00_sequence.svg" alt="DMA Mem-to-Mem 시퀀스 다이어그램">
+    <img src="../../figures/ch05_sec00_sequence.svg" width="100%" height="auto" alt="DMA Mem-to-Mem 시퀀스 다이어그램">
     <figcaption>그림 05-2. DMA Mem-to-Mem 전송 시퀀스 — CPU는 시작 명령만 내리고, 전송은 DMA 컨트롤러가 수행</figcaption>
   </figure>
 </section>
@@ -198,7 +198,7 @@ hdma->XferErrorCallback = my_error_handler;
   </p>
 
   <figure>
-    <img src="../../figures/ch05_sec01_dma_controller.svg" alt="STM32F411 DMA 컨트롤러 구조">
+    <img src="../../figures/ch05_sec01_dma_controller.svg" width="100%" height="auto" alt="STM32F411 DMA 컨트롤러 구조">
     <figcaption>그림 05-3. STM32F411 DMA 컨트롤러 구조 — DMA1/DMA2 각 8 Stream, 주변장치별 Channel 매핑</figcaption>
   </figure>
 
@@ -210,7 +210,7 @@ hdma->XferErrorCallback = my_error_handler;
   </p>
 
   <figure>
-    <img src="../../figures/ch05_sec01_stream_channel_map.svg" alt="DMA 요청 매핑 테이블">
+    <img src="../../figures/ch05_sec01_stream_channel_map.svg" width="100%" height="auto" alt="DMA 요청 매핑 테이블">
     <figcaption>그림 05-4. 이 교재에서 사용하는 주변장치의 DMA 매핑 — 색상은 사용 챕터 표시</figcaption>
   </figure>
 
@@ -429,7 +429,7 @@ void polling_copy_demo(void)
   <h3>DMA 전송 흐름</h3>
 
   <figure>
-    <img src="../../figures/ch05_sec03_mem_to_mem_flow.svg" alt="DMA Mem-to-Mem 전송 흐름">
+    <img src="../../figures/ch05_sec03_mem_to_mem_flow.svg" width="100%" height="auto" alt="DMA Mem-to-Mem 전송 흐름">
     <figcaption>그림 05-5. DMA Mem-to-Mem 전송 흐름 — 요청 → 전송 → 완료 인터럽트 → 콜백 실행</figcaption>
   </figure>
 
@@ -583,7 +583,7 @@ void dma_copy_demo(void)
   </p>
 
   <figure>
-    <img src="../../figures/ch05_sec02_polling_vs_dma_timeline.svg" alt="폴링 vs DMA CPU 타임라인 비교">
+    <img src="../../figures/ch05_sec02_polling_vs_dma_timeline.svg" width="100%" height="auto" alt="폴링 vs DMA CPU 타임라인 비교">
     <figcaption>그림 05-6. CPU 타임라인 비교 — 폴링: CPU가 복사에 100% 점유 / DMA: CPU는 시작 명령 후 자유</figcaption>
   </figure>
 
@@ -843,7 +843,7 @@ HAL_NVIC_SetPriority(EXTI15_10_IRQn, 3, 0);
   </ul>
 
   <figure>
-    <img src="../../figures/ch05_sec05_nvic_priority.svg" alt="NVIC 우선순위 배치">
+    <img src="../../figures/ch05_sec05_nvic_priority.svg" width="100%" height="auto" alt="NVIC 우선순위 배치">
     <figcaption>그림 05-7. v0.5 프로젝트의 인터럽트 우선순위 배치 — 데이터 유실 위험이 높을수록 높은 우선순위</figcaption>
   </figure>
 
@@ -973,7 +973,7 @@ __set_PRIMASK(primask);  /* 이전 상태 복원 */</code></pre>
   <h3>2가지 동작 모드</h3>
 
   <figure>
-    <img src="../../figures/ch05_sec04_normal_vs_circular.svg" alt="Normal 모드 vs Circular 모드">
+    <img src="../../figures/ch05_sec04_normal_vs_circular.svg" width="100%" height="auto" alt="Normal 모드 vs Circular 모드">
     <figcaption>그림 05-8. Normal 모드 vs Circular 모드 — Normal은 일회성, Circular는 자동 반복 (회전초밥 벨트)</figcaption>
   </figure>
 
@@ -1134,7 +1134,7 @@ int main(void)
     DMA는 특정 Driver에 속하지 않고, HAL이 내부적으로 활용하는 데이터 전송 인프라입니다.
   </p>
   <figure>
-    <img src="../../figures/ch05_sec05_architecture_v05.svg" alt="v0.5 아키텍처 최종">
+    <img src="../../figures/ch05_sec05_architecture_v05.svg" width="100%" height="auto" alt="v0.5 아키텍처 최종">
     <figcaption>그림 05-9. 아키텍처 v0.5 최종 — DMA Controller 추가. Ch06에서 uart_driver 내부가 DMA로 전환된다.</figcaption>
   </figure>
 </section>

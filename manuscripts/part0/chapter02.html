@@ -74,7 +74,7 @@
   </p>
 
   <figure>
-    <img src="../../figures/ch02_sec01_swo_signal_path.svg" alt="SWO 신호 경로: CPU Core → ITM → TPIU → SWO 핀 → ST-LINK → USB → CubeIDE SWV">
+    <img src="../../figures/ch02_sec01_swo_signal_path.svg" width="100%" height="auto" alt="SWO 신호 경로: CPU Core → ITM → TPIU → SWO 핀 → ST-LINK → USB → CubeIDE SWV">
     <figcaption>그림 02-1. SWO 신호 경로 — CPU 코어에서 CubeIDE 콘솔까지의 물리적 경로</figcaption>
   </figure>
 
@@ -110,7 +110,7 @@
   </p>
 
   <figure>
-    <img src="../../figures/ch02_sec01_swv_cubemx_settings.svg" alt="CubeIDE SWV 설정 화면: Core Clock 100MHz 입력, SWV 활성화 순서">
+    <img src="../../figures/ch02_sec01_swv_cubemx_settings.svg" width="100%" height="auto" alt="CubeIDE SWV 설정 화면: Core Clock 100MHz 입력, SWV 활성화 순서">
     <figcaption>그림 02-2. CubeIDE SWV 설정 단계 — Core Clock 100MHz 일치가 필수</figcaption>
   </figure>
 
@@ -261,7 +261,7 @@ int main(void)
   </p>
 
   <figure>
-    <img src="../../figures/ch02_sec02_rtt_memory_layout.svg" alt="RTT 메모리 구조: MCU RAM 내 _SEGGER_RTT 구조체, Up/Down 링 버퍼, J-Link 폴링">
+    <img src="../../figures/ch02_sec02_rtt_memory_layout.svg" width="100%" height="auto" alt="RTT 메모리 구조: MCU RAM 내 _SEGGER_RTT 구조체, Up/Down 링 버퍼, J-Link 폴링">
     <figcaption>그림 02-3. RTT 메모리 레이아웃 — MCU RAM에 배치된 링 버퍼와 디버거 폴링 방향</figcaption>
   </figure>
 
@@ -325,7 +325,7 @@ void rtt_example_loop(void)
   </code></pre>
 
   <figure>
-    <img src="../../figures/ch02_sec02_swo_vs_rtt_compare.svg" alt="SWO vs RTT 비교 표: 핀 필요 여부, 대역폭, CPU 오버헤드, 설정 복잡도">
+    <img src="../../figures/ch02_sec02_swo_vs_rtt_compare.svg" width="100%" height="auto" alt="SWO vs RTT 비교 표: 핀 필요 여부, 대역폭, CPU 오버헤드, 설정 복잡도">
     <figcaption>그림 02-4. SWO vs RTT 비교 — 두 방식의 트레이드오프와 선택 기준</figcaption>
   </figure>
 
@@ -380,7 +380,7 @@ void rtt_example_loop(void)
   <h3>4단계 로그 레벨의 실무 기준</h3>
 
   <figure>
-    <img src="../../figures/ch02_sec03_log_level_hierarchy.svg" alt="로그 레벨 피라미드: ERROR(빨강)→WARN(주황)→INFO(초록)→DEBUG(회색), LOG_LEVEL=2 설정 시 차단 시각화">
+    <img src="../../figures/ch02_sec03_log_level_hierarchy.svg" width="100%" height="auto" alt="로그 레벨 피라미드: ERROR(빨강)→WARN(주황)→INFO(초록)→DEBUG(회색), LOG_LEVEL=2 설정 시 차단 시각화">
     <figcaption>그림 02-5. 로그 레벨 계층 — 피라미드 위로 갈수록 중요도 높음, LOG_LEVEL=2 설정 시 INFO/DEBUG는 출력 안 됨</figcaption>
   </figure>
 
@@ -399,7 +399,7 @@ void rtt_example_loop(void)
   </p>
 
   <figure>
-    <img src="../../figures/ch02_sec03_log_format_anatomy.svg" alt="로그 출력 한 줄 해부: [1234][ERROR][main.c:45][main] 메시지 → 각 필드 화살표 설명">
+    <img src="../../figures/ch02_sec03_log_format_anatomy.svg" width="100%" height="auto" alt="로그 출력 한 줄 해부: [1234][ERROR][main.c:45][main] 메시지 → 각 필드 화살표 설명">
     <figcaption>그림 02-6. 로그 포맷 해부 — 4개 필드의 출처와 역할</figcaption>
   </figure>
 
@@ -560,7 +560,7 @@ LOG_D("버튼 상태: %d", button_state);
   </code></pre>
 
   <figure>
-    <img src="../../figures/ch02_sec04_macro_expansion.svg" alt="C 전처리기 매크로 전개: LOG_D('val=%d', x) → 전처리기 → 컴파일러 → 바이너리 포함/제거 분기">
+    <img src="../../figures/ch02_sec04_macro_expansion.svg" width="100%" height="auto" alt="C 전처리기 매크로 전개: LOG_D('val=%d', x) → 전처리기 → 컴파일러 → 바이너리 포함/제거 분기">
     <figcaption>그림 02-7. 매크로 전개 과정 — LOG_D() 호출이 전처리기를 통해 실제 코드로 치환되는 과정</figcaption>
   </figure>
 
@@ -681,7 +681,7 @@ LOG_D("버튼 상태: %d", button_state);
   </code></pre>
 
   <figure>
-    <img src="../../figures/ch02_sec05_flash_size_comparison.svg" alt="컴파일 타임 필터링 효과 막대 그래프: LOG_LEVEL 0/1/2/3/4별 .text 섹션 크기(바이트) 비교">
+    <img src="../../figures/ch02_sec05_flash_size_comparison.svg" width="100%" height="auto" alt="컴파일 타임 필터링 효과 막대 그래프: LOG_LEVEL 0/1/2/3/4별 .text 섹션 크기(바이트) 비교">
     <figcaption>그림 02-8. LOG_LEVEL별 .text 섹션 크기 비교 — 레벨이 낮을수록 플래시 절약</figcaption>
   </figure>
 
@@ -745,7 +745,7 @@ LOG_D("버튼 상태: %d", button_state);
   <h3>logger 모듈 아키텍처</h3>
 
   <figure>
-    <img src="../../figures/ch02_sec06_logger_module_architecture.svg" alt="logger 모듈 레이어 다이어그램: App(LOG 매크로) → logger.c(백엔드 선택) → SWO/RTT/UART(예비) 백엔드 → 물리 출력">
+    <img src="../../figures/ch02_sec06_logger_module_architecture.svg" width="100%" height="auto" alt="logger 모듈 레이어 다이어그램: App(LOG 매크로) → logger.c(백엔드 선택) → SWO/RTT/UART(예비) 백엔드 → 물리 출력">
     <figcaption>그림 02-9. logger 모듈 아키텍처 — 백엔드 추상화로 출력 채널 교체 가능</figcaption>
   </figure>
 
@@ -1097,7 +1097,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   <h3>v0.2 아키텍처 업데이트</h3>
   <p>이 챕터 완료 후 전체 프로젝트에 <code>logger</code> 모듈이 추가되었습니다. 이후 모든 챕터의 코드는 <code>#include "logger.h"</code>를 사용합니다.</p>
   <figure>
-    <img src="../../figures/ch02_sec06_logger_module_architecture.svg" alt="v0.2 아키텍처: logger 모듈이 공통 인프라 레이어에 추가됨">
+    <img src="../../figures/ch02_sec06_logger_module_architecture.svg" width="100%" height="auto" alt="v0.2 아키텍처: logger 모듈이 공통 인프라 레이어에 추가됨">
     <figcaption>그림 02-최종. v0.2 아키텍처 현황 — logger 모듈이 모든 레이어에서 사용 가능한 공통 인프라로 추가됨</figcaption>
   </figure>
 </section>

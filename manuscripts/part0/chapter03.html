@@ -107,7 +107,7 @@ while (1)
   </p>
 
   <figure>
-    <img src="../../figures/ch03_sec01_spaghetti_vs_layered.svg" alt="스파게티 코드 vs 레이어드 아키텍처 비교">
+    <img src="../../figures/ch03_sec01_spaghetti_vs_layered.svg" width="100%" height="auto" alt="스파게티 코드 vs 레이어드 아키텍처 비교">
     <figcaption>그림 03-1. 스파게티 코드(왼쪽)에서는 모든 것이 모든 것에 의존한다. 레이어드 아키텍처(오른쪽)에서는 센서 버그를 Driver 레이어만 보고 해결할 수 있다.</figcaption>
   </figure>
 
@@ -156,7 +156,7 @@ while (1)
   </div>
 
   <figure>
-    <img src="../../figures/ch03_sec02_restaurant_layers.svg" alt="레스토랑 주방 비유와 4계층 아키텍처 매핑">
+    <img src="../../figures/ch03_sec02_restaurant_layers.svg" width="100%" height="auto" alt="레스토랑 주방 비유와 4계층 아키텍처 매핑">
     <figcaption>그림 03-2. 레스토랑 주방의 역할 분담과 소프트웨어 4계층의 1:1 매핑</figcaption>
   </figure>
 
@@ -195,7 +195,7 @@ while (1)
   </p>
 
   <figure>
-    <img src="../../figures/ch03_sec02_four_layers.svg" alt="STM32 4계층 레이어드 아키텍처 전체도">
+    <img src="../../figures/ch03_sec02_four_layers.svg" width="100%" height="auto" alt="STM32 4계층 레이어드 아키텍처 전체도">
     <figcaption>그림 03-3. STM32 4계층 레이어드 아키텍처 — 각 계층의 책임과 의존 방향</figcaption>
   </figure>
 
@@ -421,7 +421,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   </p>
 
   <figure>
-    <img src="../../figures/ch03_sec03_v02_mapping.svg" alt="Ch01~02 코드의 4계층 배치도">
+    <img src="../../figures/ch03_sec03_v02_mapping.svg" width="100%" height="auto" alt="Ch01~02 코드의 4계층 배치도">
     <figcaption>그림 03-4. v0.2 코드의 4계층 배치 — EXTI 콜백에서 HAL 직접 호출이 위반으로 표시된다</figcaption>
   </figure>
 
@@ -502,7 +502,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   </p>
 
   <figure>
-    <img src="../../figures/ch03_sec04_button_fsm.svg" alt="버튼 디바운싱 FSM 상태 전이 다이어그램">
+    <img src="../../figures/ch03_sec04_button_fsm.svg" width="100%" height="auto" alt="버튼 디바운싱 FSM 상태 전이 다이어그램">
     <figcaption>그림 03-5. Ch01 버튼 디바운싱을 FSM 상태 전이 다이어그램으로 표현. IDLE → PRESSED → DEBOUNCED → IDLE 순환.</figcaption>
   </figure>
 
@@ -571,7 +571,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   </p>
 
   <figure>
-    <img src="../../figures/ch03_sec05_sequence.svg" alt="버튼 → LED 토글 시퀀스 다이어그램">
+    <img src="../../figures/ch03_sec05_sequence.svg" width="100%" height="auto" alt="버튼 → LED 토글 시퀀스 다이어그램">
     <figcaption>그림 03-7. Ch01 버튼 → LED 토글 시퀀스 다이어그램. 사용자 → EXTI/HAL → App Callback → LED/HAL 순서로 메시지가 전달된다.</figcaption>
   </figure>
 
@@ -597,7 +597,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   </p>
 
   <figure>
-    <img src="../../figures/ch03_sec05_architecture_v03.svg" alt="프로젝트 아키텍처 v0.3 전체 설계도">
+    <img src="../../figures/ch03_sec05_architecture_v03.svg" width="100%" height="auto" alt="프로젝트 아키텍처 v0.3 전체 설계도">
     <figcaption>그림 03-6. 프로젝트 아키텍처 v0.3 — 현재 구현(색상)과 미래 계획(회색). 매 챕터에서 회색 블록이 하나씩 색칠된다.</figcaption>
   </figure>
 
