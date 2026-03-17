@@ -1,0 +1,418 @@
+{
+  "review_type": "Final Reader Experience Review (Ch01~Ch12)",
+  "reviewer_role": "Beginner Reader (Mid-level embedded developer, C-fluent, HAL-novice)",
+  "review_date": "2026-03-17",
+  "curriculum_version": "v1.2",
+
+  "comprehension_scores": {
+    "description": "Per-chapter understanding confidence after reading (1-5 stars)",
+    "chapters": {
+      "Ch01_GPIO_EXTI": {
+        "score": 5,
+        "checkpoint_sec1": "GPIO output modes (Push-Pull vs Open-Drain) with water analogy - immediately clear",
+        "checkpoint_sec2": "HAL API functions (WritePin, TogglePin, ReadPin) - obvious from code examples",
+        "checkpoint_sec4": "EXTI interrupt + debouncing pseudocode - yes, can write it",
+        "notes": "Perfect entry point. The 'Hello World = LED' framing sets expectations. Water faucet vs drain analogy for Push-Pull/Open-Drain is instantly graspable. FAQ about floating pin on Open-Drain HIGH answers my exact confusion."
+      },
+      "Ch02_Log_System": {
+        "score": 5,
+        "checkpoint_sec1": "SWO/ITM purpose - 'eyes into the MCU' metaphor works perfectly",
+        "checkpoint_sec2": "RTT vs SWO comparison - table-based comparison makes differences clear",
+        "checkpoint_sec4": "LOG_E/W/I/D macro implementation - yes, can reproduce pattern",
+        "notes": "Airport control tower vs black box analogy is excellent. The _write() override call chain (printf -> _write -> ITM_SendChar) eliminates mystery. SB12 jumper warning is practical gold - would have lost hours without it."
+      },
+      "Ch03_Architecture": {
+        "score": 4,
+        "checkpoint_sec1": "Why architecture matters - spaghetti code example is viscerally convincing",
+        "checkpoint_sec2": "4-layer definition (HAL/Driver/Service/App) - restaurant analogy helps",
+        "checkpoint_sec4": "FSM 4 elements - understood conceptually but not yet confident to implement",
+        "notes": "Restaurant kitchen analogy is the strongest metaphor in the entire course. 'Hall manager never touches the gas range' = 'App never calls HAL' is permanently memorable. Minor concern: FSM section feels abstract without real code - but Ch08 resolves this perfectly. The caveat about concurrency limits of the restaurant metaphor is honest and appreciated."
+      },
+      "Ch04_UART": {
+        "score": 5,
+        "checkpoint_sec1": "SWO vs UART difference - 'stethoscope vs voice' framing is clear",
+        "checkpoint_sec2": "UART frame structure (start/data/stop bits) - diagram makes it visual",
+        "checkpoint_sec4": "uart_driver.h interface - can explain every function signature",
+        "notes": "The 'gray block turning green' metaphor for implementing a planned component is motivating. Interface design section showing uart_driver.h as a 'menu' connects back to Ch03 restaurant. The promise that 'this interface survives DMA upgrade in Ch06' builds trust in architecture."
+      },
+      "Ch05_DMA": {
+        "score": 4,
+        "checkpoint_sec1": "DMA concept - 'serving robot' extends restaurant analogy naturally",
+        "checkpoint_sec2": "Stream/Channel mapping - table helps but still abstract",
+        "checkpoint_sec4": "Mem-to-Mem DMA code - can follow but wouldn't write from scratch",
+        "notes": "The '870,000 wasted clock cycles' calculation is shocking and motivating. Cross-cutting concern explanation (DMA shared by all drivers) is architecturally important. Stream/Channel mapping table is dense - would benefit from a worked example of 'how to look up which stream for UART TX'."
+      },
+      "Ch06_UART_DMA_Ring": {
+        "score": 4,
+        "checkpoint_sec1": "Why DMA+UART - CPU usage 80% -> 5% is compelling",
+        "checkpoint_sec2": "Ring buffer concept - circular structure clear",
+        "checkpoint_sec4": "uart_driver_v2 internal swap - understand the principle",
+        "notes": "The 'same API, completely different internals' demonstration is the strongest proof of layered architecture value. This is where Ch03's theory pays off visibly. Ring buffer head/tail pointer logic requires careful reading but diagrams help. The instructor tip about showing header file diff (zero changes) is brilliant."
+      },
+      "Ch07_TIM_Basic": {
+        "score": 5,
+        "checkpoint_sec1": "Timer = hardware metronome - immediately intuitive",
+        "checkpoint_sec2": "PSC/ARR/CCR relationship - gear analogy with calculation table",
+        "checkpoint_sec4": "PWM duty cycle code - yes, can calculate and implement",
+        "notes": "The 'HAL_Delay is a prison' framing creates urgency. Metronome analogy for timer is perfect. PSC/ARR formula table with worked examples (500ms, 1000ms) removes calculation anxiety. The driver pattern reuse (same as uart_driver) reduces cognitive load significantly. FAQ about 'why same structure?' reinforces architecture lesson."
+      },
+      "Ch08_Advanced_TIM": {
+        "score": 4,
+        "checkpoint_sec1": "TIM1 vs GP timers - complementary PWM purpose clear",
+        "checkpoint_sec2": "Dead-time concept - H-bridge shoot-through prevention understood",
+        "checkpoint_sec4": "Stopwatch FSM (IDLE/RUNNING/PAUSED) - can implement the pattern",
+        "notes": "Service layer first appearance is a milestone moment. The phone stopwatch demonstration as FSM introduction is genius - every student has used one. Dead-time explanation could use a more concrete 'what happens without it' failure scenario. The metacognition checklist linking back to Ch07 PSC formula and Ch03 FSM theory is excellent scaffolding."
+      },
+      "Ch09_RTC": {
+        "score": 5,
+        "checkpoint_sec1": "RTC = wall-clock vs stopwatch = elapsed time - crystal clear distinction",
+        "checkpoint_sec2": "BCD encoding - why RTC uses it explained well",
+        "checkpoint_sec4": "Alarm FSM reusing Ch08 pattern - 'I've seen this before!' feeling achieved",
+        "notes": "Pattern reuse from Ch08 is the highlight. 'This structure, I saw it before' - exactly as promised. The phone clock vs timer app demonstration is a perfect real-world anchor. GetTime+GetDate trap (must call both atomically) is a practical gem that prevents real bugs. The 'parallel addition, not replacement' of alarm_service alongside stopwatch_service shows architecture scaling."
+      },
+      "Ch10_Stepper_Motor": {
+        "score": 4,
+        "checkpoint_sec1": "Step motor stride concept - staircase analogy works",
+        "checkpoint_sec2": "Gearbox 64:1 ratio - 4-step numerical analysis now clear",
+        "checkpoint_sec4": "Time-to-angle conversion - can follow the math",
+        "notes": "First complete integrated application (RTC+Motor+Clock Service) is deeply satisfying. The staircase analogy for discrete steps is intuitive. Gearbox calculation was initially confusing (the formula with 0.5 divisor) but the 4-step breakdown fixed it. The bicycle gear analogy for gear ratio is helpful. Motor FSM reuses Ch08/Ch09 pattern - third time seeing it, now feels natural."
+      },
+      "Ch11_I2C_SHT31": {
+        "score": 4,
+        "checkpoint_sec1": "I2C protocol basics (SDA/SCL, START/STOP/ACK) - understood",
+        "checkpoint_sec2": "SHT31 dataframe structure - clear with diagram",
+        "checkpoint_sec4": "CRC-8 verification - concept understood, implementation followable",
+        "notes": "Three-layer separation (I2C Driver / SHT31 Device Driver / Sensor Service) is the most sophisticated architecture yet and demonstrates the pattern's scalability. CRC-8 section was initially intimidating but the conceptual build-up (why -> analogy -> flowchart -> code) made it manageable. The 7-bit vs 8-bit I2C address confusion is a real trap and the FAQ addresses it directly. Sensor Service FSM reuses the pattern from Ch08/Ch09 - fourth time, now automatic."
+      },
+      "Ch12_SPI_LCD": {
+        "score": 4,
+        "checkpoint_sec1": "SPI vs I2C - 'highway vs two-lane road' comparison clear",
+        "checkpoint_sec2": "ILI9341 initialization sequence - 25 commands feel daunting",
+        "checkpoint_sec4": "Pixel write + basic shapes - can follow RGB565 and draw calls",
+        "notes": "The 'now the project gets eyes' metaphor is emotionally powerful. SPI explanation builds naturally on I2C knowledge from Ch11. The 25 initialization commands are the most complex single concept - but the category table (Power/Color/Timing) and comparison (official 25-35 vs our 15 optimized) reduces anxiety. The time allocation guide for instructors (90 min for sec12.4) validates that this IS the hard part. RGB565 bit manipulation is satisfying once you see colors appear."
+      }
+    }
+  },
+
+  "metaphor_effectiveness_ranking": {
+    "description": "Most useful to least useful metaphor across all chapters",
+    "ranking": [
+      {
+        "rank": 1,
+        "chapter": "Ch03",
+        "metaphor": "Restaurant kitchen (4-layer architecture)",
+        "effectiveness": "Exceptional",
+        "reason": "Perfectly maps all 4 layers. 'Hall manager never touches gas range' is permanently memorable. Referenced in Ch04, Ch05, Ch06, Ch07 - becomes shared vocabulary. Limitations honestly acknowledged (concurrency, callbacks)."
+      },
+      {
+        "rank": 2,
+        "chapter": "Ch05",
+        "metaphor": "Serving robot (DMA)",
+        "effectiveness": "Excellent",
+        "reason": "Extends restaurant metaphor naturally. 'Chef instructs robot, returns to cooking' maps perfectly to CPU-DMA relationship. Reused in Ch06 for UART DMA context."
+      },
+      {
+        "rank": 3,
+        "chapter": "Ch07",
+        "metaphor": "Metronome (Timer PSC/ARR)",
+        "effectiveness": "Excellent",
+        "reason": "Intuitive 1:1 mapping. Weight position = PSC, tick endpoint = ARR, 'tick!' sound = UEV interrupt. Does NOT feel trapped - feels clarified. The limitation note (timer does more than just tick) is appropriate."
+      },
+      {
+        "rank": 4,
+        "chapter": "Ch02",
+        "metaphor": "Airport control tower + black box (SWD vs SWO)",
+        "effectiveness": "Very Good",
+        "reason": "Dual-channel concept (bidirectional debug + unidirectional trace) becomes immediately clear. OBD-II car analogy as second reinforcement is smart."
+      },
+      {
+        "rank": 5,
+        "chapter": "Ch01",
+        "metaphor": "Water faucet vs drain (Push-Pull vs Open-Drain)",
+        "effectiveness": "Very Good",
+        "reason": "Physical intuition for electrical concepts. Bidirectional faucet vs drain-only bathtub is vivid. Limitation note about Wired-AND not fitting the analogy is honest."
+      },
+      {
+        "rank": 6,
+        "chapter": "Ch09",
+        "metaphor": "Phone clock app vs timer app (RTC vs Stopwatch)",
+        "effectiveness": "Very Good",
+        "reason": "Every student has both apps. 'Timer knows elapsed, clock knows absolute time' is a one-sentence distinction that sticks."
+      },
+      {
+        "rank": 7,
+        "chapter": "Ch10",
+        "metaphor": "Staircase (step motor discrete movement)",
+        "effectiveness": "Good",
+        "reason": "Intuitive for discrete positioning concept. Bicycle gear ratio as secondary analogy helps with gearbox understanding."
+      },
+      {
+        "rank": 8,
+        "chapter": "Ch04",
+        "metaphor": "Stethoscope vs voice (SWO vs UART)",
+        "effectiveness": "Good",
+        "reason": "Clear distinction between debug-only and universal communication. The 'unplug ST-Link' demonstration makes it tangible."
+      },
+      {
+        "rank": 9,
+        "chapter": "Ch12",
+        "metaphor": "Project gets eyes (LCD as visual output)",
+        "effectiveness": "Good",
+        "reason": "Emotionally resonant - the project transforms from 'invisible' to 'visible'. Less technically detailed than other metaphors but motivationally powerful."
+      },
+      {
+        "rank": 10,
+        "chapter": "Ch07",
+        "metaphor": "HAL_Delay as prison (CPU blocking)",
+        "effectiveness": "Good",
+        "reason": "Creates urgency to learn timers. 'You freed CPU with DMA, one HAL_Delay puts it back in jail' is dramatic and effective."
+      }
+    ]
+  },
+
+  "code_clarity": {
+    "description": "Variable names immediately obvious? Overall code readability assessment",
+    "overall_verdict": "PASS",
+    "per_chapter": {
+      "Ch01": { "verdict": "PASS", "notes": "led_on(), led_off(), led_toggle() - self-documenting. GPIO_PIN_SET/RESET explained inline." },
+      "Ch02": { "verdict": "PASS", "notes": "LOG_E/W/I/D naming is intuitive. _write() override well-commented with call chain." },
+      "Ch03": { "verdict": "PASS", "notes": "Anti-pattern code intentionally messy to contrast with layered version - pedagogically effective." },
+      "Ch04": { "verdict": "PASS", "notes": "uart_status_t enum (OK/ERROR/BUSY/TIMEOUT) is clear. uart_send(), uart_read_byte() are obvious." },
+      "Ch05": { "verdict": "PASS", "notes": "DMA configuration structs are complex but Korean comments explain each field." },
+      "Ch06": { "verdict": "PASS", "notes": "Ring buffer head/tail naming is standard. ring_buf_write/read are clear." },
+      "Ch07": { "verdict": "PASS", "notes": "tim_set_period_ms(), pwm_set_duty(percent) - parameter names self-document. PSC/ARR calculation comments excellent." },
+      "Ch08": { "verdict": "PASS", "notes": "sw_event_t (START/STOP/RESET) maps directly to FSM diagram. cpwm_set_duty() naming follows Ch07 pattern." },
+      "Ch09": { "verdict": "PASS", "notes": "rtc_time_t, rtc_date_t structs are intuitive. alarm_service API follows stopwatch_service pattern." },
+      "Ch10": { "verdict": "PASS", "notes": "stepper_move_steps(steps, speed_rpm) - parameter names are self-documenting. clock_service_on_rtc_tick() clearly indicates trigger source." },
+      "Ch11": { "verdict": "PASS", "notes": "sht31_read_temp_humid(p_temp, p_humid) - output parameters obvious. sensor_state_t enum with Korean comments (// 대기 상태, // 측정 중) aids comprehension." },
+      "Ch12": { "verdict": "PASS", "notes": "ILI9341_Draw_Pixel(x, y, color), ILI9341_Draw_String() - standard graphics API naming. RGB565 color defines are helpful." }
+    },
+    "naming_convention_consistency": "Snake_case throughout with Korean comments. HAL prefix for ST library, project-specific prefixes (uart_, tim_, stepper_, sht31_, ili9341_) maintain namespace clarity."
+  },
+
+  "emotional_journey": {
+    "description": "Anxiety -> Relief arcs detected where expected",
+    "arcs_detected": [
+      {
+        "chapter": "Ch01",
+        "arc": "Curiosity (first LED) -> Mild anxiety (interrupt concept) -> Relief (LED toggles!) -> Pride (debouncing works)",
+        "detected": true
+      },
+      {
+        "chapter": "Ch03",
+        "arc": "Curiosity (why architecture?) -> Fear (spaghetti code horror) -> Understanding (restaurant analogy) -> Confidence (v0.3 designed)",
+        "detected": true,
+        "notes": "The '3-minute horror experience' with spaghetti code is emotionally effective. Achievement confirmation sentence at start ('congratulations on reaching here') acknowledged."
+      },
+      {
+        "chapter": "Ch05",
+        "arc": "Frustration (CPU wasted 870K cycles) -> Hope (DMA concept) -> Complexity anxiety (stream/channel) -> Satisfaction (performance measured)",
+        "detected": true
+      },
+      {
+        "chapter": "Ch06",
+        "arc": "Skepticism (same API really?) -> Amazement (zero header changes) -> Complexity (ring buffer) -> Triumph (80% -> 5% CPU)",
+        "detected": true,
+        "notes": "The 'architecture proof' moment where Ch04 header survives DMA upgrade is the most powerful emotional beat in Part 1."
+      },
+      {
+        "chapter": "Ch07",
+        "arc": "Frustration (HAL_Delay prison) -> Curiosity (metronome) -> Anxiety (PSC formula) -> Relief (calculation table) -> Pride (PWM LED)",
+        "detected": true,
+        "notes": "PSC/ARR formula is the anxiety peak - resolved by worked examples table."
+      },
+      {
+        "chapter": "Ch08",
+        "arc": "Excitement (Advanced TIM!) -> Mild overwhelm (Complementary PWM) -> Recognition (FSM pattern from Ch03) -> Achievement (first Service layer)",
+        "detected": true
+      },
+      {
+        "chapter": "Ch09",
+        "arc": "Motivation (real clock!) -> Recognition ('I've seen this FSM before') -> Confidence -> Deep satisfaction (pattern mastery)",
+        "detected": true,
+        "notes": "The pattern reuse moment ('이 구조, 전에 봤는데?') is the emotional highlight of Part 2."
+      },
+      {
+        "chapter": "Ch10",
+        "arc": "Excitement (motor moves!) -> Confusion (gearbox math) -> Clarity (4-step analysis) -> Pride (v1.0 complete system!)",
+        "detected": true,
+        "notes": "v1.0 milestone feeling is powerful - first time everything connects (RTC + Motor + Clock Service)."
+      },
+      {
+        "chapter": "Ch11",
+        "arc": "Curiosity (sensor) -> Anxiety (CRC-8 algorithm) -> Relief (step-by-step build-up) -> Mastery (FSM pattern now automatic)",
+        "detected": true
+      },
+      {
+        "chapter": "Ch12",
+        "arc": "Excitement (LCD! visual output!) -> Overwhelm (25 init commands) -> Understanding (category table) -> Joy (colors on screen!)",
+        "detected": true,
+        "notes": "'The project gets eyes' is emotionally the biggest payoff in the curriculum so far."
+      }
+    ],
+    "imposter_syndrome_management": {
+      "aside_metacognition_present": true,
+      "aside_faq_present": true,
+      "this_is_hard_acknowledgments": true,
+      "achievement_confirmations_at_chapter_starts": true,
+      "notes": "Every chapter opens with 'let us confirm your achievements so far' which is reassuring. The metacognition checklists ('can you explain X from previous chapter?') reduce imposter syndrome by confirming retained knowledge. FAQs address exactly the questions I would ask."
+    }
+  },
+
+  "stuck_moments": {
+    "description": "5 moments where I got stuck as a reader",
+    "moments": [
+      {
+        "id": 1,
+        "location": "ch10 sec01 line ~200",
+        "description": "Gearbox stride calculation: '1.8 x (1/64) x 4 / 0.5 = 5.625' formula",
+        "severity": "Medium",
+        "resolution": "The 4-step numerical breakdown (Step 1-4) that was added in Phase 4 review resolves this. Without it, the formula with '0.5 divisor' would have been opaque.",
+        "remaining_gap": "The connection between 'excitation sequence' and 'why multiply by 4' could be even more explicit."
+      },
+      {
+        "id": 2,
+        "location": "ch05 sec01 (Stream/Channel mapping table)",
+        "description": "DMA stream-channel assignment table is dense. 8 streams x 8 channels = 64 combinations. How do I know which one to pick for UART2 TX?",
+        "severity": "Medium",
+        "resolution": "The table exists and is correct, but a worked example ('to find UART2_TX: look up Table XX, find DMA1 Stream 6 Channel 4') would reduce cognitive load.",
+        "remaining_gap": "A step-by-step 'how to look up your peripheral's DMA stream' would help."
+      },
+      {
+        "id": 3,
+        "location": "ch11 (CRC-8 calculation section)",
+        "description": "CRC-8 polynomial 0x31 and XOR operations - initially intimidating",
+        "severity": "Low-Medium",
+        "resolution": "The progressive build (concept -> analogy -> flowchart -> code) that was added in Phase 4 review makes it manageable. Without the flowchart, the bit-level XOR would have been a wall.",
+        "remaining_gap": "None significant - the approach is effective."
+      },
+      {
+        "id": 4,
+        "location": "ch12 sec04 (LCD initialization - 25 commands)",
+        "description": "25 initialization commands for ILI9341 feel overwhelming. Even categorized (Power/Color/Timing), it's a lot of magic numbers.",
+        "severity": "Medium",
+        "resolution": "The category comparison table (official 25-35 vs our 15 optimized) and the 90-minute lecture allocation validate that this IS complex. The instructor tip to focus on 'purpose groups' rather than memorizing each command helps.",
+        "remaining_gap": "A decision tree ('if display is blank: check X. If colors wrong: check Y') for initialization debugging would help."
+      },
+      {
+        "id": 5,
+        "location": "ch03 sec04 (FSM section - first encounter)",
+        "description": "FSM state/transition/event/action 4 elements are presented abstractly. Without a concrete code example, it's hard to visualize implementation.",
+        "severity": "Low",
+        "resolution": "This is intentional - Ch03 is 'theory', Ch08 is 'implementation'. The metacognition checkpoint in Ch08 ('remember Ch03 FSM 4 elements?') bridges the gap. By Ch09, FSM feels natural.",
+        "remaining_gap": "A tiny 2-state pseudocode example in Ch03 (not full code) might help bridge the gap to Ch08."
+      }
+    ]
+  },
+
+  "aha_moments": {
+    "description": "5 moments where I felt 'Aha!' clarity",
+    "moments": [
+      {
+        "id": 1,
+        "location": "ch06 sec00 (introduction)",
+        "description": "The moment you realize Ch04's uart_driver.h header file has ZERO changes after DMA upgrade in Ch06. The architecture promise from Ch03 is real. This is the single most convincing proof that layered architecture works.",
+        "emotional_impact": "Profound - transforms architecture from 'nice theory' to 'this saved me real work'"
+      },
+      {
+        "id": 2,
+        "location": "ch09 sec00 (introduction)",
+        "description": "Reading Ch09's Alarm FSM and realizing 'I've seen this exact pattern in Ch08 Stopwatch FSM'. The states are different but the structure is identical. Pattern recognition kicks in - FSM is no longer scary, it's a template.",
+        "emotional_impact": "Confidence surge - 'I can design FSMs for any new feature'"
+      },
+      {
+        "id": 3,
+        "location": "ch07 sec01 (timer explanation)",
+        "description": "Understanding that HAL_Delay blocks CPU while Timer runs independently. The 'prison' metaphor combined with the metronome analogy makes the hardware counter concept click. 'The timer counts while CPU does other things' is the key insight.",
+        "emotional_impact": "Liberation - 'I never need HAL_Delay again'"
+      },
+      {
+        "id": 4,
+        "location": "ch10 (v1.0 milestone)",
+        "description": "When RTC time data drives motor position through Clock Service, and the stepper motor actually moves to represent the current hour. All the pieces (GPIO, Timer, RTC, FSM, Architecture) connect into a working system.",
+        "emotional_impact": "Deep satisfaction - 'I built something real that integrates 10 chapters of learning'"
+      },
+      {
+        "id": 5,
+        "location": "ch12 sec00 (introduction)",
+        "description": "'The project gets eyes.' After 11 chapters of invisible functionality (serial output, motor sounds), seeing actual text and colors on a physical LCD screen transforms the project from 'embedded exercise' to 'real product'.",
+        "emotional_impact": "Joy and pride - 'This looks like a real smart watch'"
+      }
+    ]
+  },
+
+  "missing_answers_to_implicit_questions": {
+    "description": "Questions a student would naturally ask that may not be fully answered",
+    "questions": [
+      {
+        "chapter": "Ch04",
+        "question": "Why does UART need Baud Rate? What breaks if I get it wrong?",
+        "answered": true,
+        "location": "ch04_sec01_baudrate_mismatch.svg + text explanation",
+        "notes": "Baud rate mismatch SVG diagram shows garbled data. Well addressed."
+      },
+      {
+        "chapter": "Ch07",
+        "question": "I calculated PSC=400... how do I verify it's correct?",
+        "answered": true,
+        "location": "Worked examples table + oscilloscope measurement suggestion",
+        "notes": "Table with multiple calculated examples + LOG output verification method provided."
+      },
+      {
+        "chapter": "Ch10",
+        "question": "The motor moves, but how do I debug if it moves backward?",
+        "answered": true,
+        "location": "stepper_move_steps() positive=CW, negative=CCW documentation",
+        "notes": "Direction parameter documentation is clear. Could add a 'swap two GPIO pins to reverse direction' troubleshooting tip."
+      },
+      {
+        "chapter": "Ch11",
+        "question": "Why is SHT31 address 0x44 in code but 0x88 in some examples?",
+        "answered": true,
+        "location": "FAQ about 7-bit vs 8-bit I2C addressing",
+        "notes": "This is a classic I2C trap. The FAQ directly addresses 7-bit (0x44) vs 8-bit shifted (0x88) confusion."
+      },
+      {
+        "chapter": "Ch12",
+        "question": "LCD shows white screen after init - what went wrong?",
+        "answered": "Partially",
+        "notes": "Initialization sequence is well documented, but a dedicated troubleshooting table (symptom -> likely cause -> fix) would help students debug common LCD issues."
+      }
+    ]
+  },
+
+  "can_i_build_this": {
+    "description": "After each milestone chapter, can I actually build the described system?",
+    "checkpoints": [
+      { "after": "Ch01", "goal": "Wire LED+button, see toggle on press", "verdict": "YES", "confidence": "High" },
+      { "after": "Ch02", "goal": "See LOG_I messages in SWV console", "verdict": "YES", "confidence": "High" },
+      { "after": "Ch04", "goal": "Send/receive data via serial terminal", "verdict": "YES", "confidence": "High" },
+      { "after": "Ch06", "goal": "UART DMA with ring buffer, zero blocking", "verdict": "YES", "confidence": "Medium-High" },
+      { "after": "Ch07", "goal": "PWM LED brightness control without HAL_Delay", "verdict": "YES", "confidence": "High" },
+      { "after": "Ch08", "goal": "Stopwatch FSM with button control", "verdict": "YES", "confidence": "Medium-High" },
+      { "after": "Ch09", "goal": "Real-time clock display + alarm interrupt", "verdict": "YES", "confidence": "High" },
+      { "after": "Ch10", "goal": "Wire motor+RTC, make working clock hand", "verdict": "YES", "confidence": "Medium-High" },
+      { "after": "Ch11", "goal": "Read temperature/humidity + alarm trigger", "verdict": "YES", "confidence": "Medium-High" },
+      { "after": "Ch12", "goal": "Display '12:34' on LCD", "verdict": "YES", "confidence": "Medium" }
+    ]
+  },
+
+  "final_recommendation": {
+    "verdict": "YES - Would strongly recommend",
+    "symbol": "PASS",
+    "overall_score": "4.7 / 5.0",
+    "summary": "This is the most pedagogically sound STM32 curriculum I have encountered. The cumulative growth model (v0.1 -> v1.2) with consistent architecture patterns makes each chapter feel like building on solid ground rather than starting over. The emotional arc management (anxiety -> relief -> pride) is deliberate and effective. Code examples are production-quality with consistent naming conventions and Korean comments. Metaphors are well-chosen, honestly limited, and consistently referenced across chapters.",
+
+    "top_3_strengths": [
+      "1. Architecture-first approach: Ch03's 4-layer design pervades every subsequent chapter. The Ch06 'zero header changes' proof is the curriculum's most powerful teaching moment.",
+      "2. Pattern reuse acceleration: FSM appears in Ch03 (theory) -> Ch08 (first impl) -> Ch09 (second impl, recognition) -> Ch10 (third, automatic) -> Ch11 (fourth, mastery). By Ch11, students design FSMs instinctively.",
+      "3. Emotional safety: Every chapter starts with achievement confirmation, metacognition checklists link to prior knowledge, and FAQs preempt exact student confusions. 'This is hard for everyone' moments are present where needed."
+    ],
+
+    "top_3_improvement_suggestions": [
+      "1. Ch05 DMA Stream/Channel lookup: Add a worked example showing 'how to find the right stream/channel for your peripheral' step-by-step.",
+      "2. Ch12 LCD troubleshooting: Add a symptom-cause-fix table for common initialization failures (white screen, wrong colors, flickering).",
+      "3. Ch03 FSM bridging: Add a tiny 2-state pseudocode example (not full C code) to bridge the gap between abstract FSM theory and Ch08 implementation."
+    ]
+  }
+}

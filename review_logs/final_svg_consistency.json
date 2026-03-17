@@ -1,0 +1,214 @@
+{
+  "report_title": "SVG 다이어그램 일관성 검증 보고서",
+  "report_date": "2026-03-17",
+  "scope": "Ch01 ~ Ch12 (91 SVG files)",
+  "overall_score": "⭐⭐⭐⭐ (4/5)",
+  "summary": "전체적으로 우수한 일관성. 4계층 색상 팔레트와 Noto Sans KR 폰트 준수율 높음. Ch08/Ch09 네이밍 불일치, Ch12 누락 파일 8개, Ch02 폰트 fallback 혼재가 주요 개선점.",
+
+  "diagram_inventory": {
+    "ch01": { "count": 8, "min_threshold": "6-9", "status": "✅ PASS" },
+    "ch02": { "count": 9, "min_threshold": "6-9", "status": "✅ PASS" },
+    "ch03": { "count": 7, "min_threshold": "6-9", "status": "✅ PASS" },
+    "ch04": { "count": 9, "min_threshold": "6-9", "status": "✅ PASS" },
+    "ch05": { "count": 9, "min_threshold": "6-9", "status": "✅ PASS" },
+    "ch06": { "count": 7, "min_threshold": "6-9", "status": "✅ PASS" },
+    "ch07": { "count": 7, "min_threshold": "6-9", "status": "✅ PASS" },
+    "ch08": { "count": 8, "min_threshold": "6-9", "status": "✅ PASS" },
+    "ch09": { "count": 8, "min_threshold": "6-9", "status": "✅ PASS" },
+    "ch10": { "count": 10, "min_threshold": "6-9", "status": "✅ PASS (exceeds)" },
+    "ch11": { "count": 8, "min_threshold": "6-9", "status": "✅ PASS" },
+    "ch12": { "count": 7, "min_threshold": "6-9", "status": "⚠️ 7 exist, but 8 MISSING referenced in HTML" },
+    "total": 91
+  },
+
+  "color_audit": {
+    "official_palette": {
+      "HAL": "#1A73E8 (blue)",
+      "Driver": "#34A853 (green)",
+      "Service": "#FBBC04 (yellow)",
+      "App": "#EA4335 (red)"
+    },
+    "compliance": "✅ 4계층 아키텍처 다이어그램 전체 준수",
+    "findings": [
+      {
+        "severity": "INFO",
+        "issue": "Service 레이어 텍스트 색상 변형",
+        "details": "#F57F17 (dark yellow) used for Service text labels in ch03, ch08, ch09 instead of #FBBC04. Acceptable for text readability (contrast ratio improvement).",
+        "files_affected": ["ch03_sec02_four_layers.svg", "ch08_sec0_architecture.svg", "ch09 architecture SVGs"],
+        "action": "No change needed — readability improvement"
+      },
+      {
+        "severity": "INFO",
+        "issue": "DMA/peripheral-specific 색상 (#FF6D00 orange)",
+        "details": "Ch05 DMA controller diagram uses #FF6D00 (orange) for DMA-specific elements, distinct from 4-layer palette. Used consistently across Ch05-Ch06 DMA diagrams.",
+        "files_affected": ["ch05_sec01_dma_controller.svg", "ch05 series", "ch06 series"],
+        "action": "Acceptable — DMA is not a layer, it's a peripheral concept"
+      },
+      {
+        "severity": "MINOR",
+        "issue": "Ch01 EXTI signal path uses non-standard purple (#7C4DFF, #9575CD, #CE93D8)",
+        "details": "HAL IRQ handler block uses purple color scheme instead of blue (#1A73E8). Only in ch01_sec04_exti_signal_path.svg and ch01_sec04_nvic_priority.svg.",
+        "files_affected": ["ch01_sec04_exti_signal_path.svg", "ch01_sec04_nvic_priority.svg"],
+        "action": "Consider — purple represents HAL interrupt handler, functionally distinct from HAL layer. Acceptable as signal-flow diagram (not architecture diagram)."
+      },
+      {
+        "severity": "MINOR",
+        "issue": "Ch12 uses #4285F4 (Google blue) for SPI/hardware layer",
+        "details": "All 7 Ch12 SVGs use CSS class .spi with #4285F4 for hardware layer, slightly different from HAL #1A73E8.",
+        "files_affected": ["ch12_sec00_architecture.svg", "ch12_sec01_i2c_vs_spi.svg", "ch12_sec02_ili9341_pinout.svg", "ch12_sec04_init_sequence.svg", "ch12_sec05_rgb565_format.svg", "ch12_sec08_sequence_lcd_init.svg", "ch12_sec08_architecture_v12.svg"],
+        "action": "RECOMMEND FIX — #4285F4 should be #1A73E8 for HAL/hardware consistency"
+      }
+    ]
+  },
+
+  "font_compliance": {
+    "primary_font": "Noto Sans KR",
+    "fallback": "sans-serif",
+    "overall": "✅ Noto Sans KR used across all chapters",
+    "findings": [
+      {
+        "severity": "MINOR",
+        "issue": "Ch02 adds 'Malgun Gothic' as secondary fallback",
+        "details": "9 Ch02 SVGs use font-family='\"Noto Sans KR\", \"Malgun Gothic\", sans-serif' — adds Windows Korean font as fallback. Functionally harmless but inconsistent with other chapters.",
+        "files_affected": ["All 9 ch02_sec*.svg files"],
+        "action": "Optional normalize — remove 'Malgun Gothic' for consistency"
+      },
+      {
+        "severity": "INFO",
+        "issue": "Styling approach varies: inline vs CSS <style>",
+        "details": "Ch01-Ch09 mostly use inline font-family attributes on SVG root. Ch10-Ch12 and some Ch01 use <defs><style> CSS classes. Both valid SVG approaches.",
+        "files_affected": ["27 files use <style>, 64 use inline"],
+        "action": "No change needed — both approaches render correctly"
+      }
+    ],
+    "title_size": "18px (consistent across all chapters) ✅",
+    "body_size": "14px base (consistent) ✅",
+    "label_size": "10-12px (consistent) ✅",
+    "title_weight": "bold/700 (consistent) ✅"
+  },
+
+  "naming_convention": {
+    "expected_format": "chNN_secNN_description.svg",
+    "findings": [
+      {
+        "severity": "MAJOR",
+        "issue": "Ch08 uses single-digit section numbers (sec0, sec1, ...sec8)",
+        "details": "Ch08 uses ch08_sec0_, ch08_sec1_, etc. instead of ch08_sec00_, ch08_sec01_. All other chapters (except Ch09) use two-digit format.",
+        "files_affected": ["ch08_sec0_architecture.svg", "ch08_sec1_tim1_vs_gp.svg", "ch08_sec2_complementary_pwm.svg", "ch08_sec3_ic_principle.svg", "ch08_sec4_oc_opmode.svg", "ch08_sec5_master_slave.svg", "ch08_sec6_stopwatch_fsm.svg", "ch08_sec8_v08_final.svg"],
+        "action": "RECOMMEND FIX — rename to ch08_sec00_, ch08_sec01_, etc. (requires HTML reference update)"
+      },
+      {
+        "severity": "MAJOR",
+        "issue": "Ch09 uses single-digit section numbers (sec0, sec1, ...sec8)",
+        "details": "Same issue as Ch08. ch09_sec0_, ch09_sec1_, etc.",
+        "files_affected": ["ch09_sec0_architecture.svg", "ch09_sec1_rtc_backup.svg", "ch09_sec1_bcd_structure.svg", "ch09_sec1_lse_vs_lsi.svg", "ch09_sec4_alarm_timing.svg", "ch09_sec5_wakeup_vs_alarm.svg", "ch09_sec6_alarm_fsm.svg", "ch09_sec8_v09_final.svg"],
+        "action": "RECOMMEND FIX — rename to ch09_sec00_, ch09_sec01_, etc. (requires HTML reference update)"
+      },
+      {
+        "severity": "INFO",
+        "issue": "Ch01-Ch03 start section numbering at sec01, Ch04+ start at sec00",
+        "details": "Ch01: sec01-sec05, Ch02: sec01-sec06, Ch03: sec01-sec05. Ch04+: sec00 for architecture overview. Not a bug — Ch01-Ch03 predate the sec00 convention.",
+        "action": "No change needed — historical convention difference"
+      }
+    ]
+  },
+
+  "missing_files": {
+    "severity": "CRITICAL",
+    "issue": "8 SVG files referenced in Ch12 HTML do not exist",
+    "files_missing": [
+      "figures/ch12_sec01_spi_overview.svg",
+      "figures/ch12_sec01_cpol_cpha.svg",
+      "figures/ch12_sec02_dc_signal.svg",
+      "figures/ch12_sec02_reset_sequence.svg",
+      "figures/ch12_sec03_spi_dma_init.svg",
+      "figures/ch12_sec03_dma_callback_timing.svg",
+      "figures/ch12_sec04_dc_pin_transitions.svg",
+      "figures/ch12_sec05_pixel_write_sequence.svg"
+    ],
+    "html_file": "manuscripts/part3/ch12.html",
+    "action": "MUST FIX — Create these 8 SVG files or remove HTML references. Broken image links in published content."
+  },
+
+  "diagram_types_audit": {
+    "architecture_4layer": {
+      "present_in": ["ch03 (canonical)", "ch04-ch12 (all have architecture SVG)"],
+      "consistency": "✅ All use HAL→Driver→Service→App layering with correct colors",
+      "style_variation": "Ch03-Ch09: translucent fill + stroke border. Ch10-Ch12: CSS class-based solid fill. Minor visual difference but structurally consistent."
+    },
+    "fsm_state_diagrams": {
+      "present_in": ["ch03 (button FSM)", "ch06 (TX DMA FSM)", "ch08 (stopwatch FSM)", "ch09 (alarm FSM)", "ch10 (motor FSM)"],
+      "consistency": "✅ All use circles/ellipses for states, arrows with markers for transitions",
+      "style": "Green (#34A853) for normal states, Red (#EA4335) for error/triggered states, Blue (#1A73E8) for idle/initial states, Yellow (#FBBC04) for acknowledged/pending states"
+    },
+    "sequence_diagrams": {
+      "present_in": ["ch03, ch04, ch05, ch06, ch07, ch10, ch12"],
+      "consistency": "✅ Vertical lifelines with horizontal message arrows"
+    },
+    "comparison_tables": {
+      "present_in": ["ch01 (push-pull vs OD), ch02 (SWO vs RTT), ch04 (polling vs interrupt), ch05 (polling vs DMA), ch07 (timer hierarchy), ch08 (TIM1 vs GP), ch12 (I2C vs SPI)"],
+      "consistency": "✅ Consistent table styling with header rows and alternating backgrounds"
+    }
+  },
+
+  "architecture_evolution": {
+    "progression": [
+      { "chapter": "Ch03", "version": "v0.3", "layers": "App + HAL (2-layer start)", "file": "ch03_sec05_architecture_v03.svg" },
+      { "chapter": "Ch04", "version": "v0.4", "addition": "+uart_driver (Driver layer introduced)", "file": "ch04_sec05_architecture_v04.svg" },
+      { "chapter": "Ch05", "version": "v0.5", "addition": "+DMA support", "file": "ch05_sec05_architecture_v05.svg" },
+      { "chapter": "Ch06", "version": "v0.6", "addition": "+UART DMA + ring buffer", "file": "ch06_sec05_architecture_v06.svg" },
+      { "chapter": "Ch07", "version": "v0.7", "addition": "+tim_driver", "file": "ch07_sec06_architecture_v07.svg" },
+      { "chapter": "Ch08", "version": "v0.8", "addition": "+stopwatch_service (Service layer first!)", "file": "ch08_sec8_v08_final.svg" },
+      { "chapter": "Ch09", "version": "v0.9", "addition": "+RTC driver + alarm_service", "file": "ch09_sec8_v09_final.svg" },
+      { "chapter": "Ch10", "version": "v1.0", "addition": "+stepper_driver + clock_service", "file": "ch10_sec08_final_architecture.svg" },
+      { "chapter": "Ch11", "version": "v1.1", "addition": "+I2C driver + sensor_service", "file": "ch11_sec00_architecture.svg" },
+      { "chapter": "Ch12", "version": "v1.2", "addition": "+SPI driver + LCD driver", "file": "ch12_sec08_architecture_v12.svg" }
+    ],
+    "consistency": "✅ Clear v0.3 → v1.2 evolution across 10 architecture diagrams. All 4 layers progressively populated."
+  },
+
+  "accessibility": {
+    "text_as_svg_elements": "✅ All text uses SVG <text> elements (no text-as-image)",
+    "contrast_ratio": "✅ All text colors against backgrounds meet 4.5:1 (verified: dark text on light fills, white text on dark fills)",
+    "alt_text_in_html": "⚠️ Ch01-Ch11 HTML <img> tags include descriptive alt text. Ch12 HTML <img> tags also include alt text. PASS."
+  },
+
+  "corrections_needed": {
+    "P0_critical": [
+      {
+        "id": "P0-1",
+        "issue": "8 missing SVG files in Ch12",
+        "action": "Create: ch12_sec01_spi_overview.svg, ch12_sec01_cpol_cpha.svg, ch12_sec02_dc_signal.svg, ch12_sec02_reset_sequence.svg, ch12_sec03_spi_dma_init.svg, ch12_sec03_dma_callback_timing.svg, ch12_sec04_dc_pin_transitions.svg, ch12_sec05_pixel_write_sequence.svg",
+        "impact": "Broken images in published HTML"
+      }
+    ],
+    "P1_major": [
+      {
+        "id": "P1-1",
+        "issue": "Ch08 naming: sec0/sec1/.../sec8 instead of sec00/sec01/.../sec08",
+        "action": "Rename 8 files + update HTML references",
+        "impact": "Naming convention inconsistency"
+      },
+      {
+        "id": "P1-2",
+        "issue": "Ch09 naming: sec0/sec1/.../sec8 instead of sec00/sec01/.../sec08",
+        "action": "Rename 8 files + update HTML references",
+        "impact": "Naming convention inconsistency"
+      }
+    ],
+    "P2_minor": [
+      {
+        "id": "P2-1",
+        "issue": "Ch12 uses #4285F4 instead of #1A73E8 for HAL/hardware",
+        "action": "Replace .spi { fill: #4285F4 } with #1A73E8 in 7 Ch12 SVGs",
+        "impact": "Color palette deviation"
+      },
+      {
+        "id": "P2-2",
+        "issue": "Ch02 'Malgun Gothic' fallback font",
+        "action": "Remove 'Malgun Gothic' from font-family in 9 Ch02 SVGs",
+        "impact": "Font stack inconsistency"
+      }
+    ]
+  }
+}

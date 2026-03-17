@@ -1,0 +1,784 @@
+{
+  "report_title": "STM32 고급 실무교육 — 코드 품질 감사 보고서",
+  "report_date": "2026-03-17",
+  "auditor": "Code Quality Auditor Agent",
+  "scope": "code_examples/*.c, code_examples/*.h (Ch01~Ch12, 72 files)",
+  "validation_criteria": [
+    "Coding Standard Compliance (indent, naming, comments, no ASCII art)",
+    "Safety & Correctness (volatile, buffer checks, ISR safety, error handling)",
+    "Logging Consistency (LOG_D/I/W/E, no raw printf)",
+    "Code Block Length (≤30 lines recommended)",
+    "Example Progression (clear evolution across chapters)",
+    "Copy-Paste Fragmentation (no orphaned defines/comments)"
+  ],
+
+  "file_checklist": {
+    "ch01": {
+      "ch01_ex01_led_blink.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "⚠️ No LOG macros (intentional: Ch02 not yet introduced, has TODO markers)",
+        "block_length": "✅",
+        "notes": "Proper HAL_GPIO usage, Korean comments throughout"
+      },
+      "ch01_ex02_led_pattern.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "⚠️ No LOG macros (intentional: TODO marker present)",
+        "block_length": "✅",
+        "notes": "LED pattern array with configurable timing"
+      },
+      "ch01_ex03_button_polling.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "⚠️ No LOG macros (intentional: TODO marker present)",
+        "block_length": "✅",
+        "notes": "Basic polling pattern"
+      },
+      "ch01_ex04_button_exti.c": {
+        "coding_standard": "✅",
+        "safety": "✅ volatile on g_button_flag",
+        "logging": "⚠️ No LOG macros (intentional: TODO marker present)",
+        "block_length": "✅",
+        "notes": "EXTI callback, proper volatile usage"
+      },
+      "ch01_ex05_button_exti_debounce.c": {
+        "coding_standard": "✅",
+        "safety": "✅ volatile + timestamp debounce (no blocking in ISR)",
+        "logging": "⚠️ No LOG macros (intentional: TODO marker present)",
+        "block_length": "✅",
+        "notes": "HAL_GetTick() based debounce, 200ms threshold"
+      }
+    },
+
+    "ch02": {
+      "ch02_01_swo_printf.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅ Establishes ITM_SendChar + printf pattern",
+        "block_length": "✅",
+        "notes": "Foundation for SWO output"
+      },
+      "ch02_02_itm_port_direct.c": {
+        "coding_standard": "✅",
+        "safety": "✅ ITM port ready check before write",
+        "logging": "✅ Direct ITM port access",
+        "block_length": "✅",
+        "notes": "Low-level ITM register access"
+      },
+      "ch02_03_log_level.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅ Introduces log levels (ERROR/WARN/INFO/DEBUG)",
+        "block_length": "✅",
+        "notes": "Log level filtering concept"
+      },
+      "ch02_04_log_macro.h": {
+        "coding_standard": "✅",
+        "safety": "✅ Compile-time level filtering",
+        "logging": "✅ DEFINES LOG_E/W/I/D — the project standard",
+        "block_length": "✅",
+        "notes": "CRITICAL FILE: All subsequent chapters depend on this pattern"
+      },
+      "ch02_05_log_timestamp.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅ HAL_GetTick() timestamp in log output",
+        "block_length": "✅",
+        "notes": "Timestamp-enriched logging"
+      },
+      "ch02_06_logger_module.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅ log_print() implementation with ITM",
+        "block_length": "✅",
+        "notes": "Modular logger with init/print/set_level"
+      },
+      "ch02_07_v02_integrated.c": {
+        "coding_standard": "✅",
+        "safety": "✅ volatile on ISR-shared flag",
+        "logging": "✅ Full LOG_I/D/W/E usage",
+        "block_length": "✅",
+        "notes": "Ch01 GPIO + Ch02 logging integration (v0.2)"
+      }
+    },
+
+    "ch03": {
+      "ch03_01_spaghetti_demo.c": {
+        "coding_standard": "✅ (intentional anti-pattern for educational purpose)",
+        "safety": "⚠️ SRAM overflow: g_lcd_framebuf[153600] exceeds 128KB (documented with comment)",
+        "logging": "✅ Uses LOG_I/D",
+        "block_length": "⚠️ Some blocks >30 lines (educational: showing 'what not to do')",
+        "notes": "Intentional bad code for comparison. SRAM overflow is documented."
+      },
+      "ch03_02_layer_interfaces.h": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "N/A (header file, interface declarations only)",
+        "block_length": "✅",
+        "notes": "4-layer interface definitions (HAL→Driver→Service→App)"
+      },
+      "ch03_03_v02_layer_analysis.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "v0.2 code analyzed with layer annotations"
+      }
+    },
+
+    "ch04": {
+      "ch04_01_uart_polling_echo.c": {
+        "coding_standard": "✅",
+        "safety": "✅ HAL return value checked",
+        "logging": "✅ LOG_I/D/E via log.h",
+        "block_length": "✅",
+        "notes": "Basic UART echo, polling mode"
+      },
+      "ch04_02_uart_interrupt_echo.c": {
+        "coding_standard": "✅",
+        "safety": "✅ volatile on rx_data, HAL_UART_Receive_IT re-armed in callback",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "Interrupt-driven UART"
+      },
+      "ch04_03_uart_command_parser.c": {
+        "coding_standard": "✅",
+        "safety": "✅ Buffer overflow check (cmd_buf_idx < sizeof)",
+        "logging": "✅ LOG_I/W/E",
+        "block_length": "✅",
+        "notes": "Line-based command parser with buffer protection"
+      },
+      "ch04_04_uart_driver.h": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "N/A (header)",
+        "block_length": "✅",
+        "notes": "Driver layer interface — unchanged through Ch06"
+      },
+      "ch04_04_uart_driver.c": {
+        "coding_standard": "✅",
+        "safety": "✅ HAL return value mapped to driver status codes",
+        "logging": "✅ LOG_D/I/E",
+        "block_length": "✅",
+        "notes": "First Driver layer implementation (v0.4)"
+      }
+    },
+
+    "ch05": {
+      "ch05_ex01_dma_memcpy.c": {
+        "coding_standard": "✅",
+        "safety": "✅ volatile g_dma_complete flag",
+        "logging": "✅ LOG_I/D/E",
+        "block_length": "✅",
+        "notes": "DMA memory-to-memory with callback"
+      },
+      "ch05_ex02_dma_multi_stream.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "Multi-stream DMA demonstration"
+      },
+      "ch05_ex03_dma_performance.c": {
+        "coding_standard": "✅",
+        "safety": "✅ DWT cycle counter properly initialized",
+        "logging": "✅ LOG_I with performance metrics",
+        "block_length": "✅",
+        "notes": "Polling vs DMA 100-iteration benchmark"
+      }
+    },
+
+    "ch06": {
+      "ch06_01_ring_buffer.h": {
+        "coding_standard": "✅",
+        "safety": "✅ volatile head/tail for SPSC lock-free",
+        "logging": "N/A (header)",
+        "block_length": "✅",
+        "notes": "Lock-free SPSC ring buffer interface"
+      },
+      "ch06_01_ring_buffer.c": {
+        "coding_standard": "✅",
+        "safety": "✅ Proper SPSC pattern, volatile usage",
+        "logging": "✅ LOG_D/W",
+        "block_length": "✅",
+        "notes": "Ring buffer implementation"
+      },
+      "ch06_02_uart_dma_basic.c": {
+        "coding_standard": "✅",
+        "safety": "✅ DMA circular mode",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "Basic UART DMA RX setup"
+      },
+      "ch06_03_uart_dma_idle.c": {
+        "coding_standard": "✅",
+        "safety": "✅ IDLE line detection for variable-length frames",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "UART IDLE interrupt + DMA"
+      },
+      "ch06_04_uart_driver_v2.h": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "N/A (header)",
+        "block_length": "✅",
+        "notes": "Same interface as Ch04 — proves encapsulation"
+      },
+      "ch06_04_uart_driver_v2.c": {
+        "coding_standard": "✅",
+        "safety": "✅ Critical section with __disable_irq()/__enable_irq()",
+        "logging": "✅ LOG_D/I/E",
+        "block_length": "✅",
+        "notes": "DMA+RingBuffer driver, same API as v1 (v0.6)"
+      }
+    },
+
+    "ch07": {
+      "ch07_ex01_basic_timer.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "TIM2 basic 1-second interrupt"
+      },
+      "ch07_ex02_pwm_basic.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "PWM output on TIM2 CH1"
+      },
+      "ch07_ex03_pwm_breathing.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "LED breathing effect with PWM duty cycle sweep"
+      },
+      "ch07_tim_driver.h": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "N/A (header)",
+        "block_length": "✅",
+        "notes": "Timer Driver interface"
+      },
+      "ch07_tim_driver.c": {
+        "coding_standard": "✅",
+        "safety": "✅ PSC 16-bit overflow check (83999 > 65535), UIF clear after UG",
+        "logging": "✅ LOG_D/I/W/E",
+        "block_length": "✅",
+        "notes": "Timer driver with prescaler validation (v0.7)"
+      }
+    },
+
+    "ch08": {
+      "ch08_ex01_complementary_pwm.c": {
+        "coding_standard": "✅",
+        "safety": "✅ Dead-time configured for MOSFET protection",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "TIM1 complementary PWM with dead-time"
+      },
+      "ch08_ex02_deadtime_calc.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅ LOG_I with dead-time calculation results",
+        "block_length": "✅",
+        "notes": "Dead-time register value calculator"
+      },
+      "ch08_ex03_input_capture.c": {
+        "coding_standard": "✅",
+        "safety": "✅ volatile on capture values",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "Input capture for frequency measurement"
+      },
+      "ch08_ex04_one_pulse.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "One-pulse mode (trigger-based single shot)"
+      },
+      "ch08_05_stopwatch_service.h": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "N/A (header)",
+        "block_length": "✅",
+        "notes": "First Service layer FSM interface"
+      },
+      "ch08_05_stopwatch_service.c": {
+        "coding_standard": "✅",
+        "safety": "✅ FSM with enum states, no blocking in update",
+        "logging": "✅ LOG_I/D state transitions",
+        "block_length": "✅",
+        "notes": "Stopwatch FSM — reused pattern in Ch09/10/11"
+      },
+      "ch08_06_main_integration.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "Main loop integrating stopwatch (v0.8)"
+      }
+    },
+
+    "ch09": {
+      "ch09_01_rtc_basic_init.c": {
+        "coding_standard": "✅",
+        "safety": "✅ HAL_RTC_GetTime + GetDate pair enforced",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "RTC basic initialization + BCD reading"
+      },
+      "ch09_02_rtc_set_time.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "RTC time/date set functions"
+      },
+      "ch09_03_rtc_backup_register.c": {
+        "coding_standard": "✅",
+        "safety": "✅ Backup register magic number for power-cycle detection",
+        "logging": "✅ LOG_I/W",
+        "block_length": "✅",
+        "notes": "Backup register read/write with magic value check"
+      },
+      "ch09_04_rtc_alarm_setup.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "Alarm A/B setup, #if 0 disables learning callback to avoid duplicate"
+      },
+      "ch09_05_rtc_wakeup_timer.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "Wake-up timer for periodic events"
+      },
+      "ch09_06_rtc_driver.c": {
+        "coding_standard": "⚠️ Contains header interface as comments inside .c file (unconventional)",
+        "safety": "✅ GetTime+GetDate pair, HAL return checks",
+        "logging": "✅ LOG_D/I/E",
+        "block_length": "✅",
+        "notes": "RTC Driver (v0.9). Header interface embedded in comments."
+      },
+      "ch09_07_alarm_service.c": {
+        "coding_standard": "✅",
+        "safety": "✅ FSM pattern consistent with Ch08",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "Alarm FSM — same pattern as stopwatch_service"
+      }
+    },
+
+    "ch10": {
+      "ch10_ex01_half_step.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "Half-step excitation sequence for 28BYJ-48"
+      },
+      "ch10_ex02_full_step.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "Full-step excitation"
+      },
+      "ch10_ex03_wave_drive.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "Wave drive (1-phase excitation)"
+      },
+      "ch10_stepper_driver.h": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "N/A (header)",
+        "block_length": "✅",
+        "notes": "Stepper driver interface"
+      },
+      "ch10_stepper_driver.c": {
+        "coding_standard": "⚠️ Some English-only log messages (e.g., 'Stepper driver initialized', 'Homing motor to 0 degrees')",
+        "safety": "⚠️ Type mismatch: motor_position is int16_t but stepper_get_position() returns uint16_t",
+        "logging": "✅ LOG_I/D/E (but English messages violate Korean comment standard)",
+        "block_length": "✅",
+        "notes": "Motor position type inconsistency may cause sign issues at boundary values"
+      },
+      "ch10_ex06_acceleration.c": {
+        "coding_standard": "✅",
+        "safety": "⚠️ Calls stepper_step_forward()/stepper_step_backward() which are static in ch10_stepper_driver.c",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "Acceleration profile example. Static function visibility issue — would cause linker error if compiled separately."
+      },
+      "ch10_clock_service.c": {
+        "coding_standard": "✅",
+        "safety": "✅ FSM pattern, angle calculation from RTC time",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "Clock Service — integrates RTC + Stepper (v1.0)"
+      }
+    },
+
+    "ch11": {
+      "ch11_i2c_driver.h": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "N/A (header)",
+        "block_length": "✅",
+        "notes": "I2C Driver interface, 7-bit address convention documented"
+      },
+      "ch11_i2c_driver.c": {
+        "coding_standard": "✅",
+        "safety": "✅ Address left-shift (7→8 bit) inside driver, HAL return mapped",
+        "logging": "✅ LOG_D/I/E",
+        "block_length": "✅",
+        "notes": "hi2c2 extern relies on main.h (acceptable HAL pattern)"
+      },
+      "ch11_ex01_i2c_scan.c": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "✅ LOG_I for found devices",
+        "block_length": "✅",
+        "notes": "I2C bus scanner (0x08~0x77)"
+      },
+      "ch11_ex02_sht31_raw_read.c": {
+        "coding_standard": "✅",
+        "safety": "✅ HAL return checked",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "Raw SHT31 read without driver abstraction"
+      },
+      "ch11_ex03_crc8.c": {
+        "coding_standard": "✅",
+        "safety": "✅ CRC-8 polynomial 0x31, bit-by-bit calculation",
+        "logging": "✅",
+        "block_length": "✅",
+        "notes": "CRC-8 implementation for SHT31 verification"
+      },
+      "ch11_sht31_driver.h": {
+        "coding_standard": "✅",
+        "safety": "✅ Named constants for all frame indices",
+        "logging": "N/A (header)",
+        "block_length": "✅",
+        "notes": "SHT31 device driver interface with status codes"
+      },
+      "ch11_sht31_driver.c": {
+        "coding_standard": "⚠️ #include \"ch11_ex03_crc8.c\" — includes .c file directly (should use .h)",
+        "safety": "✅ CRC verification on both temp and humidity, error returns",
+        "logging": "✅ LOG_D/I/E contextual messages",
+        "block_length": "✅",
+        "notes": "Including .c file is bad practice but functional. Should extract crc8 to separate .h/.c pair."
+      },
+      "ch11_sensor_service.h": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "N/A (header)",
+        "block_length": "✅",
+        "notes": "Sensor Service FSM interface"
+      },
+      "ch11_sensor_service.c": {
+        "coding_standard": "✅",
+        "safety": "✅ Non-blocking FSM with timeout handling",
+        "logging": "✅ LOG_I/D/W/E",
+        "block_length": "✅",
+        "notes": "Sensor polling FSM (v1.1 integration)"
+      }
+    },
+
+    "ch12": {
+      "ch12_01_spi_dma_init.c": {
+        "coding_standard": "⚠️ Uses #include \"log_system.h\" instead of #include \"log.h\" (inconsistent with Ch04-Ch11)",
+        "safety": "✅ DMA stream configuration verified",
+        "logging": "⚠️ Contains emoji in log: LOG_I(\"SPI1 DMA 초기화 완료 ✓\") — violates no-emoji rule",
+        "block_length": "✅",
+        "notes": "SPI+DMA init. Defines Delay_Ms() — duplicated in ch12_02."
+      },
+      "ch12_02_ili9341_init.c": {
+        "coding_standard": "⚠️ Uses #include \"log_system.h\", has duplicate static Delay_Ms()",
+        "safety": "✅ 120ms Sleep Out delay documented (voltage stabilization)",
+        "logging": "⚠️ Emoji in log: LOG_I(\"ILI9341 초기화 완료 ✓\")",
+        "block_length": "⚠️ Init command sequence block is long (~40 lines, but justified for 25-command init sequence)",
+        "notes": "ILI9341 25-command initialization. Duplicate Delay_Ms should be refactored to shared utility."
+      },
+      "ch12_03_ili9341_pixel_write.c": {
+        "coding_standard": "⚠️ Uses log_system.h",
+        "safety": "✅ Bounds check on pixel coordinates",
+        "logging": "✅ LOG_D for pixel operations",
+        "block_length": "✅",
+        "notes": "Single pixel write + fill functions"
+      },
+      "ch12_04_ili9341_shapes.c": {
+        "coding_standard": "⚠️ Uses log_system.h",
+        "safety": "✅ Bounds check on rectangle, Bresenham integer-only",
+        "logging": "✅ LOG_D/W",
+        "block_length": "✅",
+        "notes": "Bresenham line, Midpoint circle, filled shapes"
+      },
+      "ch12_05_ili9341_text.c": {
+        "coding_standard": "⚠️ Uses log_system.h, font data incomplete (ASCII 32-97 only, rest marked '나머지 생략')",
+        "safety": "✅ Character bounds check",
+        "logging": "✅ LOG_D/I",
+        "block_length": "⚠️ Font data array is very long (unavoidable for bitmap fonts)",
+        "notes": "5x7 bitmap font rendering. Incomplete font table — only covers space through 'a'. Sufficient for demo but not production."
+      },
+      "ch12_06_ili9341_driver.h": {
+        "coding_standard": "✅",
+        "safety": "✅",
+        "logging": "N/A (header)",
+        "block_length": "✅",
+        "notes": "LCD Driver consolidated interface"
+      },
+      "ch12_06_ili9341_driver.c": {
+        "coding_standard": "⚠️ Uses log_system.h",
+        "safety": "✅ SPI DMA transfer complete flag handling",
+        "logging": "✅ LOG_D/I/E",
+        "block_length": "✅",
+        "notes": "LCD Driver with SPI DMA (v1.2)"
+      }
+    }
+  },
+
+  "safety_audit": {
+    "volatile_usage": {
+      "status": "✅ PASS",
+      "details": [
+        "ch01_ex04: volatile on g_button_flag ✅",
+        "ch01_ex05: volatile on g_button_flag + g_last_tick ✅",
+        "ch02_07: volatile on ISR-shared flag ✅",
+        "ch04_02: volatile on rx_data ✅",
+        "ch05_ex01: volatile on g_dma_complete ✅",
+        "ch06_01: volatile on ring_buffer head/tail ✅",
+        "ch08_ex03: volatile on capture values ✅"
+      ]
+    },
+    "buffer_overflow_protection": {
+      "status": "✅ PASS",
+      "details": [
+        "ch04_03: cmd_buf_idx < sizeof(cmd_buf) check ✅",
+        "ch06_01: ring buffer full/empty detection ✅",
+        "ch12_03: pixel coordinate bounds check ✅",
+        "ch12_04: rectangle bounds check ✅",
+        "ch03_01: SRAM overflow documented (educational, intentional) ⚠️"
+      ]
+    },
+    "isr_safety": {
+      "status": "✅ PASS",
+      "details": [
+        "No HAL_Delay() in ISR callbacks ✅",
+        "ch01_ex05: timestamp-based debounce (no blocking) ✅",
+        "ch08: stopwatch uses event flags, not blocking calls in callbacks ✅",
+        "ch09: alarm callback sets flag only ✅",
+        "ch11_sht31_driver.c: HAL_Delay(50) in sht31_read_temp_humid() is in main context, not ISR ✅"
+      ]
+    },
+    "hal_return_value_checking": {
+      "status": "✅ PASS",
+      "details": [
+        "ch04_04: HAL_UART return → driver status mapping ✅",
+        "ch07_tim_driver: HAL_TIM return checked ✅",
+        "ch09_06: HAL_RTC return checked ✅",
+        "ch11_i2c_driver: HAL_I2C return → i2c_status_t mapping ✅",
+        "ch11_sht31_driver: CRC verification + I2C return checked ✅"
+      ]
+    },
+    "critical_section_usage": {
+      "status": "✅ PASS",
+      "details": [
+        "ch06_04: __disable_irq()/__enable_irq() around ring buffer access ✅"
+      ]
+    }
+  },
+
+  "evolution_map": {
+    "uart_path": {
+      "ch04": "UART Polling → Interrupt → Command Parser → uart_driver v1 (HAL wrapper)",
+      "ch06": "UART DMA + Ring Buffer → uart_driver v2 (same interface, DMA backend)",
+      "note": "Interface unchanged (ch04_04_uart_driver.h ≡ ch06_04_uart_driver_v2.h) — proves encapsulation"
+    },
+    "timer_path": {
+      "ch07": "TIM2 Basic → PWM → Breathing → tim_driver (PSC overflow check)",
+      "ch08": "TIM1 Complementary PWM → Dead-time → Input Capture → One-Pulse → stopwatch_service FSM"
+    },
+    "rtc_path": {
+      "ch09": "RTC Init → Set Time → Backup Register → Alarm → Wake-up → rtc_driver → alarm_service FSM"
+    },
+    "motor_path": {
+      "ch10": "Half-step → Full-step → Wave drive → stepper_driver → Acceleration → clock_service FSM"
+    },
+    "sensor_path": {
+      "ch11": "I2C Scan → SHT31 Raw Read → CRC-8 → sht31_driver → sensor_service FSM"
+    },
+    "display_path": {
+      "ch12": "SPI DMA Init → ILI9341 Init → Pixel Write → Shapes (Bresenham/Midpoint) → Text → ili9341_driver"
+    },
+    "architecture_evolution": {
+      "v0.1": "Ch01 — GPIO bare (no architecture)",
+      "v0.2": "Ch02 — GPIO + Logging",
+      "v0.3": "Ch03 — Architecture design (4-layer concept)",
+      "v0.4": "Ch04 — First Driver layer (uart_driver)",
+      "v0.5": "Ch05 — DMA infrastructure",
+      "v0.6": "Ch06 — DMA + Ring Buffer integration",
+      "v0.7": "Ch07 — Timer Driver added",
+      "v0.8": "Ch08 — First Service layer (stopwatch_service)",
+      "v0.9": "Ch09 — RTC Driver + Alarm Service",
+      "v1.0": "Ch10 — Stepper + Clock Service (first full integration)",
+      "v1.1": "Ch11 — I2C/SHT31 + Sensor Service",
+      "v1.2": "Ch12 — SPI/ILI9341 LCD (complete smart watch ecosystem)"
+    },
+    "fsm_pattern_reuse": {
+      "origin": "Ch08 stopwatch_service.c — establishes enum states + switch-case + event-driven pattern",
+      "reuse": [
+        "Ch09 alarm_service.c — same FSM structure",
+        "Ch10 clock_service.c — same FSM structure + RTC integration",
+        "Ch11 sensor_service.c — same FSM structure + timeout handling"
+      ]
+    }
+  },
+
+  "issues_found": {
+    "critical": [
+      {
+        "id": "C1",
+        "file": "ch11_sht31_driver.c:8",
+        "issue": "#include \"ch11_ex03_crc8.c\" — includes a .c file directly",
+        "impact": "Causes multiple definition errors if crc8.c is also compiled separately. Violates C compilation model.",
+        "fix": "Extract crc8 functions into ch11_crc8.h (declarations) and keep ch11_ex03_crc8.c as implementation. Include .h only."
+      },
+      {
+        "id": "C2",
+        "file": "ch10_stepper_driver.c",
+        "issue": "motor_position declared as int16_t but stepper_get_position() returns uint16_t",
+        "impact": "Sign mismatch: negative position values (e.g., during homing) would be misinterpreted as large positive values by callers.",
+        "fix": "Unify to int16_t throughout, or use uint16_t with explicit wrapping logic."
+      },
+      {
+        "id": "C3",
+        "file": "ch10_ex06_acceleration.c",
+        "issue": "Calls stepper_step_forward()/stepper_step_backward() which are static in ch10_stepper_driver.c",
+        "impact": "Would cause linker error if compiled as separate translation unit.",
+        "fix": "Either expose these functions in ch10_stepper_driver.h or use public API (stepper_move_steps)."
+      }
+    ],
+    "major": [
+      {
+        "id": "M1",
+        "files": "ch12_01_spi_dma_init.c, ch12_02_ili9341_init.c",
+        "issue": "Duplicate Delay_Ms() definitions",
+        "impact": "Multiple definition error if both files compiled together.",
+        "fix": "Define Delay_Ms() once in a shared utility or use HAL_Delay() directly."
+      },
+      {
+        "id": "M2",
+        "files": "All ch12_*.c files",
+        "issue": "Uses #include \"log_system.h\" instead of #include \"log.h\"",
+        "impact": "Inconsistent with Ch04-Ch11 convention. Students may get confused about which header to use.",
+        "fix": "Standardize to #include \"log.h\" across all chapters, or explain the transition in Ch12 text."
+      },
+      {
+        "id": "M3",
+        "files": "ch12_01_spi_dma_init.c, ch12_02_ili9341_init.c",
+        "issue": "Emoji in log messages: LOG_I(\"...완료 ✓\")",
+        "impact": "Violates project no-emoji rule. May cause encoding issues on some SWO viewers.",
+        "fix": "Replace ✓ with text: LOG_I(\"...완료 [OK]\")"
+      },
+      {
+        "id": "M4",
+        "file": "ch12_05_ili9341_text.c",
+        "issue": "Font data incomplete — only ASCII 32-97, rest marked '나머지 생략'",
+        "impact": "Cannot render uppercase letters beyond 'a', numbers work but limited. Educational context is acceptable but should be noted.",
+        "fix": "Add comment clarifying this is a minimal demo set. Provide full font as downloadable resource."
+      }
+    ],
+    "minor": [
+      {
+        "id": "m1",
+        "file": "ch10_stepper_driver.c",
+        "issue": "Some English-only log messages (e.g., 'Stepper driver initialized')",
+        "impact": "Inconsistent with Korean comment standard.",
+        "fix": "Translate to Korean: LOG_I(\"스텝 모터 드라이버 초기화 완료\")"
+      },
+      {
+        "id": "m2",
+        "file": "ch09_06_rtc_driver.c",
+        "issue": "Header interface embedded as comments inside .c file",
+        "impact": "Unconventional but functional. May confuse students about file organization.",
+        "fix": "Extract to separate ch09_rtc_driver.h file."
+      },
+      {
+        "id": "m3",
+        "files": "ch01_ex01~ex05",
+        "issue": "No LOG macros (uses TODO markers instead)",
+        "impact": "Intentional (Ch02 not yet introduced). TODO markers are appropriate.",
+        "fix": "No fix needed — pedagogically correct."
+      },
+      {
+        "id": "m4",
+        "file": "ch12_02_ili9341_init.c",
+        "issue": "Init command sequence block ~40 lines",
+        "impact": "Exceeds 30-line recommendation, but justified for 25-command LCD init.",
+        "fix": "Acceptable exception. Could add section comments to visually break the sequence."
+      }
+    ]
+  },
+
+  "summary": {
+    "total_files_audited": 72,
+    "quality_score": "⭐⭐⭐⭐ (4/5)",
+    "score_rationale": "Strong overall quality across 12 chapters. Consistent coding standards, excellent safety practices (volatile, buffer checks, ISR safety), and clear evolutionary progression. Deducted 1 star for Ch12 logging inconsistency (log_system.h vs log.h), 3 critical issues (C1-C3), and emoji in logs.",
+
+    "top_5_improvements": [
+      {
+        "priority": 1,
+        "action": "Fix ch11_sht31_driver.c #include of .c file → use proper .h/.c separation",
+        "impact": "Eliminates compilation model violation, teaches students correct practice"
+      },
+      {
+        "priority": 2,
+        "action": "Standardize Ch12 logging header to log.h (matching Ch04-Ch11) and remove emoji",
+        "impact": "Consistent student experience across all chapters"
+      },
+      {
+        "priority": 3,
+        "action": "Fix ch10_stepper_driver type mismatch (int16_t vs uint16_t) and static function visibility",
+        "impact": "Prevents subtle sign bugs and linker errors"
+      },
+      {
+        "priority": 4,
+        "action": "Eliminate duplicate Delay_Ms() in Ch12 files → shared utility or direct HAL_Delay()",
+        "impact": "Prevents multiple definition errors in student projects"
+      },
+      {
+        "priority": 5,
+        "action": "Translate Ch10 English-only log messages to Korean",
+        "impact": "Maintains consistent Korean comment standard"
+      }
+    ],
+
+    "strengths": [
+      "Excellent volatile usage on all ISR-shared variables (Ch01, Ch04, Ch05, Ch06, Ch08)",
+      "Consistent FSM pattern from Ch08 through Ch11 (enum + switch-case + event-driven)",
+      "Clean architecture evolution (v0.1 → v1.2) with interface stability (uart_driver API unchanged Ch04→Ch06)",
+      "HAL return values consistently checked and mapped to driver status codes",
+      "Korean comments thorough and educational throughout (except minor Ch10 exceptions)",
+      "No blocking HAL calls in ISR contexts",
+      "Progressive complexity: each chapter builds on the previous without orphaned code"
+    ],
+
+    "no_issues_found": [
+      "Indentation: All files use 4-space indentation ✅",
+      "Naming: snake_case consistently applied ✅",
+      "ASCII art: None found (SVG only) ✅",
+      "Copy-paste fragmentation: No orphaned #defines or version comments ✅",
+      "Buffer overflows: All user-facing buffers have bounds checks ✅"
+    ]
+  }
+}
