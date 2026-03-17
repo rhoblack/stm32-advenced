@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch09. 내부 RTC 활용 — STM32 고급 실무교육</title>
+  <link rel="stylesheet" href="../../templates/book_style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+
+<!-- ===== 챕터 헤더 ===== -->
+<header class="chapter-header">
+  <div class="chapter-meta">Part 2 · Chapter 09 · 프로젝트 <span class="version">v0.9</span></div>
+  <h1>Ch09. 내부 RTC 활용</h1>
+  <p class="chapter-summary">경과 시간(스톱워치)을 넘어 "지금 몇 시인가" — 실시간 시계와 알람 FSM으로 스마트 시계의 심장을 완성한다</p>
+  <div class="chapter-badge">누적 기능: RTC 실시간 시각 + Alarm FSM (alarm_service + rtc_driver 추가, v0.8 → v0.9)</div>
+</header>
+
+<!-- ===== §9.0 도입 ===== -->
+<section id="sec-00">
+  <h2>§9.0 "스톱워치의 한계 — 진짜 시계를 만들자"</h2>
+
+  <p>
+    여기까지의 여정을 돌아봅시다.
+    Ch08에서 Stopwatch FSM을 완성하고, Service 레이어를 처음 구현했습니다.
+    버튼을 누르면 IDLE → RUNNING → PAUSED → IDLE.
+    <strong>v0.8의 stopwatch_service — 여러분이 직접 설계한 첫 FSM 서비스입니다.</strong>
+  </p>
+
+  <p>
+    그런데 한 가지 근본적인 한계가 있습니다.
+    스톱워치는 <strong>"얼마나 지났나"(경과 시간, elapsed time)</strong>만 알 수 있습니다.
+    "지금 몇 시인지"는 모릅니다.
+    핸드폰으로 비유하면, 타이머 앱은 있는데 시계 앱이 없는 셈입니다.
+    진짜 스마트 시계를 만들려면 <strong>"지금 몇 시인가"(절대 시각, wall-clock time)</strong>를 알아야 합니다.
+  </p>
+
+  <p>
+    이 챕터가 끝나면:
+  </p>
+  <ul>
+    <li><strong>RTC(Real-Time Clock)</strong>로 시:분:초, 년:월:일을 읽고 씁니다.</li>
+    <li><strong>AlarmA</strong>를 설정하여 특정 시각에 인터럽트를 발생시킵니다.</li>
+    <li>Ch08 Stopwatch FSM과 <strong>동일한 패턴</strong>으로 <strong>Alarm FSM</strong>을 설계·구현합니다.</li>
+    <li>아키텍처를 <strong>v0.8 → v0.9</strong>로 업그레이드합니다 — alarm_service + rtc_driver 추가.</li>
+  </ul>
+
+  <p>
+    특히 중요한 것은 <strong>패턴의 반복</strong>입니다.
+    Ch08에서 FSM을 처음 구현했다면, 이 챕터에서 <strong>두 번째로 동일한 패턴을 적용</strong>합니다.
+    "이 구조, 전에 봤는데?" — 그 느낌이 들면 성공입니다.
+    FSM 패턴이 체화되기 시작했다는 뜻입니다.
+  </p>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    도입부에서 핸드폰을 꺼내 시계 앱과 타이머 앱을 동시에 보여주세요.
+    "타이머는 '3분 남았다', 시계는 '지금 2시 30분'. Ch08은 타이머, Ch09는 시계입니다."
+    그리고 "Ch10에서 이 시계가 스텝 모터를 돌려 실제 시침을 움직입니다!"로 동기부여.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>Ch08의 Stopwatch FSM 상태 3가지(IDLE, RUNNING, PAUSED)를 기억하나요?</li>
+      <li>ISR에서 플래그만 설정하고, main loop에서 FSM을 처리하는 이유를 설명할 수 있나요?</li>
+      <li>Service 레이어와 Driver 레이어의 역할 차이를 설명할 수 있나요?</li>
+    </ul>
+  </aside>
+</section>
+
+
+<!-- ===== 아키텍처 위치 ===== -->
+<section class="architecture-position">
+  <h2>이 챕터의 아키텍처 위치</h2>
+  <p>Ch09는 두 가지 컴포넌트를 추가합니다:
+    ① Driver 레이어에 <code>rtc_driver</code> 신규 추가,
+    ② Service 레이어에 <code>alarm_service</code> 신규 추가.
+    Ch08의 <code>stopwatch_service</code>는 그대로 유지됩니다 — <strong>교체가 아닌 병렬 추가</strong>입니다.</p>
+  <figure>
+    <img src="../../figures/ch09_sec0_architecture.svg" width="100%" height="auto" alt="v0.8 → v0.9 아키텍처">
+    <figcaption>그림 09-1. v0.8 → v0.9 아키텍처 — rtc_driver(Driver) + alarm_service(Service) 추가</figcaption>
+  </figure>
+
+  <h3>인터페이스 설계</h3>
+  <p>Ch09에서 추가되는 API입니다. rtc_driver(Driver)와 alarm_service(Service), 두 부분입니다.</p>
+  <pre><code class="language-c">/* rtc_driver.h — Driver 레이어 공개 API */
+
+/* 시간/날짜 읽기·쓰기 */
+rtc_status_t rtc_get_time(rtc_time_t *time);
+rtc_status_t rtc_get_date(rtc_date_t *date);
+rtc_status_t rtc_set_time(const rtc_time_t *time);
+rtc_status_t rtc_set_date(const rtc_date_t *date);
+
+/* 알람 */
+rtc_status_t rtc_set_alarm_a(const rtc_time_t *time, uint32_t mask);
+rtc_status_t rtc_deactivate_alarm_a(void);
+void         rtc_register_alarm_callback(rtc_alarm_callback_t cb);
+
+/* Wake-up 타이머 */
+rtc_status_t rtc_set_wakeup(uint16_t seconds);
+rtc_status_t rtc_stop_wakeup(void);
+
+/* alarm_service.h — Service 레이어 공개 API */
+void          alarm_service_init(void);
+void          alarm_service_handle_event(alarm_event_t evt);
+void          alarm_service_process(void);
+alarm_state_t alarm_service_get_state(void);
+void          alarm_service_set_time(uint8_t h, uint8_t m, uint8_t s);
+  </code></pre>
+
+  <h3>FSM 설계</h3>
+  <figure>
+    <img src="../../figures/ch09_sec6_alarm_fsm.svg" width="100%" height="auto" alt="Alarm FSM 상태 전이 다이어그램">
+    <figcaption>그림 09-2. Alarm FSM — IDLE / ARMED / TRIGGERED / ACKNOWLEDGED 4개 상태<br>
+    <small>Ch08 Stopwatch FSM(3상태)과 동일 패턴 — 상태 1개(ACKNOWLEDGED) 추가, 이벤트 소스가 RTC로 변경</small></figcaption>
+  </figure>
+</section>
+
+
+<!-- ===== 학습 목표 ===== -->
+<section class="learning-objectives">
+  <h2>학습 목표</h2>
+  <p>이 챕터를 완료하면 다음을 할 수 있습니다.</p>
+  <ul>
+    <li><strong>[이해]</strong> RTC 아키텍처(백업 도메인, BCD 레지스터, 클럭 소스)를 설명할 수 있다.</li>
+    <li><strong>[적용]</strong> HAL_RTC API를 사용하여 시간/날짜를 설정하고 읽을 수 있다.</li>
+    <li><strong>[적용]</strong> RTC AlarmA/AlarmB를 구성하고 인터럽트 콜백으로 동작을 트리거할 수 있다.</li>
+    <li><strong>[분석]</strong> LSE vs LSI 클럭 소스의 정확도·전력·비용 트레이드오프를 분석하고 상황에 맞는 선택을 할 수 있다.</li>
+    <li><strong>[창조]</strong> Alarm FSM + rtc_driver를 설계·구현하여 v0.9 아키텍처를 완성할 수 있다.</li>
+  </ul>
+  <div class="project-milestone">
+    <strong>프로젝트 v0.9</strong>: 이 챕터 완료 후 RTC 시각 표시 + Alarm FSM이 동작합니다. Ch10에서 이 시각이 스텝 모터 시침을 움직입니다!
+  </div>
+</section>
+
+
+<!-- ===== §9.1 RTC 아키텍처 ===== -->
+<section id="sec-01">
+  <h2>§9.1 RTC 아키텍처 — "MCU 안의 시계"</h2>
+
+  <p>
+    RTC는 <strong>Real-Time Clock(실시간 시계)</strong>의 약자입니다.
+    이름에 "Real-Time"이 있지만, RTOS의 "Real-Time"과는 완전히 다른 의미입니다.
+    RTC의 Real-Time은 <strong>"실제 시각(wall-clock time)"</strong> — 사람이 사용하는 시:분:초, 년:월:일을 뜻합니다.
+    RTOS의 Real-Time은 "시간 제약 보장(deadline guarantee)"입니다. 전혀 다른 개념이니 혼동하지 마세요.
+  </p>
+
+  <p>
+    STM32F411의 RTC는 MCU 내부에 있는 독립적인 시계 블록입니다.
+    세 가지 핵심 특성을 이해하면 됩니다: <strong>백업 도메인, BCD 레지스터, 프리스케일러</strong>.
+  </p>
+
+  <h3>백업 도메인 — "비상 배터리가 있는 시계"</h3>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    집에 벽걸이 시계가 있습니다. 정전이 되어도 건전지로 계속 돌아갑니다.
+    MCU의 RTC도 같습니다. 메인 전원(VDD)이 꺼져도 VBAT 핀에 코인셀 배터리를 연결하면, RTC만 독립적으로 시간을 유지합니다.
+    이 독립 영역이 <strong>백업 도메인(Backup Domain)</strong>입니다.
+    <br><small>※ 이 비유의 한계: NUCLEO-F411RE에서는 VBAT가 VDD에 연결되어 있어, 전원을 끄면 시간이 소실됩니다. 코인셀 배터리를 별도로 연결해야 백업이 동작합니다. 실습에서는 매번 시간을 설정해야 합니다.</small>
+  </div>
+
+  <p>
+    백업 도메인에 포함된 것:
+  </p>
+  <ul>
+    <li><strong>RTC 하드웨어</strong> — 캘린더, 알람, Wake-up 타이머</li>
+    <li><strong>백업 레지스터 20개</strong> — 각 32비트, 총 80바이트 (전원 차단에도 유지)</li>
+    <li><strong>LSE 오실레이터</strong> — 32.768kHz 외부 크리스탈 (연결 시)</li>
+  </ul>
+
+  <figure>
+    <img src="../../figures/ch09_sec1_rtc_backup.svg" width="100%" height="auto" alt="RTC 내부 블록 다이어그램">
+    <figcaption>그림 09-3. RTC 내부 블록 다이어그램 — 백업 도메인, 프리스케일러, 캘린더, 알람</figcaption>
+  </figure>
+
+  <h3>BCD 레지스터 — "전광판처럼 자릿수별 저장"</h3>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    지하철 전광판을 떠올리세요. 각 자릿수마다 0~9 숫자가 독립적으로 표시됩니다.
+    BCD(Binary-Coded Decimal)도 같습니다. 23시를 저장할 때, "2"와 "3"을 각각 4비트(니블)로 나눠 담습니다.
+    결과: 0x23. 이것은 십진수 35(=0x23)가 아니라, <strong>"23"이라는 10진수를 그대로 16진 표기한 것</strong>입니다.
+    <br><small>※ 이 비유의 한계: BCD는 각 니블이 0~9만 유효합니다. 0xA~0xF가 나오면 잘못된 값입니다. 전광판은 물리적으로 0~9만 표시하므로 이 제약이 자연스럽지만, 메모리에서는 A~F가 저장될 수 있어 주의가 필요합니다.</small>
+  </div>
+
+  <p>
+    RTC가 왜 BCD를 사용할까요? 두 가지 이유입니다:
+  </p>
+  <ol>
+    <li><strong>디스플레이 친화적</strong>: 7-세그먼트나 LCD에 시간을 표시할 때, BCD 값을 그대로 보내면 됩니다. 별도 변환이 필요 없습니다.</li>
+    <li><strong>사람이 읽기 쉬움</strong>: 디버거에서 RTC_TR 레지스터를 보면 0x145930 → "14시 59분 30초"로 바로 읽힙니다.</li>
+  </ol>
+
+  <figure>
+    <img src="../../figures/ch09_sec1_bcd_structure.svg" width="100%" height="auto" alt="BCD 레지스터 구조">
+    <figcaption>그림 09-4. BCD 레지스터 구조 — 23:59:08을 "전광판처럼" 자릿수별 저장</figcaption>
+  </figure>
+
+  <p>
+    BCD ↔ Binary 변환은 간단합니다:
+  </p>
+  <pre><code class="language-c">/* BCD → Binary: (상위 니블 × 10) + 하위 니블 */
+uint8_t bcd_to_bin(uint8_t bcd) {
+    return ((bcd >> 4) * 10) + (bcd & 0x0F);
+}
+
+/* Binary → BCD: (십의 자리 << 4) | 일의 자리 */
+uint8_t bin_to_bcd(uint8_t bin) {
+    return ((bin / 10) << 4) | (bin % 10);
+}
+
+/* 실무에서는 HAL 매크로 사용: */
+/* RTC_ByteToBcd2(value), RTC_Bcd2ToByte(value) */
+  </code></pre>
+
+  <h3>프리스케일러 — "32,768Hz를 1Hz로"</h3>
+
+  <p>
+    RTC 클럭(LSE 32,768Hz 또는 LSI ~32kHz)을 1초 단위로 만들기 위해 두 단계 분주를 합니다:
+  </p>
+  <ul>
+    <li><strong>비동기 프리스케일러</strong> (PREDIV_A, 7비트): 기본값 127 → 128분주</li>
+    <li><strong>동기 프리스케일러</strong> (PREDIV_S, 15비트): 기본값 255 → 256분주</li>
+  </ul>
+  <p>
+    결과: 32,768 / (128 × 256) = <strong>1Hz</strong> (ck_spre)
+  </p>
+  <p>
+    Ch07의 TIM에서 PSC/ARR로 주기를 계산한 것과 같은 원리입니다.
+    TIM은 84MHz를 분주했다면, RTC는 32kHz를 분주합니다.
+    목표 주파수가 다를 뿐, "프리스케일러로 원하는 주기를 만든다"는 개념은 동일합니다.
+  </p>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> BCD가 왜 필요한가요? Binary로 하면 안 되나요?<br>
+    <strong>A.</strong> HAL_RTC_GetTime()이 BCD → Binary 변환을 자동으로 해주므로, 실무에서 직접 BCD 계산할 일은 거의 없습니다. 하지만 <strong>디버거에서 RTC_TR 레지스터를 직접 볼 때</strong> BCD 값이 표시됩니다. "0x23이 왜 35가 아니라 23이지?"를 이해해야 합니다. 또한 7-세그먼트 디스플레이 같은 BCD 출력 장치와 연동할 때 변환 없이 바로 쓸 수 있습니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    <strong>Q.</strong> "RTC 백업 도메인의 목적과 구성 요소를 설명하세요."<br>
+    <strong>A.</strong> 정전이나 시스템 리셋이 발생해도 시간 정보와 중요 설정값을 유지하기 위한 독립 전원 영역입니다.
+    구성: RTC 하드웨어, 백업 레지스터 20개, LSE 오실레이터.
+    전원: VDD 또는 VBAT (자동 전환). 리셋(시스템/전원/Standby)에 영향받지 않습니다.
+  </aside>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    NUCLEO-F411RE에서 VBAT 핀은 VDD에 연결되어 있어 별도 백업 전원이 없습니다.
+    전원을 끄면 RTC 시간이 소실됩니다.
+    제품 설계 시에는 VBAT 핀에 CR2032 코인셀 배터리를 연결하여 RTC를 독립 유지하세요.
+    RTC 소비 전류는 약 1μA로, 코인셀 하나로 수 년 유지됩니다.
+  </aside>
+</section>
+
+
+<!-- ===== §9.2 LSE vs LSI + CubeMX ===== -->
+<section id="sec-02">
+  <h2>§9.2 클럭 소스 선택과 CubeMX 설정</h2>
+
+  <p>
+    RTC의 정확도는 클럭 소스에 의해 결정됩니다.
+    STM32F411은 두 가지 저속 클럭을 제공합니다: <strong>LSE(외부 크리스탈)</strong>와 <strong>LSI(내부 RC)</strong>.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    석영(quartz) 시계와 기계식 시계의 차이입니다.
+    석영 시계(LSE)는 월 수 초 오차. 기계식 시계(LSI)는 월 수 분 오차.
+    정확도가 중요하면 석영, 아니면 기계식으로 충분합니다.
+    <br><small>※ 이 비유의 한계: LSI는 RC 오실레이터이므로 기계식보다는 "저가형 전자시계"에 가깝습니다. 온도에 따른 주파수 편차도 있습니다.</small>
+  </div>
+
+  <figure>
+    <img src="../../figures/ch09_sec1_lse_vs_lsi.svg" width="100%" height="auto" alt="LSE vs LSI 비교">
+    <figcaption>그림 09-5. LSE vs LSI 비교 — 정확도, 비용, NUCLEO 기본 상태</figcaption>
+  </figure>
+
+  <table>
+    <thead>
+      <tr><th>항목</th><th>LSE (32.768kHz)</th><th>LSI (~32kHz)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>정확도</td><td>±20ppm (월 ~1초)</td><td><strong>±5% (하루 ~72분)</strong></td></tr>
+      <tr><td>주파수</td><td>정확히 32,768Hz</td><td>약 32,000Hz (변동)</td></tr>
+      <tr><td>외부 부품</td><td>크리스탈 필요</td><td>없음 (내장)</td></tr>
+      <tr><td>NUCLEO 기본</td><td>미장착 (SB48/SB49 OFF)</td><td><strong>즉시 사용 가능</strong></td></tr>
+      <tr><td>실무 판단</td><td>양산 제품 → 필수</td><td>프로토타입/교육 → OK</td></tr>
+    </tbody>
+  </table>
+
+  <h3>NUCLEO-F411RE LSE 상태 확인</h3>
+
+  <p>
+    NUCLEO-F411RE는 <strong>기본적으로 LSE 크리스탈이 장착되어 있지 않습니다</strong>.
+    보드 뒷면의 솔더 브릿지 SB48, SB49가 열려 있습니다.
+    LSE를 사용하려면:
+  </p>
+  <ol>
+    <li>SB48, SB49에 납땜으로 브릿지 연결</li>
+    <li>32.768kHz 크리스탈 장착</li>
+    <li>CubeMX에서 RCC → LSE를 "Crystal/Ceramic Resonator"로 변경</li>
+  </ol>
+
+  <p>
+    <strong>오늘 실습에서는 LSI를 사용합니다.</strong>
+    추가 하드웨어가 필요 없고, 교육 목적으로는 충분합니다.
+    하루 72분 오차가 있지만, 실습 시간(4시간) 동안에는 약 12분 오차 — 동작 확인에 지장 없습니다.
+  </p>
+
+  <h3>CubeMX 설정 순서</h3>
+
+  <ol>
+    <li><strong>RCC 설정</strong>: Pinout & Configuration → System Core → RCC → Low Speed Clock = "LSI" 선택</li>
+    <li><strong>클럭 소스 확인</strong>: Device Configuration → RTC → Clock Source가 "LSI" 또는 "LSE"인지 확인 (의도한 소스와 일치해야 합니다)</li>
+    <li><strong>RTC 활성화</strong>: Timers → RTC → "Activate Clock Source" 체크, "Activate Calendar" 체크</li>
+    <li><strong>Alarm 활성화</strong>: RTC → Alarm A → "Internal Alarm A" 선택</li>
+    <li><strong>NVIC 설정</strong>: NVIC → "RTC Alarm interrupt through EXTI line 17" 체크</li>
+    <li><strong>초기 시간</strong>: RTC → Calendar → Hours/Minutes/Seconds 설정</li>
+  </ol>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> LSI로 시계를 만들면 하루에 얼마나 틀려요?<br>
+    <strong>A.</strong> LSI는 ±5% 편차입니다. 최악의 경우 32kHz × 5% = 1,600Hz 오차. 하루 86,400초 × 5% = 4,320초 = <strong>약 72분</strong>. 실습에서는 "시간이 빠르게/느리게 흘러간다"는 느낌이 들 수 있지만, 동작 자체에는 문제없습니다. 제품에서는 반드시 LSE를 사용합니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>내 NUCLEO 보드에서 LSE를 사용하려면 어떤 하드웨어 작업이 필요한가?</li>
+      <li>LSI ±5% 오차가 내 프로젝트에서 허용 가능한지 판단할 수 있는가?</li>
+    </ul>
+  </aside>
+</section>
+
+
+<!-- ===== §9.3 시간 읽기/쓰기 ===== -->
+<section id="sec-03">
+  <h2>§9.3 시간 읽기와 쓰기 — rtc_driver 설계</h2>
+
+  <p>
+    CubeMX에서 RTC를 활성화했다면, 이제 시간을 읽고 써봅시다.
+    그 전에 중요한 경고가 하나 있습니다.
+  </p>
+
+  <p>
+    <strong>HAL_RTC_GetTime() 호출 후 반드시 HAL_RTC_GetDate()를 호출해야 합니다!</strong>
+  </p>
+
+  <p>
+    이것은 RM0383 Reference Manual에 명시된 동작입니다.
+    RTC의 Shadow Register(그림자 레지스터)는 GetTime을 호출하면 <strong>잠금(lock)</strong>되어 값이 고정됩니다.
+    GetDate를 호출해야 <strong>잠금이 해제</strong>되어 다음 읽기에서 새로운 값이 갱신됩니다.
+    GetDate를 빠뜨리면 시간이 멈춘 것처럼 보입니다 — <strong>이것은 100% 모든 수강생이 처음에 빠지는 함정입니다</strong>. 일부러 경험해 보세요!
+  </p>
+
+  <h3>기본 시간 읽기</h3>
+
+  <pre><code class="language-c">/* ch09_02_rtc_get_time.c — 시간 읽기 기본 패턴 */
+
+void rtc_read_time(void)
+{
+    RTC_TimeTypeDef time;
+    RTC_DateTypeDef date;
+
+    /* ⚠️ 반드시 GetTime → GetDate 순서! 쌍으로 호출! */
+    HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BIN);  /* 생략 금지! */
+
+    LOG_I("현재 시각: %02d:%02d:%02d", time.Hours, time.Minutes, time.Seconds);
+    LOG_D("현재 날짜: 20%02d-%02d-%02d", date.Year, date.Month, date.Date);
+}
+  </code></pre>
+
+  <h3>시간 설정</h3>
+
+  <pre><code class="language-c">/* ch09_03_rtc_set_time.c — 시간 설정 */
+
+void rtc_set_time_example(void)
+{
+    RTC_TimeTypeDef time = {0};
+    time.Hours   = 14;
+    time.Minutes = 30;
+    time.Seconds = 0;
+    time.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+    time.StoreOperation = RTC_STOREOPERATION_RESET;
+
+    if (HAL_RTC_SetTime(&hrtc, &time, RTC_FORMAT_BIN) != HAL_OK) {
+        LOG_E("RTC 시간 설정 실패!");
+        return;
+    }
+
+    RTC_DateTypeDef date = {0};
+    date.Year    = 26;   /* 2026년 */
+    date.Month   = RTC_MONTH_MARCH;
+    date.Date    = 17;
+    date.WeekDay = RTC_WEEKDAY_TUESDAY;
+
+    if (HAL_RTC_SetDate(&hrtc, &date, RTC_FORMAT_BIN) != HAL_OK) {
+        LOG_E("RTC 날짜 설정 실패!");
+        return;
+    }
+
+    LOG_I("RTC 설정: 14:30:00, 2026-03-17");
+}
+  </code></pre>
+
+  <h3>rtc_driver 설계 — tim_driver 패턴 재활용</h3>
+
+  <p>
+    Ch07에서 tim_driver를 설계할 때 <code>init → start → stop → set</code> 패턴을 사용했습니다.
+    rtc_driver도 같은 패턴입니다: <code>init → get/set → alarm → wakeup</code>.
+    <strong>Driver는 하드웨어 추상화만</strong> 담당하고, 비즈니스 로직(알람 FSM)은 Service 레이어에 둡니다.
+  </p>
+
+  <pre><code class="language-c">/* rtc_driver.h — 공개 인터페이스 (Driver 레이어) */
+
+typedef enum { RTC_OK = 0, RTC_ERROR = 1 } rtc_status_t;
+
+typedef struct {
+    uint8_t hours, minutes, seconds;
+} rtc_time_t;
+
+typedef struct {
+    uint8_t year, month, date, weekday;
+} rtc_date_t;
+
+typedef void (*rtc_alarm_callback_t)(void);
+
+/* 초기화 */
+rtc_status_t rtc_driver_init(void);
+
+/* 시간/날짜 */
+rtc_status_t rtc_get_time(rtc_time_t *time);
+rtc_status_t rtc_set_time(const rtc_time_t *time);
+
+/* 알람 — 상위 레이어(alarm_service)에서 사용 */
+rtc_status_t rtc_set_alarm_a(const rtc_time_t *time, uint32_t mask);
+rtc_status_t rtc_deactivate_alarm_a(void);
+void         rtc_register_alarm_callback(rtc_alarm_callback_t cb);
+  </code></pre>
+
+  <p>
+    rtc_driver의 구현은 <code>ch09_06_rtc_driver.c</code>에 있습니다.
+    핵심은 HAL 콜백을 Driver 콜백으로 전달하는 패턴입니다:
+  </p>
+
+  <pre><code class="language-c">/* rtc_driver.c — HAL 콜백 → Driver 콜백 전달 */
+static rtc_alarm_callback_t s_alarm_cb = NULL;
+
+void rtc_register_alarm_callback(rtc_alarm_callback_t cb)
+{
+    s_alarm_cb = cb;
+    LOG_D("알람 콜백 등록");
+}
+
+/* HAL이 호출하는 콜백 → 등록된 Service 콜백으로 전달 */
+void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc_cb)
+{
+    if (s_alarm_cb != NULL) {
+        s_alarm_cb();   /* alarm_service의 콜백 호출 */
+    }
+}
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    HAL_RTC_GetTime()에서 <code>RTC_FORMAT_BIN</code>을 사용하면 HAL이 BCD → Binary 변환을 자동으로 해줍니다.
+    <code>RTC_FORMAT_BCD</code>를 사용하면 원본 BCD 값을 얻습니다.
+    디버깅 시 레지스터 뷰에서 BCD 값이 보이므로, 두 형식의 차이를 이해해두면 좋습니다.
+  </aside>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    BCD → Binary 변환은 칠판에서 1~2회만 연습하고 빠르게 넘어가세요. HAL이 자동 변환해주므로 15분 이상 투자하면 시간이 부족합니다. "디버거에서 레지스터 읽을 때만 BCD를 알면 됩니다"로 마무리.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> RTC 시간이 자꾸 틀려요. 보정할 수 있나요?<br>
+    <strong>A.</strong> LSI를 사용하면 ±5% 편차는 정상입니다. 해결 방법 3가지: ① LSE 크리스탈로 교체(근본 해결) ② STM32의 Smooth Calibration 레지스터 사용(CALR, ±488ppm 보정) ③ 외부 시간 소스(NTP, GPS)와 주기적 동기화. 우리 실습에서는 LSI를 사용하되 "정확도 한계를 이해하는 것"이 목표입니다.
+  </aside>
+</section>
+
+
+<!-- ===== §9.4 RTC 알람 ===== -->
+<section id="sec-04">
+  <h2>§9.4 RTC 알람 — AlarmA/AlarmB 인터럽트</h2>
+
+  <p>
+    시간을 읽고 쓸 수 있게 되었으니, 이제 <strong>특정 시각에 이벤트를 발생</strong>시킵시다.
+    이것이 RTC 알람입니다.
+    스마트폰의 알람 앱과 정확히 같은 원리입니다 — "7시 30분에 울려!"
+  </p>
+
+  <p>
+    STM32F411의 RTC는 <strong>AlarmA와 AlarmB, 두 개의 독립 알람</strong>을 제공합니다.
+    각각 시:분:초와 요일/날짜를 비교하여 매칭 시 인터럽트를 발생시킵니다.
+  </p>
+
+  <h3>알람 마스크 — "스마트폰 반복 설정"</h3>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    스마트폰에서 알람을 설정할 때 "매일 반복"을 선택하면 날짜를 무시합니다.
+    RTC 알람의 마스크도 같은 원리입니다.
+    마스크를 켜면 <strong>"이 필드는 무시(=항상 매칭)"</strong>가 됩니다.
+    마스크를 많이 켤수록 알람이 더 자주 울립니다.
+    <br><small>※ 이 비유의 한계: 스마트폰은 "반복 요일"을 선택하지만, RTC 마스크는 시/분/초/요일 각각을 독립적으로 마스킹합니다. 더 유연하지만 더 복잡합니다.</small>
+  </div>
+
+  <figure>
+    <img src="../../figures/ch09_sec4_alarm_timing.svg" width="100%" height="auto" alt="알람 마스크 동작">
+    <figcaption>그림 09-6. 알람 마스크 시나리오 — 마스크를 많이 켤수록 더 자주 트리거</figcaption>
+  </figure>
+
+  <table>
+    <thead>
+      <tr><th>마스크 설정</th><th>동작</th><th>트리거 빈도</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>모두 OFF</td><td>정확히 해당 시:분:초에만</td><td>하루 1회</td></tr>
+      <tr><td>날짜/요일 마스크 ON</td><td>매일 해당 시:분:초에</td><td>하루 1회 (매일 반복)</td></tr>
+      <tr><td>시+날짜 마스크 ON</td><td>매시간 해당 분:초에</td><td>하루 24회</td></tr>
+      <tr><td>시+분+날짜 마스크 ON</td><td>매분 해당 초에</td><td>하루 1,440회</td></tr>
+      <tr><td>모두 ON</td><td>매초마다</td><td>하루 86,400회</td></tr>
+    </tbody>
+  </table>
+
+  <h3>AlarmA 설정 코드</h3>
+
+  <pre><code class="language-c">/* ch09_04_rtc_alarm_setup.c — AlarmA 설정 */
+
+void rtc_alarm_set_daily(void)
+{
+    RTC_AlarmTypeDef alarm = {0};
+
+    alarm.AlarmTime.Hours   = 7;
+    alarm.AlarmTime.Minutes = 30;
+    alarm.AlarmTime.Seconds = 0;
+
+    /* 마스크: 날짜/요일만 마스크 → 매일 07:30:00에 트리거 */
+    alarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY;
+
+    alarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+    alarm.AlarmDateWeekDay    = 1;   /* 마스크되어 무시됨 */
+    alarm.Alarm = RTC_ALARM_A;
+
+    if (HAL_RTC_SetAlarm_IT(&hrtc, &alarm, RTC_FORMAT_BIN) != HAL_OK) {
+        LOG_E("AlarmA 설정 실패!");
+        return;
+    }
+
+    LOG_I("AlarmA 설정: 매일 07:30:00");
+}
+  </code></pre>
+
+  <h3>ISR → 플래그 → main loop (Ch08 패턴 동일!)</h3>
+
+  <pre><code class="language-c">/* 알람 콜백 — ISR에서는 플래그만! (학습용 단독 예제) */
+/* ⚠️ 최종 프로젝트에서는 rtc_driver(§9.6)의 콜백을 사용하세요.
+ *    HAL 콜백은 프로젝트당 하나만 정의 가능합니다.
+ *    ch09_06(rtc_driver) + ch09_07(alarm_service)만 포함하세요. */
+static volatile uint8_t alarm_flag = 0;
+
+void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc_cb)
+{
+    alarm_flag = 1;   /* ISR에서는 이것이 전부! */
+}
+
+/* main loop에서 처리 */
+void alarm_process(void)
+{
+    if (alarm_flag) {
+        alarm_flag = 0;
+        LOG_I("*** AlarmA 트리거! ***");
+        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);  /* LED 토글 */
+    }
+}
+  </code></pre>
+
+  <p>
+    Ch08에서 배운 패턴 그대로입니다:
+    <strong>EXTI 콜백 → 플래그 → main loop</strong>가
+    <strong>RTC 콜백 → 플래그 → main loop</strong>로 바뀐 것뿐입니다.
+    이벤트 소스만 바뀌었을 뿐, 처리 구조는 동일합니다.
+  </p>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> AlarmA와 AlarmB는 뭐가 다른가요?<br>
+    <strong>A.</strong> 기능적으로 거의 동일합니다. 둘 다 독립적으로 시:분:초 매칭 + 인터럽트를 지원합니다. 차이는 <strong>별도의 ISR</strong>을 가진다는 것입니다. 우리 프로젝트에서는 AlarmA를 사용자 알람(alarm_service)으로, AlarmB는 Ch11에서 온도 알람으로 활용할 예정입니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    <strong>Q.</strong> "RTC 알람의 마스크 비트 역할을 설명하시오."<br>
+    <strong>A.</strong> 마스크 비트는 알람 비교 시 특정 필드를 무시하는 설정입니다. 마스크 ON = "이 필드는 항상 매칭" → 알람이 더 자주 트리거됩니다. 예: 시 마스크 ON + 분=30, 초=00 → "매시간 30분 정각에 트리거". 마스크를 조합하여 매일/매시/매분 반복 알람을 구현합니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>매주 월요일 오전 9시에 알람을 설정하려면 마스크를 어떻게 설정해야 하는가?</li>
+      <li>ISR에서 직접 LED 토글하지 않고 플래그를 사용하는 이유를 설명할 수 있는가?</li>
+    </ul>
+  </aside>
+</section>
+
+
+<!-- ===== §9.5 Wake-up 타이머 + 백업 레지스터 ===== -->
+<section id="sec-05">
+  <h2>§9.5 Wake-up 타이머와 백업 레지스터</h2>
+
+  <p>
+    알람은 "몇 시에" 트리거됩니다. 그런데 "몇 초마다" 주기적으로 트리거가 필요할 때는 어떻게 할까요?
+    TIM 인터럽트를 쓸 수도 있지만, RTC에는 전용 기능이 있습니다 — <strong>Wake-up Timer</strong>.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    알람 시계는 "오전 7시에 깨워줘" — 특정 시각.
+    주방 타이머는 "5분 후에 알려줘" — 일정 주기.
+    Alarm은 알람 시계, Wake-up Timer는 주방 타이머입니다.
+    <br><small>※ 이 비유의 한계: Wake-up Timer는 한 번만 울리는 주방 타이머와 달리, 자동으로 반복 트리거됩니다. "5분마다 계속 울리는 반복 타이머"에 더 가깝습니다.</small>
+  </div>
+
+  <figure>
+    <img src="../../figures/ch09_sec5_wakeup_vs_alarm.svg" width="100%" height="auto" alt="Alarm vs Wake-up 비교">
+    <figcaption>그림 09-7. Alarm vs Wake-up Timer — "몇 시에" vs "몇 초마다"</figcaption>
+  </figure>
+
+  <h3>Wake-up Timer vs TIM 인터럽트</h3>
+
+  <p>
+    "둘 다 주기적 인터럽트인데 뭐가 다른가요?"
+    핵심 차이는 <strong>전력</strong>입니다.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>항목</th><th>TIM 인터럽트 (Ch07)</th><th>Wake-up Timer</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>클럭 소스</td><td>APB (84MHz)</td><td>RTC (32kHz)</td></tr>
+      <tr><td>Stop 모드</td><td>동작 불가 (APB 정지)</td><td><strong>동작 가능!</strong></td></tr>
+      <tr><td>정밀도</td><td>μs 단위 가능</td><td>ms~초 단위</td></tr>
+      <tr><td>소비 전류</td><td>높음 (APB 클럭 필요)</td><td>매우 낮음 (~1μA)</td></tr>
+      <tr><td>사용처</td><td>PWM, 정밀 타이밍</td><td>저전력 주기 깨우기</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Wake-up Timer 설정</h3>
+
+  <pre><code class="language-c">/* ch09_05_wakeup_timer.c — 5초 주기 Wake-up */
+
+void rtc_wakeup_start(uint16_t seconds)
+{
+    /* 입력 검증: 0이면 언더플로우 (0 - 1 = 0xFFFF) */
+    if (seconds == 0) {
+        LOG_W("Wake-up 주기 0초 — 무시");
+        return;
+    }
+
+    /* 기존 타이머 해제 */
+    HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+
+    /* 1Hz(ck_spre) 기반, seconds초 주기 */
+    if (HAL_RTCEx_SetWakeUpTimer_IT(
+            &hrtc,
+            (uint16_t)(seconds - 1),            /* 카운트다운 값 (안전) */
+            RTC_WAKEUPCLOCK_CK_SPRE_16BITS     /* 1초 단위 */
+        ) != HAL_OK) {
+        LOG_E("Wake-up 타이머 설정 실패!");
+        return;
+    }
+
+    LOG_I("Wake-up 타이머: %d초 주기", seconds);
+}
+
+/* 콜백 — ISR에서는 카운트만! */
+void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc_cb)
+{
+    wakeup_count++;
+}
+  </code></pre>
+
+  <h3>백업 레지스터 — "냉장고 메모지"</h3>
+
+  <p>
+    백업 도메인에는 <strong>20개의 32비트 백업 레지스터(BKP_DR0~19)</strong>가 있습니다.
+    VBAT가 유지되는 한 전원을 꺼도, 리셋해도 값이 보존됩니다.
+    냉장고 메모지처럼 "전원이 꺼져도 붙어있는 메모"입니다.
+  </p>
+
+  <pre><code class="language-c">/* 백업 레지스터 활용: 리셋 횟수 카운터 */
+
+#define RTC_MAGIC_NUMBER  0xA5A5
+
+void rtc_init_with_backup(void)
+{
+    uint32_t magic = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0);
+
+    if (magic == RTC_MAGIC_NUMBER) {
+        LOG_I("RTC 이미 설정됨 — 시간 유지");
+    } else {
+        LOG_W("RTC 최초 설정 — 시간 초기화");
+        rtc_set_time_example();
+
+        /* 매직 넘버 기록 → 다음 리셋 시 재설정 건너뛰기 */
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, RTC_MAGIC_NUMBER);
+    }
+
+    /* 리셋 카운터 */
+    uint32_t count = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1);
+    count++;
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, count);
+    LOG_I("리셋 횟수: %lu", count);
+}
+  </code></pre>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> Wake-up Timer와 AlarmA 중 언제 뭘 쓰나요?<br>
+    <strong>A.</strong> <strong>Alarm</strong>: "매일 7시 알람", "매시 정각 로그" → 특정 시각 기반.
+    <strong>Wake-up</strong>: "10초마다 센서 읽기", "1분마다 데이터 전송" → 주기 기반.
+    우리 프로젝트에서는 Alarm으로 사용자 알람을, Wake-up으로 주기적 센서 체크를 구현합니다.
+  </aside>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    백업 레지스터 실무 활용: ① 시스템 리셋 원인 기록 ② 부팅 카운터 ③ 마지막 에러 코드 저장 ④ DFU(Firmware Update) 부트로더 진입 플래그. 20개 × 32비트 = 80바이트로 용량이 적으니, 꼭 필요한 정보만 저장하세요.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> Wake-up Timer는 TIM 인터럽트와 뭐가 다른가요?<br>
+    <strong>A.</strong> 기능은 비슷합니다. 차이는 <strong>전력</strong>입니다. TIM은 84MHz APB 클럭이 필요해서 Stop 모드에서 동작하지 않습니다. Wake-up Timer는 32kHz RTC 클럭만으로 동작하므로 Stop 모드에서도 MCU를 깨울 수 있습니다. 배터리 IoT 디바이스에서 "30분마다 깨워서 센서 읽기 → 전송 → 다시 Sleep" 패턴의 핵심이 RTC Wake-up입니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>Wake-up Timer와 TIM 인터럽트의 핵심 차이(전력)를 설명할 수 있는가?</li>
+      <li>백업 레지스터에 어떤 종류의 데이터를 저장하면 좋을지 3가지를 말할 수 있는가?</li>
+      <li><code>seconds - 1</code> 계산에서 0을 입력하면 어떤 문제가 발생하는지 설명할 수 있는가?</li>
+    </ul>
+  </aside>
+</section>
+
+
+<!-- ===== §9.6 Alarm FSM 설계 ===== -->
+<section id="sec-06">
+  <h2>§9.6 Alarm FSM 설계 — "Ch08 패턴을 다시 한번"</h2>
+
+  <p>
+    이 챕터의 <strong>핵심 성취 구간</strong>에 왔습니다.
+    Ch08에서 Stopwatch FSM을 설계하고 구현했습니다.
+    이제 동일한 패턴으로 Alarm FSM을 설계합니다.
+    <strong>"같은 패턴, 다른 도메인"</strong> — FSM의 강점을 체감하는 순간입니다.
+  </p>
+
+  <h3>Ch08 Stopwatch FSM 복습 (2문장)</h3>
+
+  <p>
+    Stopwatch FSM: <strong>IDLE → RUNNING → PAUSED → IDLE</strong>. 3개 상태, 이벤트 소스는 버튼(BTN_SHORT, BTN_LONG).
+    ISR에서 플래그 세팅 → main loop에서 <code>stopwatch_handle_event()</code> 호출 → switch-case로 전이 처리.
+  </p>
+
+  <h3>Alarm FSM: 상태 정의</h3>
+
+  <p>
+    핸드폰 알람 앱의 동작을 관찰해 봅시다:
+    알람 설정 → 대기 → 시간 되면 울림 → 사용자가 끔.
+    4개 상태가 필요합니다:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>상태</th><th>enum 값</th><th>설명</th><th>LED 상태</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>IDLE</strong></td><td>ALARM_STATE_IDLE</td><td>알람 미설정</td><td>OFF</td></tr>
+      <tr><td><strong>ARMED</strong></td><td>ALARM_STATE_ARMED</td><td>알람 대기 중</td><td>OFF</td></tr>
+      <tr><td><strong>TRIGGERED</strong></td><td>ALARM_STATE_TRIGGERED</td><td>알람 울리는 중!</td><td>ON (점멸)</td></tr>
+      <tr><td><strong>ACKNOWLEDGED</strong></td><td>ALARM_STATE_ACKNOWLEDGED</td><td>사용자 확인 완료</td><td>OFF</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    Stopwatch는 3상태, Alarm은 4상태입니다.
+    ACKNOWLEDGED(확인 완료)가 추가되었습니다.
+    "왜 TRIGGERED에서 바로 IDLE로 안 가나요?" — 알람이 울린 사실을 기록하고, 다음 동작(재설정 또는 자동 복귀)을 결정하기 위해서입니다.
+  </p>
+
+  <h3>이벤트 정의</h3>
+
+  <table>
+    <thead>
+      <tr><th>이벤트</th><th>enum 값</th><th>발생 소스</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>SET_ALARM</strong></td><td>ALARM_EVT_SET_ALARM</td><td>사용자 명령 (CLI/버튼)</td></tr>
+      <tr><td><strong>CANCEL</strong></td><td>ALARM_EVT_CANCEL</td><td>사용자 취소</td></tr>
+      <tr><td><strong>ALARM_MATCH</strong></td><td>ALARM_EVT_ALARM_MATCH</td><td>RTC HW (ISR → 플래그)</td></tr>
+      <tr><td><strong>ACK</strong></td><td>ALARM_EVT_ACK</td><td>버튼 B1 (PC13)</td></tr>
+      <tr><td><strong>TIMEOUT</strong></td><td>ALARM_EVT_TIMEOUT</td><td>자동 (30초 경과)</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    Stopwatch의 이벤트 소스는 <strong>버튼만</strong>이었습니다.
+    Alarm의 이벤트 소스는 <strong>RTC 하드웨어 + 버튼 + 타임아웃</strong> — 더 다양합니다.
+    하지만 FSM 구조(switch-case + 전이)는 완전히 동일합니다.
+    <strong>이것이 FSM의 강점: 이벤트 소스가 바뀌어도 FSM 구조는 동일합니다.</strong>
+  </p>
+
+  <h3>상태 전이표 — "빈 칸 채우기"</h3>
+
+  <table>
+    <thead>
+      <tr><th>현재 상태</th><th>이벤트</th><th>다음 상태</th><th>액션</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>IDLE</td><td>SET_ALARM</td><td>ARMED</td><td>RTC_SetAlarm(), LOG "알람 설정"</td></tr>
+      <tr><td>ARMED</td><td>ALARM_MATCH</td><td>TRIGGERED</td><td>LED/부저 시작, LOG "알람 발생!"</td></tr>
+      <tr><td>ARMED</td><td>CANCEL</td><td>IDLE</td><td>RTC_DeactivateAlarm(), LOG "알람 취소"</td></tr>
+      <tr><td>TRIGGERED</td><td>ACK</td><td>ACKNOWLEDGED</td><td>LED/부저 정지</td></tr>
+      <tr><td>TRIGGERED</td><td>TIMEOUT</td><td>ACKNOWLEDGED</td><td>LED/부저 정지 (자동)</td></tr>
+      <tr><td>ACKNOWLEDGED</td><td>SET_ALARM</td><td>ARMED</td><td>새 알람 설정</td></tr>
+      <tr><td>ACKNOWLEDGED</td><td>TIMEOUT</td><td>IDLE</td><td>자동 복귀</td></tr>
+    </tbody>
+  </table>
+
+  <figure>
+    <img src="../../figures/ch09_sec6_alarm_fsm.svg" width="100%" height="auto" alt="Alarm FSM 상태 전이 다이어그램">
+    <figcaption>그림 09-8. Alarm FSM 상태 전이 다이어그램 — 4상태, Ch08 패턴과 동일 구조</figcaption>
+  </figure>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    Ch08 Stopwatch FSM 코드를 화면에 띄우고, 옆에 Alarm FSM 빈 칸을 준비하세요.
+    "이 구조를 복사하고, 상태 이름과 이벤트 이름만 바꾸면 됩니다."
+    학생들이 직접 전이표의 빈 칸을 채우게 하면, "패턴이 같다!"는 깨달음이 옵니다.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> 왜 ACKNOWLEDGED 상태가 따로 필요한가요? TRIGGERED에서 바로 IDLE로 가면 안 되나요?<br>
+    <strong>A.</strong> 두 가지 이유입니다. ① 알람이 울린 사실을 기록합니다(마지막 알람 시각 저장, 로그 기록). ② 사용자에게 "다시 설정할 건지, 끝낼 건지" 선택권을 줍니다. 스마트폰에서도 알람을 끄면 "내일 같은 시각?" 같은 옵션이 나오죠. 그 상태가 ACKNOWLEDGED입니다.
+  </aside>
+</section>
+
+
+<!-- ===== §9.7 Alarm FSM 구현 ===== -->
+<section id="sec-07">
+  <h2>§9.7 Alarm FSM 구현 — "패턴 반복, 자신감 확보"</h2>
+
+  <p>
+    설계가 완료되었으니 코드로 옮깁시다.
+    Ch08 stopwatch_service.c를 열고, 구조를 복사한 다음, 상태와 이벤트 이름만 바꾸면 됩니다.
+    <strong>이것이 FSM 패턴의 핵심 — 한 번 익히면 어떤 도메인에든 적용 가능합니다.</strong>
+  </p>
+
+  <h3>alarm_service.h — 인터페이스</h3>
+
+  <pre><code class="language-c">/* ch09_07_alarm_service.h — Service 레이어 공개 API */
+
+typedef enum {
+    ALARM_STATE_IDLE         = 0,   /* 알람 미설정 */
+    ALARM_STATE_ARMED        = 1,   /* 알람 대기 중 */
+    ALARM_STATE_TRIGGERED    = 2,   /* 알람 울리는 중! */
+    ALARM_STATE_ACKNOWLEDGED = 3    /* 사용자 확인 완료 */
+} alarm_state_t;
+
+typedef enum {
+    ALARM_EVT_SET_ALARM   = 0,    /* 알람 설정 요청 */
+    ALARM_EVT_CANCEL      = 1,    /* 알람 취소 */
+    ALARM_EVT_ALARM_MATCH = 2,    /* RTC 시각 매칭 (ISR) */
+    ALARM_EVT_ACK         = 3,    /* 사용자 확인 (버튼) */
+    ALARM_EVT_TIMEOUT     = 4     /* 자동 타임아웃 */
+} alarm_event_t;
+
+void          alarm_service_init(void);
+void          alarm_service_handle_event(alarm_event_t evt);
+void          alarm_service_process(void);
+alarm_state_t alarm_service_get_state(void);
+void          alarm_service_set_time(uint8_t h, uint8_t m, uint8_t s);
+  </code></pre>
+
+  <p>
+    stopwatch_service.h와 비교해 보세요.
+    <code>sw_state_t</code> → <code>alarm_state_t</code>, <code>sw_event_t</code> → <code>alarm_event_t</code>.
+    함수 이름도 <code>stopwatch_*</code> → <code>alarm_service_*</code>.
+    <strong>구조가 완전히 동일합니다.</strong>
+  </p>
+
+  <h3>alarm_service.c — FSM 구현 (핵심부)</h3>
+
+  <pre><code class="language-c">/* ch09_07_alarm_service.c — Alarm FSM 핵심 */
+
+#include "alarm_service.h"
+#include "rtc_driver.h"
+#include "log.h"
+
+static volatile alarm_state_t s_state = ALARM_STATE_IDLE;
+static volatile uint8_t s_alarm_flag  = 0;
+static rtc_time_t s_alarm_time = {0};
+static uint32_t s_trigger_tick = 0;
+
+#define ALARM_ACK_TIMEOUT_MS  30000   /* 30초 후 자동 타임아웃 (TRIGGERED → ACKNOWLEDGED) */
+#define ALARM_IDLE_TIMEOUT_MS 2000    /* 2초 후 ACKNOWLEDGED → IDLE 자동 복귀 */
+
+static const char * const STATE_NAMES[] = {
+    "IDLE", "ARMED", "TRIGGERED", "ACKNOWLEDGED"
+};
+
+/* ISR 콜백: 플래그만 설정 (Ch08 패턴 동일!) */
+static void alarm_isr_callback(void)
+{
+    s_alarm_flag = 1;
+}
+
+void alarm_service_init(void)
+{
+    s_state = ALARM_STATE_IDLE;
+    s_alarm_flag = 0;
+    rtc_register_alarm_callback(alarm_isr_callback);
+    LOG_I("alarm_service 초기화 완료");
+}
+
+void alarm_service_handle_event(alarm_event_t evt)
+{
+    alarm_state_t prev = s_state;
+
+    switch (s_state) {
+
+    case ALARM_STATE_IDLE:
+        if (evt == ALARM_EVT_SET_ALARM) {
+            rtc_set_alarm_a(&s_alarm_time, RTC_ALARMMASK_DATEWEEKDAY);
+            s_state = ALARM_STATE_ARMED;
+            LOG_I("알람 설정: %02d:%02d:%02d",
+                  s_alarm_time.hours, s_alarm_time.minutes, s_alarm_time.seconds);
+        }
+        break;
+
+    case ALARM_STATE_ARMED:
+        if (evt == ALARM_EVT_ALARM_MATCH) {
+            s_trigger_tick = HAL_GetTick();
+            HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+            s_state = ALARM_STATE_TRIGGERED;
+            LOG_I("*** 알람 울림! ***");
+        } else if (evt == ALARM_EVT_CANCEL) {
+            rtc_deactivate_alarm_a();
+            s_state = ALARM_STATE_IDLE;
+            LOG_I("알람 취소");
+        }
+        break;
+
+    case ALARM_STATE_TRIGGERED:
+        if (evt == ALARM_EVT_ACK || evt == ALARM_EVT_TIMEOUT) {
+            HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+            s_state = ALARM_STATE_ACKNOWLEDGED;
+            LOG_I("알람 확인 완료");
+        }
+        break;
+
+    case ALARM_STATE_ACKNOWLEDGED:
+        if (evt == ALARM_EVT_SET_ALARM) {
+            rtc_set_alarm_a(&s_alarm_time, RTC_ALARMMASK_DATEWEEKDAY);
+            s_state = ALARM_STATE_ARMED;
+        } else if (evt == ALARM_EVT_TIMEOUT) {
+            s_state = ALARM_STATE_IDLE;
+            LOG_D("자동 복귀: ACKNOWLEDGED → IDLE");
+        }
+        break;
+    }
+
+    if (prev != s_state) {
+        LOG_D("FSM: %s → %s", STATE_NAMES[prev], STATE_NAMES[s_state]);
+    }
+}
+
+/* main loop에서 매 사이클 호출 */
+void alarm_service_process(void)
+{
+    /* ISR 플래그 → FSM 이벤트 */
+    if (s_alarm_flag) {
+        s_alarm_flag = 0;
+        alarm_service_handle_event(ALARM_EVT_ALARM_MATCH);
+    }
+
+    /* TRIGGERED 타임아웃 체크 */
+    if (s_state == ALARM_STATE_TRIGGERED) {
+        if ((HAL_GetTick() - s_trigger_tick) > ALARM_ACK_TIMEOUT_MS) {
+            alarm_service_handle_event(ALARM_EVT_TIMEOUT);
+        }
+    }
+}
+  </code></pre>
+
+  <p>
+    stopwatch_service.c와 1:1 대응되는 구조를 확인하세요:
+  </p>
+  <table>
+    <thead>
+      <tr><th>Stopwatch (Ch08)</th><th>Alarm (Ch09)</th><th>패턴 동일?</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>static sw_state_t s_state</td><td>static alarm_state_t s_state</td><td>동일</td></tr>
+      <tr><td>STATE_NAMES[] 배열</td><td>STATE_NAMES[] 배열</td><td>동일</td></tr>
+      <tr><td>switch (s_state) + case</td><td>switch (s_state) + case</td><td>동일</td></tr>
+      <tr><td>prev != s_state → LOG</td><td>prev != s_state → LOG</td><td>동일</td></tr>
+      <tr><td>tim_start() / tim_stop()</td><td>rtc_set_alarm_a() / deactivate()</td><td>Driver 호출만 다름</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    <strong>"패턴이 보이기 시작한다"</strong> — 이 느낌이 들면 성공입니다.
+    Ch10에서 clock_service를 만들 때, Ch11에서 sensor_service를 만들 때, 같은 FSM 패턴을 반복합니다.
+    한 번 익힌 패턴이 계속 재활용됩니다.
+    이제 FSM은 쉬워졌나요? 두 번째라서 패턴이 보이기 시작했다면, 그것이 바로 체화의 시작입니다.
+  </p>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    <strong>Q.</strong> "FSM 패턴을 다른 서비스에 적용한 경험을 설명하시오."<br>
+    <strong>A.</strong> Stopwatch FSM(IDLE/RUNNING/PAUSED)과 Alarm FSM(IDLE/ARMED/TRIGGERED/ACKNOWLEDGED)을 동일한 switch-case 패턴으로 구현했습니다. 상태·이벤트·전이 테이블만 변경하고 구조는 동일합니다. FSM 패턴의 장점: ① 상태를 명시적으로 관리하여 버그 감소 ② 새 상태/이벤트 추가가 용이 ③ 상태 전이표로 설계 검증 가능.
+  </aside>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    실습 시 alarm_service의 스켈레톤 코드를 제공하고, switch-case 안의 전이 부분을 TODO로 비워두세요.
+    학생들이 상태 전이표를 보고 직접 코드를 채우는 방식이 효과적입니다.
+    "Ch08 코드를 참고해도 됩니다!" — 참고하면서 패턴의 동일성을 체감하게 됩니다.
+  </aside>
+</section>
+
+
+<!-- ===== §9.8 누적 통합 v0.9 ===== -->
+<section id="sec-08">
+  <h2>§9.8 누적 통합 — v0.9 아키텍처 완성</h2>
+
+  <p>
+    모든 구성 요소가 준비되었습니다.
+    v0.8에 rtc_driver와 alarm_service를 추가하여 v0.9를 완성합시다.
+    <strong>핵심: v0.8의 모든 것이 그대로 유지됩니다. 교체가 아닌 추가입니다.</strong>
+  </p>
+
+  <h3>v0.9 main.c 통합 구조</h3>
+
+  <pre><code class="language-c">/* main.c — v0.9 통합 (슈퍼루프) */
+
+#include "rtc_driver.h"
+#include "alarm_service.h"
+#include "stopwatch_service.h"   /* Ch08 — 유지! */
+#include "tim_driver.h"
+#include "uart_driver.h"
+#include "log.h"
+
+int main(void)
+{
+    /* 초기화 */
+    HAL_Init();
+    SystemClock_Config();
+    MX_GPIO_Init();
+    MX_USART2_UART_Init();
+    MX_TIM2_Init();
+    MX_RTC_Init();              /* RTC 초기화 (CubeMX) */
+
+    /* Driver 초기화 */
+    uart_driver_init();
+    tim_driver_init();
+    rtc_driver_init();          /* ★ 신규 */
+
+    /* Service 초기화 */
+    stopwatch_init();           /* Ch08 — 유지! */
+    alarm_service_init();       /* ★ 신규 */
+
+    /* 알람 설정: 10초 후 테스트 */
+    alarm_service_set_time(14, 30, 10);
+    alarm_service_handle_event(ALARM_EVT_SET_ALARM);
+
+    LOG_I("v0.9 시스템 시작 — RTC + Alarm + Stopwatch");
+
+    /* 슈퍼루프 */
+    while (1) {
+        /* 두 Service가 병렬로 동작 */
+        alarm_service_process();      /* 알람 FSM */
+        // stopwatch_process();       // v1.0에서 모터 추가 시 통합
+
+        /* 버튼 이벤트 분배 */
+        if (button_short_pressed()) {
+            if (alarm_service_get_state() == ALARM_STATE_TRIGGERED) {
+                alarm_service_handle_event(ALARM_EVT_ACK);
+            } else {
+                stopwatch_handle_event(SW_EVT_BTN_SHORT);
+            }
+        }
+
+        /* 1초마다 시각 표시 */
+        rtc_time_t now;
+        rtc_get_time(&now);
+        /* LOG_I("[RTC] %02d:%02d:%02d", now.hours, now.minutes, now.seconds); */
+    }
+}
+  </code></pre>
+
+  <h3>v0.9 아키텍처 다이어그램</h3>
+
+  <figure>
+    <img src="../../figures/ch09_sec8_v09_final.svg" width="100%" height="auto" alt="v0.9 최종 아키텍처">
+    <figcaption>그림 09-9. v0.9 최종 아키텍처 — Stopwatch + RTC Alarm 통합, Ch10(clock_service) 예정 표시</figcaption>
+  </figure>
+
+  <h3>v0.9 컴포넌트 목록</h3>
+
+  <table>
+    <thead>
+      <tr><th>레이어</th><th>컴포넌트</th><th>추가 챕터</th><th>역할</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>App</td><td>main.c</td><td>Ch01~</td><td>슈퍼루프, 이벤트 디스패치</td></tr>
+      <tr><td>Service</td><td>stopwatch_service</td><td>Ch08</td><td>스톱워치 FSM</td></tr>
+      <tr><td>Service</td><td><strong>alarm_service ★</strong></td><td><strong>Ch09</strong></td><td>알람 FSM (4상태)</td></tr>
+      <tr><td>Driver</td><td>uart_driver</td><td>Ch04~06</td><td>UART DMA + 링버퍼</td></tr>
+      <tr><td>Driver</td><td>tim_driver</td><td>Ch07~08</td><td>TIM + CPWM + IC</td></tr>
+      <tr><td>Driver</td><td><strong>rtc_driver ★</strong></td><td><strong>Ch09</strong></td><td>RTC 시간/알람/Wake-up</td></tr>
+      <tr><td>HAL</td><td>HAL_RTC, HAL_RTCEx</td><td>Ch09</td><td>RTC HAL 인터페이스</td></tr>
+    </tbody>
+  </table>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>v0.9 아키텍처에서 각 레이어의 역할을 설명할 수 있는가?</li>
+      <li>stopwatch_service와 alarm_service가 동시에 동작하는 구조를 설명할 수 있는가?</li>
+      <li>rtc_driver가 alarm_service에 알람 이벤트를 전달하는 경로를 추적할 수 있는가?</li>
+    </ul>
+  </aside>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    Service 레이어가 2개(stopwatch_service, alarm_service)로 늘어났습니다.
+    현재는 슈퍼루프에서 순차적으로 process()를 호출하지만,
+    RTOS를 도입하면 각 Service를 별도 Task로 분리할 수 있습니다.
+    레이어드 아키텍처의 장점: <strong>슈퍼루프 → RTOS 전환 시 Service 코드 변경 없이 Task 래퍼만 추가</strong>.
+  </aside>
+</section>
+
+
+<!-- ===== 실습 ===== -->
+<section id="lab">
+  <h2>실습: RTC 시각 표시 + Alarm FSM</h2>
+  <p><strong>목표</strong>: RTC로 시각을 읽고, Alarm FSM으로 알람을 설정·트리거·확인하는 전체 과정을 구현합니다.</p>
+  <p><strong>환경</strong>: STM32CubeIDE, NUCLEO-F411RE, UART 시리얼 모니터</p>
+
+  <h3>Step 1. CubeMX 설정</h3>
+  <ol>
+    <li>RCC → Low Speed Clock: <strong>LSI</strong></li>
+    <li>RTC → Activate Clock Source: <strong>체크</strong></li>
+    <li>RTC → Activate Calendar: <strong>체크</strong></li>
+    <li>RTC → Alarm A → Internal Alarm A: <strong>체크</strong></li>
+    <li>NVIC → RTC Alarm interrupt through EXTI line 17: <strong>Enable</strong></li>
+    <li>RTC → Calendar → 초기 시간 설정 (예: 14:30:00)</li>
+  </ol>
+
+  <h3>Step 2. 코드 작성</h3>
+  <ol>
+    <li><code>rtc_driver.h/c</code> 파일 추가 (<code>ch09_06</code> 참고)</li>
+    <li><code>alarm_service.h/c</code> 파일 추가 (<code>ch09_07</code> 참고)</li>
+    <li><code>main.c</code>에 초기화 + 슈퍼루프 통합 (<code>§9.8</code> 참고)</li>
+  </ol>
+
+  <h3>Step 3. 동작 확인</h3>
+  <p><strong>예상 결과</strong>:</p>
+  <ol>
+    <li>시리얼 모니터에 1초마다 현재 시각 출력</li>
+    <li>10초 후 "*** 알람 울림! ***" + LED ON</li>
+    <li>버튼 B1 누르면 "알람 확인 완료" + LED OFF</li>
+  </ol>
+  <p><strong>로그 출력 예시</strong>:</p>
+  <pre><code>[INFO ] v0.9 시스템 시작 — RTC + Alarm + Stopwatch
+[INFO ] rtc_driver 초기화
+[INFO ] alarm_service 초기화 완료
+[INFO ] AlarmA 설정: 14:30:10 (마스크=0x80)
+[DEBUG] FSM: IDLE → ARMED
+[INFO ] [RTC] 14:30:08
+[INFO ] [RTC] 14:30:09
+[INFO ] *** 알람 울림! ***
+[DEBUG] FSM: ARMED → TRIGGERED
+[INFO ] 알람 확인 완료
+[DEBUG] FSM: TRIGGERED → ACKNOWLEDGED
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실습이 안 될 때</strong><br>
+    <strong>시간이 안 변해요</strong>: HAL_RTC_GetDate() 호출을 빠뜨렸는지 확인하세요. GetTime 후 반드시 GetDate를 호출해야 합니다.
+    <strong>알람이 안 울려요</strong>: NVIC에서 RTC Alarm 인터럽트를 활성화했는지 확인하세요. CubeMX에서 EXTI line 17을 Enable해야 합니다.
+    <strong>LSI 오차가 심해요</strong>: 정상입니다. LSI는 ±5% 편차가 있습니다. 10초 후 알람이 9초 또는 11초에 울릴 수 있습니다.
+  </aside>
+</section>
+
+
+<!-- ===== 핵심 정리 ===== -->
+<section class="chapter-summary-section">
+  <h2>핵심 정리</h2>
+  <ul>
+    <li><strong>RTC</strong>는 MCU 내부의 독립 시계 — 백업 도메인으로 전원 차단에도 시각 유지(VBAT 필요).</li>
+    <li><strong>BCD</strong> 레지스터로 시:분:초를 "전광판처럼" 자릿수별 저장 — HAL이 자동 변환하지만 디버거에서 BCD를 읽을 줄 알아야 한다.</li>
+    <li><strong>LSE</strong>(정밀, 외부 크리스탈) vs <strong>LSI</strong>(편리, 내장, ±5% 오차) — 용도에 따라 선택.</li>
+    <li><strong>Alarm</strong>(특정 시각) vs <strong>Wake-up Timer</strong>(주기적) — 마스크 비트로 반복 패턴 설정.</li>
+    <li><strong>Alarm FSM</strong>(IDLE/ARMED/TRIGGERED/ACKNOWLEDGED) — Ch08 Stopwatch FSM과 동일 패턴, 이벤트 소스만 다르다.</li>
+    <li><strong>GetTime + GetDate 쌍 호출 필수</strong> — Shadow Register 잠금 해제를 위해 빠뜨리지 말 것.</li>
+    <li><strong>rtc_driver</strong>(Driver) + <strong>alarm_service</strong>(Service) — tim_driver/stopwatch_service와 동일한 레이어드 패턴.</li>
+  </ul>
+
+  <h3>아키텍처 업데이트</h3>
+  <p>이 챕터 완료 후 전체 아키텍처에 <code>rtc_driver</code>(Driver)와 <code>alarm_service</code>(Service)가 추가되었습니다.</p>
+  <figure>
+    <img src="../../figures/ch09_sec8_v09_final.svg" width="100%" height="auto" alt="v0.9 아키텍처">
+    <figcaption>그림 09-10. v0.9 아키텍처 현황 — Stopwatch + RTC Alarm 통합</figcaption>
+  </figure>
+</section>
+
+
+<!-- ===== 연습문제 ===== -->
+<section class="exercises">
+  <h2>연습문제</h2>
+
+  <div class="exercise">
+    <span class="level">기억</span>
+    <strong>1.</strong> BCD에서 0x59는 십진수로 몇인가? RTC 분(minute) 레지스터에 저장된 0x23은 몇 분인가?
+  </div>
+
+  <div class="exercise">
+    <span class="level">이해</span>
+    <strong>2.</strong> LSI(32kHz, ±5%)를 RTC 클럭으로 사용할 때, 하루(24시간) 동안 최대 몇 분의 오차가 발생할 수 있는가? 계산 과정을 보이시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">적용</span>
+    <strong>3.</strong> 매일 오전 8시 30분에 AlarmA가 발생하도록 <code>HAL_RTC_SetAlarm_IT()</code> 호출 코드를 작성하시오. 알람 마스크 설정에 유의할 것.
+  </div>
+
+  <div class="exercise">
+    <span class="level">분석</span>
+    <strong>4.</strong> RTC Wake-up 타이머와 AlarmA/B의 차이를 "트리거 조건, 주기성, 사용 사례" 3가지 관점에서 비교 분석하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">평가</span>
+    <strong>5.</strong> 다음 3가지 시나리오에서 적합한 RTC 기능을 선택하고 이유를 설명하시오:
+    (a) 매 5초마다 센서 읽기 (b) 매일 자정에 로그 파일 롤오버 (c) 특정 날짜·시각에 일회성 이벤트 트리거
+  </div>
+
+  <div class="exercise">
+    <span class="level">창조</span>
+    <strong>6.</strong> RTC 시각과 TIM 기반 스톱워치를 동시에 운용하는 시스템을 설계하시오. "전역 시각(RTC)"과 "로컬 경과 시간(TIM)"의 역할 분담을 Service 레이어 인터페이스로 표현할 것.
+  </div>
+</section>
+
+
+<!-- ===== 다음 챕터 예고 ===== -->
+<section class="next-chapter">
+  <h2>다음 챕터 예고</h2>
+  <p>
+    현재 프로젝트는 <strong>v0.9</strong> 상태로,
+    RTC 실시간 시각 + Alarm FSM + Stopwatch FSM까지 구현되었습니다.
+    "지금 몇 시인지" 알게 되었고, "특정 시각에 알람"도 울릴 수 있습니다.
+  </p>
+  <p>
+    그런데 이 시각 정보가 UART 로그로만 나오고 있습니다.
+    <strong>진짜 시계</strong>라면 시침이 움직여야 합니다!
+  </p>
+  <p>
+    다음 <strong>Ch10. 스텝 모터(ULN2003) 제어</strong>에서는
+    28BYJ-48 스텝 모터를 구동하여 <strong>RTC 시각 → 시침 각도 → 모터 회전</strong>을 구현합니다.
+    지금까지 만든 모든 것이 하나로 합쳐집니다:
+    GPIO(버튼) + UART(로그) + TIM(PWM) + RTC(시각) + 스텝 모터(구동).
+    프로젝트를 <strong>v1.0 — 마일스톤 ①</strong>으로 업그레이드합니다!
+  </p>
+</section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+</body>
+</html>

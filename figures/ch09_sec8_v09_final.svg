@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 540" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <defs>
+    <marker id="arr9h" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="410" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">v0.9 최종 아키텍처 — Stopwatch + RTC Alarm 통합</text>
+
+  <!-- App Layer -->
+  <rect x="30" y="50" width="760" height="75" rx="8" fill="#EA4335" opacity="0.12" stroke="#EA4335" stroke-width="2"/>
+  <text x="60" y="72" font-size="11" fill="#EA4335" font-weight="bold">App Layer</text>
+
+  <rect x="50" y="82" width="130" height="32" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="115" y="103" text-anchor="middle" font-size="10" fill="#C62828">main.c (슈퍼루프)</text>
+
+  <rect x="195" y="82" width="140" height="32" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="265" y="103" text-anchor="middle" font-size="10" fill="#C62828">Button EXTI (PC13)</text>
+
+  <rect x="350" y="82" width="100" height="32" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="400" y="103" text-anchor="middle" font-size="10" fill="#C62828">CLI (Ch06)</text>
+
+  <rect x="465" y="82" width="90" height="32" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="510" y="103" text-anchor="middle" font-size="10" fill="#C62828">Log (Ch02)</text>
+
+  <!-- App → Service 화살표 -->
+  <line x1="265" y1="125" x2="265" y2="155" stroke="#555" stroke-width="1.5" marker-end="url(#arr9h)"/>
+  <line x1="400" y1="125" x2="500" y2="155" stroke="#555" stroke-width="1.5" marker-end="url(#arr9h)"/>
+
+  <!-- Service Layer -->
+  <rect x="30" y="160" width="760" height="85" rx="8" fill="#FBBC04" opacity="0.12" stroke="#FBBC04" stroke-width="2"/>
+  <text x="60" y="182" font-size="11" fill="#E65100" font-weight="bold">Service Layer</text>
+
+  <rect x="50" y="192" width="190" height="42" rx="5" fill="#FFF8E1" stroke="#FBBC04" stroke-width="1.5"/>
+  <text x="145" y="210" text-anchor="middle" font-size="11" font-weight="bold" fill="#E65100">stopwatch_service (Ch08)</text>
+  <text x="145" y="227" text-anchor="middle" font-size="9" fill="#E65100">FSM: IDLE/RUNNING/PAUSED</text>
+
+  <rect x="260" y="192" width="210" height="42" rx="5" fill="#FFF3E0" stroke="#E65100" stroke-width="2.5"/>
+  <text x="365" y="210" text-anchor="middle" font-size="12" font-weight="bold" fill="#BF360C">alarm_service (Ch09) ★</text>
+  <text x="365" y="227" text-anchor="middle" font-size="9" fill="#E65100">FSM: IDLE/ARMED/TRIGGERED/ACK</text>
+
+  <!-- 미래 Service -->
+  <rect x="490" y="192" width="130" height="42" rx="5" fill="none" stroke="#FBBC04" stroke-dasharray="5,3"/>
+  <text x="555" y="210" text-anchor="middle" font-size="10" fill="#999">Ch10: clock_service</text>
+  <text x="555" y="225" text-anchor="middle" font-size="9" fill="#999">RTC → 시침 각도</text>
+
+  <rect x="635" y="192" width="130" height="42" rx="5" fill="none" stroke="#FBBC04" stroke-dasharray="5,3"/>
+  <text x="700" y="210" text-anchor="middle" font-size="10" fill="#999">Ch11: sensor_service</text>
+  <text x="700" y="225" text-anchor="middle" font-size="9" fill="#999">SHT31 + AlarmB</text>
+
+  <!-- Service → Driver 화살표 -->
+  <line x1="145" y1="234" x2="260" y2="275" stroke="#555" stroke-width="1.5" marker-end="url(#arr9h)"/>
+  <line x1="365" y1="234" x2="530" y2="275" stroke="#555" stroke-width="1.5" marker-end="url(#arr9h)"/>
+
+  <!-- Driver Layer -->
+  <rect x="30" y="260" width="760" height="85" rx="8" fill="#34A853" opacity="0.12" stroke="#34A853" stroke-width="2"/>
+  <text x="60" y="282" font-size="11" fill="#1B5E20" font-weight="bold">Driver Layer</text>
+
+  <rect x="50" y="292" width="110" height="42" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="105" y="310" text-anchor="middle" font-size="10" fill="#1B5E20">uart_driver</text>
+  <text x="105" y="327" text-anchor="middle" font-size="8" fill="#555">Ch04~06</text>
+
+  <rect x="175" y="292" width="100" height="42" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="225" y="310" text-anchor="middle" font-size="10" fill="#1B5E20">dma_driver</text>
+  <text x="225" y="327" text-anchor="middle" font-size="8" fill="#555">Ch05</text>
+
+  <rect x="290" y="292" width="140" height="42" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="360" y="310" text-anchor="middle" font-size="10" fill="#1B5E20">tim_driver (확장)</text>
+  <text x="360" y="327" text-anchor="middle" font-size="8" fill="#555">Ch07~08 (+CPWM, IC)</text>
+
+  <rect x="445" y="292" width="180" height="42" rx="5" fill="#A5D6A7" stroke="#1B5E20" stroke-width="2.5"/>
+  <text x="535" y="310" text-anchor="middle" font-size="11" font-weight="bold" fill="#1B5E20">rtc_driver (Ch09) ★</text>
+  <text x="535" y="327" text-anchor="middle" font-size="9" fill="#1B5E20">시간/알람/Wake-up/백업</text>
+
+  <rect x="640" y="292" width="70" height="42" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="675" y="313" text-anchor="middle" font-size="10" fill="#1B5E20">log</text>
+
+  <!-- 미래 Driver (점선) -->
+  <rect x="720" y="292" width="60" height="42" rx="5" fill="none" stroke="#34A853" stroke-dasharray="4,3"/>
+  <text x="750" y="310" text-anchor="middle" font-size="8" fill="#999">Ch10:</text>
+  <text x="750" y="325" text-anchor="middle" font-size="8" fill="#999">stepper</text>
+
+  <!-- Driver → HAL -->
+  <line x1="400" y1="345" x2="400" y2="375" stroke="#555" stroke-width="1.5" marker-end="url(#arr9h)"/>
+
+  <!-- HAL Layer -->
+  <rect x="30" y="380" width="760" height="60" rx="8" fill="#1A73E8" opacity="0.12" stroke="#1A73E8" stroke-width="2"/>
+  <text x="60" y="402" font-size="11" fill="#1A73E8" font-weight="bold">HAL Layer</text>
+
+  <rect x="50" y="412" width="80" height="20" rx="4" fill="#BBDEFB"/>
+  <text x="90" y="426" text-anchor="middle" font-size="9" fill="#0D47A1">HAL_UART</text>
+
+  <rect x="140" y="412" width="70" height="20" rx="4" fill="#BBDEFB"/>
+  <text x="175" y="426" text-anchor="middle" font-size="9" fill="#0D47A1">HAL_DMA</text>
+
+  <rect x="220" y="412" width="70" height="20" rx="4" fill="#BBDEFB"/>
+  <text x="255" y="426" text-anchor="middle" font-size="9" fill="#0D47A1">HAL_TIM</text>
+
+  <rect x="300" y="412" width="80" height="20" rx="4" fill="#BBDEFB"/>
+  <text x="340" y="426" text-anchor="middle" font-size="9" fill="#0D47A1">HAL_TIMEx</text>
+
+  <rect x="390" y="412" width="90" height="20" rx="4" fill="#90CAF9" stroke="#1A73E8"/>
+  <text x="435" y="426" text-anchor="middle" font-size="9" font-weight="bold" fill="#0D47A1">HAL_RTC ★</text>
+
+  <rect x="490" y="412" width="100" height="20" rx="4" fill="#90CAF9" stroke="#1A73E8"/>
+  <text x="540" y="426" text-anchor="middle" font-size="9" font-weight="bold" fill="#0D47A1">HAL_RTCEx ★</text>
+
+  <rect x="600" y="412" width="70" height="20" rx="4" fill="#BBDEFB"/>
+  <text x="635" y="426" text-anchor="middle" font-size="9" fill="#0D47A1">HAL_GPIO</text>
+
+  <rect x="680" y="412" width="70" height="20" rx="4" fill="#BBDEFB"/>
+  <text x="715" y="426" text-anchor="middle" font-size="9" fill="#0D47A1">HAL_PWR</text>
+
+  <!-- 범례 -->
+  <rect x="50" y="460" width="15" height="12" fill="#EA4335" opacity="0.3"/>
+  <text x="70" y="471" font-size="10" fill="#555">App</text>
+  <rect x="120" y="460" width="15" height="12" fill="#FBBC04" opacity="0.3"/>
+  <text x="140" y="471" font-size="10" fill="#555">Service</text>
+  <rect x="190" y="460" width="15" height="12" fill="#34A853" opacity="0.3"/>
+  <text x="210" y="471" font-size="10" fill="#555">Driver</text>
+  <rect x="260" y="460" width="15" height="12" fill="#1A73E8" opacity="0.3"/>
+  <text x="280" y="471" font-size="10" fill="#555">HAL</text>
+  <rect x="330" y="460" width="15" height="12" fill="none" stroke="#999" stroke-dasharray="3,2"/>
+  <text x="350" y="471" font-size="10" fill="#555">미래 (예정)</text>
+
+  <!-- 버전 + 마일스톤 예고 -->
+  <rect x="180" y="490" width="460" height="45" rx="8" fill="#1A1A2E"/>
+  <text x="410" y="510" text-anchor="middle" font-size="13" font-weight="bold" fill="white">v0.9 — RTC 시각 + Alarm FSM 완성</text>
+  <text x="410" y="528" text-anchor="middle" font-size="11" fill="#90CAF9">다음: Ch10 스텝 모터 + clock_service → v1.0 마일스톤 ①</text>
+</svg>

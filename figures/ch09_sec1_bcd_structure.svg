@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 400" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <text x="390" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">BCD 레지스터 구조 — "전광판처럼 자릿수별 저장"</text>
+
+  <!-- 전광판 비유 -->
+  <text x="390" y="60" text-anchor="middle" font-size="13" fill="#555">예시: 현재 시각 23시 59분 08초</text>
+
+  <!-- RTC_TR 레지스터 (시간) -->
+  <text x="60" y="100" font-size="14" font-weight="bold" fill="#1A73E8">RTC_TR (Time Register)</text>
+
+  <!-- 비트 필드 헤더 -->
+  <text x="130" y="125" text-anchor="middle" font-size="10" fill="#999">비트 23~20</text>
+  <text x="230" y="125" text-anchor="middle" font-size="10" fill="#999">비트 19~16</text>
+  <text x="370" y="125" text-anchor="middle" font-size="10" fill="#999">비트 14~12</text>
+  <text x="470" y="125" text-anchor="middle" font-size="10" fill="#999">비트 11~8</text>
+  <text x="610" y="125" text-anchor="middle" font-size="10" fill="#999">비트 6~4</text>
+  <text x="710" y="125" text-anchor="middle" font-size="10" fill="#999">비트 3~0</text>
+
+  <!-- 시(Hour) 십의 자리 -->
+  <rect x="80" y="135" width="100" height="60" rx="6" fill="#E3F2FD" stroke="#1A73E8" stroke-width="2"/>
+  <text x="130" y="162" text-anchor="middle" font-size="28" font-weight="bold" fill="#1A73E8">2</text>
+  <text x="130" y="188" text-anchor="middle" font-size="9" fill="#0D47A1">HT (시 10자리)</text>
+
+  <!-- 시(Hour) 일의 자리 -->
+  <rect x="180" y="135" width="100" height="60" rx="6" fill="#E3F2FD" stroke="#1A73E8" stroke-width="2"/>
+  <text x="230" y="162" text-anchor="middle" font-size="28" font-weight="bold" fill="#1A73E8">3</text>
+  <text x="230" y="188" text-anchor="middle" font-size="9" fill="#0D47A1">HU (시 1자리)</text>
+
+  <!-- 구분자 -->
+  <text x="300" y="172" text-anchor="middle" font-size="28" font-weight="bold" fill="#333">:</text>
+
+  <!-- 분(Minute) 십의 자리 -->
+  <rect x="320" y="135" width="100" height="60" rx="6" fill="#E8F5E9" stroke="#34A853" stroke-width="2"/>
+  <text x="370" y="162" text-anchor="middle" font-size="28" font-weight="bold" fill="#34A853">5</text>
+  <text x="370" y="188" text-anchor="middle" font-size="9" fill="#1B5E20">MNT (분 10자리)</text>
+
+  <!-- 분(Minute) 일의 자리 -->
+  <rect x="420" y="135" width="100" height="60" rx="6" fill="#E8F5E9" stroke="#34A853" stroke-width="2"/>
+  <text x="470" y="162" text-anchor="middle" font-size="28" font-weight="bold" fill="#34A853">9</text>
+  <text x="470" y="188" text-anchor="middle" font-size="9" fill="#1B5E20">MNU (분 1자리)</text>
+
+  <!-- 구분자 -->
+  <text x="540" y="172" text-anchor="middle" font-size="28" font-weight="bold" fill="#333">:</text>
+
+  <!-- 초(Second) 십의 자리 -->
+  <rect x="560" y="135" width="100" height="60" rx="6" fill="#FFF8E1" stroke="#FBBC04" stroke-width="2"/>
+  <text x="610" y="162" text-anchor="middle" font-size="28" font-weight="bold" fill="#E65100">0</text>
+  <text x="610" y="188" text-anchor="middle" font-size="9" fill="#E65100">ST (초 10자리)</text>
+
+  <!-- 초(Second) 일의 자리 -->
+  <rect x="660" y="135" width="100" height="60" rx="6" fill="#FFF8E1" stroke="#FBBC04" stroke-width="2"/>
+  <text x="710" y="162" text-anchor="middle" font-size="28" font-weight="bold" fill="#E65100">8</text>
+  <text x="710" y="188" text-anchor="middle" font-size="9" fill="#E65100">SU (초 1자리)</text>
+
+  <!-- BCD 이진 표현 -->
+  <text x="60" y="230" font-size="13" font-weight="bold" fill="#333">BCD 바이트 값:</text>
+
+  <!-- 시 BCD -->
+  <rect x="80" y="240" width="200" height="40" rx="5" fill="#E3F2FD" stroke="#1A73E8"/>
+  <text x="180" y="265" text-anchor="middle" font-size="13" fill="#0D47A1">시: 0x23 = 0010 0011</text>
+
+  <!-- 분 BCD -->
+  <rect x="300" y="240" width="200" height="40" rx="5" fill="#E8F5E9" stroke="#34A853"/>
+  <text x="400" y="265" text-anchor="middle" font-size="13" fill="#1B5E20">분: 0x59 = 0101 1001</text>
+
+  <!-- 초 BCD -->
+  <rect x="520" y="240" width="200" height="40" rx="5" fill="#FFF8E1" stroke="#FBBC04"/>
+  <text x="620" y="265" text-anchor="middle" font-size="13" fill="#E65100">초: 0x08 = 0000 1000</text>
+
+  <!-- 비교: BCD vs Binary -->
+  <text x="60" y="310" font-size="13" font-weight="bold" fill="#333">BCD vs Binary 비교:</text>
+
+  <rect x="80" y="320" width="310" height="60" rx="6" fill="#E8F5E9" stroke="#34A853"/>
+  <text x="235" y="342" text-anchor="middle" font-size="12" font-weight="bold" fill="#1B5E20">BCD: 23시 → 0x23 (직관적!)</text>
+  <text x="235" y="362" text-anchor="middle" font-size="11" fill="#555">상위 4비트 = 2, 하위 4비트 = 3</text>
+
+  <rect x="420" y="320" width="310" height="60" rx="6" fill="#FCE4EC" stroke="#EA4335"/>
+  <text x="575" y="342" text-anchor="middle" font-size="12" font-weight="bold" fill="#C62828">Binary: 23시 → 0x17 (변환 필요)</text>
+  <text x="575" y="362" text-anchor="middle" font-size="11" fill="#555">23 = 16 + 7 = 0001 0111</text>
+</svg>

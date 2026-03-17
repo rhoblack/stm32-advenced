@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 380" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <defs>
+    <marker id="arr5" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#1A73E8"/>
+    </marker>
+    <marker id="arr5r" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#EA4335"/>
+    </marker>
+  </defs>
+
+  <text x="390" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">타이머 연계 (Master-Slave) — "부장-대리" 비유</text>
+
+  <!-- 비유 영역 -->
+  <rect x="50" y="45" width="680" height="45" rx="6" fill="#FFF9C4" stroke="#F9A825" stroke-dasharray="5,3"/>
+  <text x="390" y="65" text-anchor="middle" font-size="13" fill="#795548">부장(Master): "지금 시작해!" → 대리(Slave): "네, 제 일 시작합니다!" (자기 주기대로 동작)</text>
+  <text x="390" y="82" text-anchor="middle" font-size="11" fill="#795548">※ 대리는 부장 명령으로 시작/정지/리셋될 뿐, 자기 PSC/ARR로 독립 카운트</text>
+
+  <!-- Master Timer (TIM1) -->
+  <rect x="60" y="110" width="280" height="180" rx="8" fill="#FCE4EC" stroke="#EA4335" stroke-width="2"/>
+  <text x="200" y="135" text-anchor="middle" font-size="15" font-weight="bold" fill="#EA4335">Master: TIM1</text>
+  <text x="200" y="155" text-anchor="middle" font-size="12" fill="#555">PSC=8399, ARR=9999 (1초 주기)</text>
+
+  <!-- Master 내부 -->
+  <rect x="90" y="170" width="220" height="35" rx="5" fill="#FFCDD2"/>
+  <text x="200" y="193" text-anchor="middle" font-size="12" fill="#C62828">UEV 발생 → TRGO 출력</text>
+
+  <rect x="90" y="215" width="220" height="30" rx="5" fill="#FFF"/>
+  <text x="200" y="235" text-anchor="middle" font-size="11" fill="#555">MMS = Update (TRGO = UEV)</text>
+
+  <text x="200" y="275" text-anchor="middle" font-size="11" fill="#EA4335">매 1초마다 "지금!" 신호</text>
+
+  <!-- TRGO 화살표 -->
+  <line x1="340" y1="190" x2="430" y2="190" stroke="#EA4335" stroke-width="3" marker-end="url(#arr5r)"/>
+  <text x="385" y="183" text-anchor="middle" font-size="13" font-weight="bold" fill="#EA4335">TRGO</text>
+  <text x="385" y="210" text-anchor="middle" font-size="10" fill="#999">내부 연결선</text>
+  <text x="385" y="223" text-anchor="middle" font-size="10" fill="#999">(핀 불필요)</text>
+
+  <!-- Slave Timer (TIM2) -->
+  <rect x="440" y="110" width="290" height="180" rx="8" fill="#E3F2FD" stroke="#1A73E8" stroke-width="2"/>
+  <text x="585" y="135" text-anchor="middle" font-size="15" font-weight="bold" fill="#1A73E8">Slave: TIM2</text>
+  <text x="585" y="155" text-anchor="middle" font-size="12" fill="#555">PSC=839, ARR=999 (10ms PWM)</text>
+
+  <!-- Slave 내부 -->
+  <rect x="470" y="170" width="230" height="35" rx="5" fill="#BBDEFB"/>
+  <text x="585" y="193" text-anchor="middle" font-size="12" fill="#0D47A1">ITR0 수신 → Enable/Reset/Gate</text>
+
+  <rect x="470" y="215" width="230" height="30" rx="5" fill="#FFF"/>
+  <text x="585" y="235" text-anchor="middle" font-size="11" fill="#555">SMS = Trigger Mode / Reset Mode</text>
+
+  <text x="585" y="275" text-anchor="middle" font-size="11" fill="#1A73E8">TRGO 수신 시 카운터 시작/리셋</text>
+
+  <!-- Slave 모드 종류 -->
+  <rect x="60" y="305" width="670" height="65" rx="8" fill="#F5F5F5" stroke="#BDBDBD"/>
+  <text x="390" y="328" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">Slave 모드 3종</text>
+
+  <rect x="80" y="338" width="180" height="24" rx="4" fill="#E3F2FD" stroke="#1A73E8"/>
+  <text x="170" y="355" text-anchor="middle" font-size="11" fill="#0D47A1">Trigger: TRGO→카운터 시작</text>
+
+  <rect x="280" y="338" width="200" height="24" rx="4" fill="#E8F5E9" stroke="#34A853"/>
+  <text x="380" y="355" text-anchor="middle" font-size="11" fill="#1B5E20">Reset: TRGO→카운터 0으로 리셋</text>
+
+  <rect x="500" y="338" width="210" height="24" rx="4" fill="#FFF8E1" stroke="#FBBC04"/>
+  <text x="605" y="355" text-anchor="middle" font-size="11" fill="#E65100">Gated: TRGO HIGH 동안만 카운트</text>
+</svg>

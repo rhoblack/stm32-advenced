@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch08. Advanced TIM 심화 — STM32 고급 실무교육</title>
+  <link rel="stylesheet" href="../../templates/book_style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+
+<!-- ===== 챕터 헤더 ===== -->
+<header class="chapter-header">
+  <div class="chapter-meta">Part 2 · Chapter 08 · 프로젝트 <span class="version">v0.8</span></div>
+  <h1>Ch08. Advanced TIM 심화</h1>
+  <p class="chapter-summary">타이머의 숨겨진 능력을 깨워 Complementary PWM으로 양방향을 제어하고, FSM으로 스톱워치를 완성한다</p>
+  <div class="chapter-badge">누적 기능: Complementary PWM + Input Capture + Stopwatch FSM (stopwatch_service 추가)</div>
+</header>
+
+<!-- ===== §8.0 도입 ===== -->
+<section id="sec-00">
+  <h2>§8.0 "스톱워치의 꿈 — 왜 Advanced TIM인가?"</h2>
+
+  <p>
+    여기까지의 여정을 돌아봅시다.
+    Ch07에서 TIM2로 정밀 주기 타이머와 PWM을 완성했습니다.
+    LED가 원하는 밝기로 빛나고, 500ms마다 정확히 콜백이 호출됩니다.
+    <strong>v0.7의 tim_driver — 여러분이 직접 만든 첫 타이머 드라이버입니다.</strong>
+  </p>
+
+  <p>
+    그런데 현실의 임베디드 시스템은 이보다 훨씬 복잡합니다.
+    모터를 양방향으로 돌리려면 PWM 하나로는 부족합니다 — <strong>상보 출력(Complementary PWM)</strong>이 필요합니다.
+    외부 신호의 주파수를 측정하려면 타이머를 "입력" 장치로 써야 합니다 — <strong>Input Capture</strong>입니다.
+    그리고 가장 중요한 것, Ch03에서 이론으로만 배웠던 <strong>FSM(유한 상태 머신)</strong>을 드디어 실제 코드로 구현합니다.
+  </p>
+
+  <p>
+    이 챕터가 끝나면:
+  </p>
+  <ul>
+    <li>TIM1(Advanced Control Timer)으로 <strong>Complementary PWM + Dead-time</strong>을 출력합니다.</li>
+    <li>Input Capture로 <strong>외부 신호의 주파수</strong>를 정밀 측정합니다.</li>
+    <li>Stopwatch FSM을 설계하고, <strong>Service 레이어에 구현</strong>합니다 — 아키텍처 v0.7 → v0.8.</li>
+  </ul>
+
+  <p>
+    특히 <strong>Service 레이어의 첫 등장</strong>이 중요합니다.
+    지금까지는 App이 Driver를 직접 호출했습니다.
+    이 챕터에서 처음으로 App → Service → Driver 3단 구조를 구현합니다.
+    이것이 Ch10(clock_service), Ch11(sensor_service), Ch13(ui_service)의 원형입니다.
+  </p>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    도입부에서 핸드폰 스톱워치 앱을 직접 시연하세요.
+    "Start → 숫자 올라감 → Pause → 멈춤 → Resume → 이어감 → Reset → 0으로."
+    그리고 질문하세요: "이 동작을 코드로 구현하려면 어떤 '상태'가 필요할까요?"
+    학생들이 "시작, 정지, 리셋?" 하면 "바로 그것이 FSM입니다! 오늘 직접 만듭니다."
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>Ch07에서 배운 PSC/ARR/CCR 공식을 기억하나요? (T = (PSC+1) × (ARR+1) / f_clk)</li>
+      <li>tim_driver의 init → start → stop → set 패턴을 설명할 수 있나요?</li>
+      <li>Ch03에서 FSM의 4요소(상태, 전이, 이벤트, 액션)를 배운 것이 기억나나요?</li>
+    </ul>
+  </aside>
+</section>
+
+
+<!-- ===== 아키텍처 위치 ===== -->
+<section class="architecture-position">
+  <h2>이 챕터의 아키텍처 위치</h2>
+  <p>Ch08은 두 가지 아키텍처 변화를 가져옵니다:
+    ① Driver 레이어의 tim_driver를 확장(TIM1 CPWM + IC),
+    ② <strong>Service 레이어를 처음으로 실체화</strong>(stopwatch_service).</p>
+  <figure>
+    <img src="../../figures/ch08_sec0_architecture.svg" width="100%" height="auto" alt="v0.7 vs v0.8 아키텍처 비교">
+    <figcaption>그림 08-1. v0.7 → v0.8 아키텍처 — Service 레이어(stopwatch_service) 첫 등장</figcaption>
+  </figure>
+
+  <h3>인터페이스 설계</h3>
+  <p>Ch08에서 추가되는 API입니다. tim_driver 확장과 stopwatch_service 신설, 두 부분입니다.</p>
+  <pre><code class="language-c">/* tim_driver.h — v0.8 확장 API */
+
+/* Complementary PWM (TIM1) */
+tim_status_t cpwm_start(void);
+tim_status_t cpwm_stop(void);
+tim_status_t cpwm_set_duty(uint8_t percent);
+
+/* Input Capture (TIM3) */
+tim_status_t ic_start(void);
+tim_status_t ic_stop(void);
+uint32_t     ic_get_frequency(void);
+
+/* stopwatch_service.h — Service 레이어 API */
+void       stopwatch_init(void);
+void       stopwatch_handle_event(sw_event_t evt);
+sw_state_t stopwatch_get_time(sw_time_t *time);
+sw_state_t stopwatch_get_state(void);
+  </code></pre>
+
+  <h3>FSM 설계</h3>
+  <figure>
+    <img src="../../figures/ch08_sec6_stopwatch_fsm.svg" width="100%" height="auto" alt="Stopwatch FSM 상태 전이 다이어그램">
+    <figcaption>그림 08-2. Stopwatch FSM — IDLE / RUNNING / PAUSED 3개 상태, 버튼 이벤트로 전이<br>
+    <small>범례: ━━━ (실선) = 필수 전이 (BTN_SHORT) / ╌╌╌ (점선) = 조건부 전이 (BTN_LONG, 길게 누르기 필요)</small></figcaption>
+  </figure>
+</section>
+
+<!-- ===== 학습 목표 ===== -->
+<section class="learning-objectives">
+  <h2>학습 목표</h2>
+  <p>이 챕터를 완료하면 다음을 할 수 있습니다.</p>
+  <ul>
+    <li><strong>[이해]</strong> TIM1(Advanced Control Timer)과 GP Timer의 차이를 설명하고, Complementary PWM과 Dead-time의 필요성을 설명할 수 있다.</li>
+    <li><strong>[적용]</strong> TIM1으로 Complementary PWM을 설정하고, Dead-time Generator로 안전한 PWM 출력을 생성할 수 있다.</li>
+    <li><strong>[적용]</strong> Input Capture 모드로 외부 신호의 주파수를 측정하고, Output Compare와 One-Pulse 모드의 개념을 설명할 수 있다.</li>
+    <li><strong>[분석]</strong> 타이머 연계(Master-Slave) 구조를 분석하고, Trigger/Reset/Gated 모드의 차이를 설명할 수 있다.</li>
+    <li><strong>[창조]</strong> Ch03의 FSM 설계 원칙을 적용하여 Stopwatch FSM을 설계하고, Service 레이어에 구현할 수 있다.</li>
+  </ul>
+  <div class="project-milestone">
+    <strong>프로젝트 v0.8</strong>: 이 챕터 완료 후 Complementary PWM + Input Capture + Stopwatch FSM이 동작합니다. Service 레이어의 첫 등장!
+  </div>
+</section>
+
+
+<!-- ===== §8.1 TIM1 Advanced Control Timer ===== -->
+<section id="sec-01">
+  <h2>§8.1 TIM1 — Advanced Control Timer의 세계</h2>
+
+  <p>
+    Ch07에서 우리는 TIM2(GP Timer)를 사용했습니다.
+    타이머 계층 표에서 한 줄이 남아 있었죠 — <strong>TIM1, Advanced Control Timer</strong>.
+    "GP 기능 + Complementary PWM + Dead-time"이라고 적혀 있었습니다.
+    이제 그 한 줄의 의미를 파헤칩니다.
+  </p>
+
+  <h3>TIM1 vs TIM2~5 — 무엇이 다른가?</h3>
+
+  <p>
+    핵심 차이는 세 가지입니다:
+  </p>
+
+  <figure>
+    <img src="../../figures/ch08_sec1_tim1_vs_gp.svg" width="100%" height="auto" alt="TIM1 vs GP Timer 비교">
+    <figcaption>그림 08-3. TIM1(Advanced) vs TIM2~5(GP) — 파란색은 공통 기능, 빨간색은 TIM1 전용</figcaption>
+  </figure>
+
+  <table>
+    <thead>
+      <tr><th>항목</th><th>GP Timer (TIM2~5)</th><th>Advanced (TIM1)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>버스</td><td>APB1 (84MHz)</td><td><strong>APB2 (84MHz)</strong></td></tr>
+      <tr><td>비트</td><td>TIM2/5: 32bit, TIM3/4: 16bit</td><td>16bit</td></tr>
+      <tr><td>PWM 채널</td><td>CH1~CH4 (단방향)</td><td>CH1~CH4 + <strong>CH1N~CH3N (상보 출력)</strong></td></tr>
+      <tr><td>Dead-time</td><td>없음</td><td><strong>BDTR 레지스터 (DTG 비트 필드)</strong></td></tr>
+      <tr><td>Break 입력</td><td>없음</td><td><strong>비상 정지 핀 (BKIN)</strong></td></tr>
+      <tr><td>MOE 비트</td><td>없음</td><td><strong>Main Output Enable — 안전 잠금</strong></td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    <strong>MOE는 Advanced Control Timer(TIM1)만의 안전 장치입니다.</strong>
+    고전력 모터를 제어할 때 실수로 양쪽이 동시 ON 되면 합선입니다.
+    그 순간에 모든 출력을 즉시 끌 수 있도록 MOE라는 마스터 스위치를 넣었습니다.
+    일반용 GP Timer(TIM2~5)는 이런 고전력 제어를 하지 않으니까 없습니다.
+  </p>
+
+  <p>
+    "TIM2는 만능 스톱워치, TIM1은 안전장치가 달린 산업용 스톱워치"라고 생각하세요.
+    기본 사용법(PSC/ARR/CCR, UEV, PWM)은 완전히 동일합니다.
+    차이는 <strong>안전 관련 기능</strong>이 추가된 것뿐입니다.
+  </p>
+
+  <h3>Complementary PWM — "시소(Seesaw)"</h3>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    <strong>시소</strong>를 떠올리세요.
+    한쪽이 올라가면 반대쪽은 반드시 내려갑니다.
+    절대로 양쪽이 동시에 위에 있을 수 없습니다.
+    Complementary PWM이 바로 이것입니다 — CH1이 HIGH면 CH1N은 LOW, CH1이 LOW면 CH1N은 HIGH.
+    <br>
+    그런데 시소가 방향을 바꾸는 그 짧은 순간, 양쪽 다 중간 높이에 있습니다.
+    이 순간이 <strong>Dead-time</strong> — 양쪽 FET이 모두 꺼지는 안전 구간입니다.
+    <br><small>※ 이 비유의 한계: 실제 시소는 기계적으로 연결되어 반드시 반대로 움직이지만, Complementary PWM은 하드웨어 설정으로 반전이 구현됩니다. 시소의 "중간 순간"은 자연스럽게 발생하지만, Dead-time은 엔지니어가 의도적으로 설정하는 보호 구간입니다.</small>
+  </div>
+
+  <p>
+    왜 상보 출력이 필요할까요?
+    <strong>하프 브리지(Half-Bridge) 회로</strong>를 생각해 봅시다.
+    상단 FET과 하단 FET이 번갈아 켜지면서 모터를 양방향으로 구동합니다.
+    만약 소프트웨어로 두 PWM 채널의 타이밍을 맞추면, 인터럽트 지연으로 <strong>둘 다 동시에 켜지는</strong> 순간이 발생할 수 있습니다.
+    전원에서 GND로 직통 — <strong>shoot-through</strong>.
+    매우 큰 전류가 흘러 소자가 파괴됩니다.
+  </p>
+
+  <p>
+    Complementary PWM은 <strong>하드웨어가 자동으로 반전</strong>시키므로 이 위험이 없습니다.
+    Dead-time은 "둘 다 꺼지는 안전 구간"을 하드웨어가 강제 삽입합니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch08_sec2_complementary_pwm.svg" width="100%" height="auto" alt="Complementary PWM 파형과 Dead-time">
+    <figcaption>그림 08-4. Complementary PWM 파형 — CH1과 CH1N이 반전, Dead-time 구간에서 둘 다 OFF</figcaption>
+  </figure>
+
+  <h3>Dead-time 설정 — "에어록(Airlock)" 안전 구간</h3>
+
+  <p>
+    에어록(가압 실린더) 원리와도 같습니다.
+    한쪽 문이 열릴 때 반대쪽 문이 동시에 열리면 기압이 빠져 위험합니다.
+    따라서 짧은 순간 양쪽 문 모두 닫히는(Dead-time) 안전 구간을 넣습니다.
+    Complementary PWM의 Dead-time이 바로 이 역할입니다.
+  </p>
+
+  <p>
+    FET(트랜지스터)은 꺼지는 데 시간이 걸립니다.
+    수십~수백 나노초입니다.
+    CH1이 OFF되는 순간 CH1N이 바로 ON되면, 짧은 순간 둘 다 ON — shoot-through입니다.
+    Dead-time은 이 전환 구간에 "둘 다 OFF"를 삽입합니다.
+  </p>
+
+  <p>
+    STM32의 Dead-time은 <strong>BDTR(Break and Dead-Time Register)</strong>의 DTG 비트 필드로 설정합니다.
+    DTG 인코딩은 비선형적이라 직접 계산하기 복잡합니다.
+    실무에서는 <strong>CubeMX의 Dead-time 슬라이더</strong>로 ns 단위로 설정하고, 오실로스코프로 확인합니다.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>DTG 값 (예시)</th><th>Dead-time</th><th>84MHz 기준</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>DTG = 42</td><td>42 × T_DTS</td><td>500 ns</td></tr>
+      <tr><td>DTG = 84</td><td>84 × T_DTS</td><td>1000 ns (1 us)</td></tr>
+      <tr><td>DTG = 168</td><td>(64+40) × 2 × T_DTS</td><td>~2.5 us</td></tr>
+    </tbody>
+  </table>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    Dead-time 계산은 DTG 비트 필드의 구간별 공식 4가지가 있어 복잡합니다.
+    실무에서는 "CubeMX에서 원하는 ns 설정 → 오실로로 파형 확인"이 표준 절차입니다.
+    "원리는 알되, 도구를 쓴다"가 올바른 자세입니다.
+    DTG 세부 계산은 Reference Manual의 TIM1 BDTR 섹션을 참조하세요.
+  </aside>
+
+  <h3>TIM1 핵심 HAL API</h3>
+
+  <p>
+    GP Timer와의 핵심 차이는 API 이름에 <code>Ex</code>와 <code>N</code>이 붙는 것입니다:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>동작</th><th>GP Timer (TIM2)</th><th>Advanced (TIM1)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>일반 PWM 시작</td><td><code>HAL_TIM_PWM_Start()</code></td><td>동일</td></tr>
+      <tr><td>보상 PWM 시작</td><td>없음</td><td><code>HAL_TIMEx_PWMN_Start()</code></td></tr>
+      <tr><td>Dead-time 설정</td><td>없음</td><td>CubeMX BDTR 또는 <code>HAL_TIMEx_ConfigBreakDeadTime()</code></td></tr>
+    </tbody>
+  </table>
+
+  <pre><code class="language-c">/* ch08_01_complementary_pwm.c — Complementary PWM 시작 핵심 코드 */
+
+/* CH1 (주 출력) 시작 — PA8 */
+HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+LOG_I("TIM1 CH1 PWM 시작 (PA8)");
+
+/* CH1N (보상 출력) 시작 — PB13 */
+HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
+LOG_I("TIM1 CH1N PWM 시작 (PB13)");
+
+/* 듀티 50% 설정 */
+uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&htim1);
+uint32_t ccr = (arr + 1) * 50 / 100;
+__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, ccr);
+LOG_D("CPWM 듀티 50%% (CCR=%lu, ARR=%lu)", ccr, arr);
+  </code></pre>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> Complementary PWM과 일반 PWM의 차이가 뭐예요?<br>
+    <strong>A.</strong> 일반 PWM은 출력이 하나입니다. Complementary PWM은 출력이 <strong>두 개</strong> — 주 채널(CH1)과 보상 채널(CH1N)이 항상 반대입니다.
+    H-Bridge 회로에서 상단/하단 FET을 번갈아 제어할 때 필수입니다.
+    일반 PWM 2개를 소프트웨어로 반전시키면 타이밍 지연으로 shoot-through 위험이 있지만,
+    Complementary PWM은 하드웨어가 자동 반전하므로 안전합니다.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> Dead-time은 왜 필요해요? 없으면 안 되나요?<br>
+    <strong>A.</strong> FET은 꺼지는 데 시간이 걸립니다 (수십~수백 ns).
+    CH1 OFF 순간 CH1N이 바로 ON되면 둘 다 ON → shoot-through → <strong>소자 파괴</strong>.
+    Dead-time은 "둘 다 OFF" 구간을 하드웨어가 강제 삽입합니다.
+    실무에서 Dead-time 설정 실수로 MOSFET을 태운 경험은 임베디드 엔지니어의 통과의례입니다.
+  </aside>
+
+  <h3>NUCLEO-F411RE TIM1 핀 배치</h3>
+
+  <p>
+    TIM1 채널을 NUCLEO 보드에서 사용할 때 핀 충돌에 주의해야 합니다:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>채널</th><th>핀</th><th>Arduino 헤더</th><th>충돌 주의</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>TIM1_CH1</td><td>PA8</td><td>D7</td><td>사용 가능</td></tr>
+      <tr><td>TIM1_CH1N</td><td>PB13</td><td>CN10-30</td><td>사용 가능</td></tr>
+      <tr><td>TIM1_CH1N (대안)</td><td>PA7</td><td>D11</td><td><strong>SPI1_MOSI와 충돌!</strong></td></tr>
+    </tbody>
+  </table>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    이 교재에서는 <strong>PA8(CH1) + PB13(CH1N)</strong> 조합을 사용합니다.
+    PA7은 Ch11(SPI, SHT31 센서)에서 사용할 예정이므로 피합니다.
+    CubeMX에서 핀을 설정할 때 항상 "다른 주변장치와 겹치지 않는지" 확인하는 습관을 들이세요.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    <strong>Q.</strong> "Complementary PWM을 사용하는 이유와 Dead-time의 역할을 설명하세요."<br>
+    <strong>A.</strong> H-Bridge/Half-Bridge에서 shoot-through 방지.
+    FET 스위칭 지연 보상을 위해 "둘 다 OFF" 구간을 하드웨어가 강제 삽입.
+    핵심: "소프트웨어 타이밍은 인터럽트 지연으로 동시 ON 위험 → 하드웨어 Dead-time이 필수."
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>TIM1과 TIM2의 핵심 차이 3가지를 말할 수 있나요?</li>
+      <li>shoot-through가 무엇이고 왜 위험한지 설명할 수 있나요?</li>
+      <li><code>HAL_TIMEx_PWMN_Start()</code>에서 N이 무엇을 의미하는지 아나요?</li>
+    </ul>
+  </aside>
+</section>
+
+
+<!-- ===== §8.2 Complementary PWM 실습 ===== -->
+<section id="sec-02">
+  <h2>§8.2 Complementary PWM 실습 — "시소를 만들자"</h2>
+
+  <p>
+    이론을 확인했으니 직접 파형을 만들어 봅시다.
+    TIM1으로 1kHz Complementary PWM을 설정하고, Dead-time 1us를 적용합니다.
+    오실로스코프(또는 느린 주파수로 LED 2개)로 CH1과 CH1N이 반전되는 것을 확인합니다.
+  </p>
+
+  <h3>CubeMX 설정</h3>
+
+  <ol>
+    <li><strong>TIM1 활성화</strong>: Clock Source → Internal Clock</li>
+    <li><strong>Channel1</strong>: PWM Generation CH1</li>
+    <li><strong>Channel1N</strong>: PWM Generation CH1N</li>
+    <li><strong>PSC</strong> = 83 (84MHz / 84 = 1MHz 카운터)</li>
+    <li><strong>ARR</strong> = 999 (1MHz / 1000 = 1kHz PWM)</li>
+    <li><strong>CCR</strong> = 500 (듀티 50%)</li>
+    <li><strong>Dead-time</strong> = 84 (1us @ 84MHz)</li>
+    <li><strong>Break</strong> → Disable (이 실습에서 불필요)</li>
+    <li>핀 확인: PA8(CH1), PB13(CH1N)</li>
+  </ol>
+
+  <h3>코드</h3>
+
+  <pre><code class="language-c">/* ch08_01_complementary_pwm.c — CPWM 실습 핵심 */
+
+extern TIM_HandleTypeDef htim1;
+
+void complementary_pwm_demo(void)
+{
+    /* CH1 (주 출력) 시작 — PA8 */
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+    LOG_I("TIM1 CH1 PWM 시작 (PA8)");
+
+    /* CH1N (보상 출력) 시작 — PB13 */
+    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
+    LOG_I("TIM1 CH1N PWM 시작 (PB13)");
+
+    /* 듀티 50% 설정 */
+    uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&htim1);
+    uint32_t ccr = (arr + 1) * 50 / 100;
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, ccr);
+    LOG_D("CPWM 듀티 50%% (CCR=%lu, ARR=%lu)", ccr, arr);
+
+    LOG_I("오실로스코프로 PA8/PB13 파형 확인하세요");
+}
+  </code></pre>
+
+  <h3>동작 확인</h3>
+
+  <p><strong>오실로스코프 확인 시:</strong></p>
+  <ul>
+    <li>PA8(CH1): 1kHz, 듀티 50%, HIGH 기준</li>
+    <li>PB13(CH1N): 동일 주파수, <strong>반전된 파형</strong></li>
+    <li>전환 순간에 1us Dead-time 확인 (둘 다 LOW 구간)</li>
+  </ul>
+
+  <p><strong>오실로스코프 없는 경우:</strong> PSC=83999(100Hz), ARR=9999로 설정 후 LED 2개를 PA8/PB13에 연결하면 번갈아 깜빡이는 것을 육안으로 확인할 수 있습니다.</p>
+
+  <aside class="tip">
+    💡 <strong>실습이 안 될 때</strong><br>
+    가장 흔한 실수 두 가지:
+    <strong>1)</strong> <code>HAL_TIMEx_PWMN_Start()</code>를 빠뜨림 — CH1만 시작하면 CH1N은 출력되지 않습니다.
+    <strong>2)</strong> MOE(Main Output Enable) 비활성 — CubeMX에서 BDTR 설정에서 "Automatic Output State"를 Enable로 설정하세요.
+    TIM1은 GP Timer와 달리 MOE 비트가 세트되어야 출력이 나옵니다.
+  </aside>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    오실로스코프가 있으면 CH1과 CH1N을 동시에 보여주세요.
+    Dead-time 구간을 확대하면 "둘 다 LOW"인 짧은 구간이 보입니다.
+    "이 1마이크로초가 수백만 원짜리 MOSFET을 살리는 구간입니다" — 학생들이 Dead-time의 가치를 체감합니다.
+  </aside>
+</section>
+
+
+<!-- ===== §8.3 Input Capture ===== -->
+<section id="sec-03">
+  <h2>§8.3 Input Capture — "외부 신호를 찰칵 찍다"</h2>
+
+  <p>
+    Ch07에서 타이머는 <strong>출력</strong> 장치였습니다 — PWM을 만들어 외부로 내보냈습니다.
+    이제 관점을 180도 전환합니다.
+    타이머를 <strong>입력</strong> 장치로 사용하여 외부 신호의 주기와 주파수를 측정합니다.
+    이것이 <strong>Input Capture(입력 캡처)</strong>입니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    <strong>스톱워치의 랩(Lap) 버튼</strong>을 떠올리세요.
+    100m 달리기에서 선수가 지나갈 때마다 버튼을 누르면, 그 순간의 시간이 기록됩니다.
+    Input Capture는 외부 신호의 엣지(edge)가 발생하는 순간,
+    카운터(CNT) 값을 CCR에 "찰칵!" 저장합니다.
+    두 번 "찰칵"한 값의 차이가 곧 주기입니다.
+    <br><small>※ 이 비유의 한계: 실제 랩 버튼은 사람이 누르므로 정확도가 낮지만, Input Capture는 하드웨어가 나노초 단위로 정확하게 기록합니다.</small>
+  </div>
+
+  <h3>Input Capture 원리</h3>
+
+  <figure>
+    <img src="../../figures/ch08_sec3_ic_principle.svg" width="100%" height="auto" alt="Input Capture 원리">
+    <figcaption>그림 08-5. Input Capture — Rising Edge마다 CNT 값을 CCR에 캡처, 차이로 주파수 계산</figcaption>
+  </figure>
+
+  <p>
+    핵심 공식:
+  </p>
+  <pre><code class="language-c">/* Input Capture 주파수 계산 */
+주기(카운트)  = Capture2 - Capture1
+주기(초)      = (Capture2 - Capture1) / f_cnt
+주파수(Hz)    = f_cnt / (Capture2 - Capture1)
+
+/* 예: f_cnt = 1MHz (PSC=83), 차이 = 2500 카운트
+ *   주기  = 2500 / 1,000,000 = 2.5ms
+ *   주파수 = 1,000,000 / 2500 = 400 Hz
+ */
+  </code></pre>
+
+  <p>
+    <strong>측정 한계</strong>: 16비트 카운터(TIM3)에서 PSC=83(f_cnt = 1MHz)일 때, 최대 카운트 65535에 해당하는 주기는 약 65.5ms이므로 <strong>약 15Hz 이하의 주파수는 카운터 오버플로우로 측정 불가능</strong>할 수 있습니다. 더 낮은 주파수를 측정하려면 PSC를 높이거나 오버플로우 카운팅을 추가해야 합니다.
+  </p>
+
+  <h3>Input Capture 구현</h3>
+
+  <pre><code class="language-c">/* ch08_02_input_capture.c — IC 주파수 측정 핵심 코드 */
+
+extern TIM_HandleTypeDef htim3;
+
+static volatile uint32_t s_capture_1st  = 0;
+static volatile uint32_t s_capture_2nd  = 0;
+static volatile uint8_t  s_capture_done = 0;
+static volatile uint8_t  s_capture_idx  = 0;
+
+/* IC 측정 시작 */
+void input_capture_start(void)
+{
+    s_capture_idx  = 0;
+    s_capture_done = 0;
+    HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_1);
+    LOG_I("Input Capture 시작 (TIM3 CH1, PA6)");
+}
+
+/* HAL IC 콜백 — Rising Edge마다 호출 */
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim->Instance != TIM3) return;
+
+    uint32_t captured = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+    if (s_capture_idx == 0) {
+        s_capture_1st = captured;
+        s_capture_idx = 1;
+    } else {
+        s_capture_2nd = captured;
+        s_capture_done = 1;
+        HAL_TIM_IC_Stop_IT(htim, TIM_CHANNEL_1);
+    }
+}
+
+/* 메인 루프에서 결과 확인 */
+void input_capture_poll(void)
+{
+    if (!s_capture_done) return;
+    s_capture_done = 0;
+
+    uint32_t diff = (s_capture_2nd >= s_capture_1st)
+        ? s_capture_2nd - s_capture_1st
+        : (0xFFFF - s_capture_1st) + s_capture_2nd + 1;
+
+    LOG_I("주파수 = %lu Hz, 주기 = %lu us",
+          1000000 / diff, diff);
+}
+  </code></pre>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> Input Capture로 뭘 측정할 수 있어요? 실무에서 쓰나요?<br>
+    <strong>A.</strong> 외부 신호의 주파수, 주기, 펄스 폭을 측정합니다.
+    실무 사례: ① 자동차 엔진 RPM 측정 (크랭크 센서 펄스 주기)
+    ② 초음파 센서 거리 측정 (에코 펄스 폭)
+    ③ 적외선 리모컨 신호 디코딩 (펄스 패턴 분석).
+    우리 실습에서는 버튼 누르기 간격 측정으로 시작합니다.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> GPIO EXTI + HAL_GetTick()으로도 시간 측정할 수 있지 않나요?<br>
+    <strong>A.</strong> 가능합니다. 하지만 정확도가 다릅니다.
+    HAL_GetTick()은 1ms 해상도이고, EXTI 콜백 진입까지 인터럽트 지연이 있습니다.
+    Input Capture는 하드웨어가 Rising Edge 순간 CNT 값을 직접 CCR에 저장하므로,
+    <strong>1 카운트 해상도</strong>(PSC=83이면 1us)로 정확합니다.
+    고주파 신호(kHz 이상)는 Input Capture만 가능합니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>Input Capture에서 "캡처"되는 것이 무엇인지 설명할 수 있나요? (답: CNT 값이 CCR에 저장)</li>
+      <li>두 캡처 값의 차이로 주파수를 계산하는 공식을 쓸 수 있나요?</li>
+      <li>카운터 오버플로(16비트 TIM3에서 CNT 롤오버) 시 어떻게 처리하는지 코드에서 찾을 수 있나요?</li>
+    </ul>
+  </aside>
+</section>
+
+
+<!-- ===== §8.4 Output Compare & One-Pulse ===== -->
+<section id="sec-04">
+  <h2>§8.4 Output Compare &amp; One-Pulse — "알람 시계와 카메라 플래시"</h2>
+
+  <p>
+    타이머의 입출력 모드 "3형제"를 정리합시다.
+    §8.1~8.2에서 PWM(출력)과 Input Capture(입력)를 배웠습니다.
+    나머지 두 가지 — <strong>Output Compare(출력 비교)</strong>와 <strong>One-Pulse Mode(원 펄스)</strong> — 를 개념 수준으로 살펴봅니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch08_sec4_oc_opmode.svg" width="100%" height="auto" alt="Output Compare와 One-Pulse 비교">
+    <figcaption>그림 08-6. Output Compare("알람 시계") vs One-Pulse("카메라 플래시")</figcaption>
+  </figure>
+
+  <h3>Output Compare — "알람 시계"</h3>
+
+  <p>
+    PWM과 비슷하지만 목적이 다릅니다.
+    PWM은 "일정한 듀티의 반복 파형"을 만드는 것이 목적이고,
+    Output Compare는 <strong>"카운터가 CCR에 도달하는 특정 시점"</strong>에 이벤트를 발생시키는 것이 목적입니다.
+    알람 시계가 설정한 시각에 "삐!" 하고 울리듯, 카운터가 CCR 값에 도달하면:
+  </p>
+  <ul>
+    <li>핀을 Toggle/Set/Clear</li>
+    <li>인터럽트 또는 DMA 트리거 발생</li>
+    <li>매 주기마다 반복</li>
+  </ul>
+
+  <p>
+    Ch09(RTC)에서 알람 기능을 구현할 때 이 "특정 시점 이벤트" 개념이 다시 등장합니다.
+  </p>
+
+  <h3>One-Pulse Mode — "카메라 플래시"</h3>
+
+  <p>
+    트리거 한 번에 펄스 딱 하나만 나오고 자동 정지합니다.
+    반복 PWM과 달리 "한 번만 실행"이 필요한 상황에 사용합니다:
+  </p>
+  <ul>
+    <li>카메라 플래시 트리거 (정확한 시간 동안 빛)</li>
+    <li>서보 모터 위치 지정 (한 번의 펄스로 각도 설정)</li>
+    <li>부저 단음 발생</li>
+  </ul>
+
+  <pre><code class="language-c">/* ch08_03_one_pulse.c — One-Pulse 핵심 코드 */
+
+extern TIM_HandleTypeDef htim4;
+
+void one_pulse_start(void)
+{
+    /* One-Pulse 모드: 트리거 → 지연 → 펄스 1개 → 자동 정지 */
+    HAL_TIM_OnePulse_Start(&htim4, TIM_CHANNEL_1);
+    LOG_I("One-Pulse 대기 (TIM4 CH1, PB6)");
+    LOG_D("  지연: 3ms, 펄스 폭: 7ms, 총 주기: 10ms");
+}
+  </code></pre>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> One-Pulse 모드는 언제 쓰나요?<br>
+    <strong>A.</strong> 트리거 한 번에 펄스 딱 하나만 나오고 자동 정지합니다.
+    반복 PWM과 달리 "한 번만 실행"이 필요한 상황에 씁니다.
+    실무에서는 초음파 센서 트리거 펄스 생성, 서보 위치 제어, 특정 시간 후 GPIO 토글 등에 활용합니다.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> Input Capture와 Output Compare 뭐가 다른가요?<br>
+    <strong>A.</strong> 입출력이 반대입니다.
+    IC는 "외부 신호를 타이머가 재기" (신호 → MCU),
+    OC는 "MCU가 신호를 타이머로 만들기" (MCU → 신호).
+    쉽게 기억하세요: "IC = 스톱워치로 측정", "OC = 신호 발생기".
+  </aside>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    §8.4는 개념 중심입니다. IC에 비해 OC와 One-Pulse는 활용 빈도가 낮으므로,
+    "이런 모드가 있다" 수준으로 넘어가세요.
+    학생이 관심 있으면 Reference Manual 링크를 안내하고,
+    나머지 시간을 §8.5~8.7(FSM)에 투자하는 것이 효과적입니다.
+  </aside>
+</section>
+
+
+<!-- ===== §8.5 타이머 연계 ===== -->
+<section id="sec-05">
+  <h2>§8.5 타이머 연계 — "부장과 대리의 팀워크"</h2>
+
+  <p>
+    지금까지 타이머는 각자 독립적으로 동작했습니다.
+    TIM2는 TIM2의 PSC/ARR로, TIM1은 TIM1의 PSC/ARR로.
+    하지만 STM32 타이머들은 <strong>내부 연결선(ITR)</strong>으로 서로 연결되어 있어,
+    한 타이머의 이벤트가 다른 타이머를 제어할 수 있습니다.
+    이것이 <strong>Master-Slave(마스터-슬레이브) 타이머 연계</strong>입니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    <strong>부장과 대리</strong>를 떠올리세요.
+    부장(Master)이 "지금!" 하고 명령하면, 대리(Slave)가 자기 일을 시작합니다.
+    대리는 자기만의 업무 속도(PSC/ARR)로 일하지만, <strong>시작/정지/리셋은 부장 명령</strong>에 따릅니다.
+    부장은 정기적으로(UEV마다) 명령을 내리고, 대리는 그때마다 자기 일을 수행합니다.
+    <br><small>※ 이 비유의 한계: 실제 조직에서는 부장-대리가 양방향 소통하지만, 타이머 Master-Slave는 단방향(Master→Slave)입니다.</small>
+  </div>
+
+  <figure>
+    <img src="../../figures/ch08_sec5_master_slave.svg" width="100%" height="auto" alt="Master-Slave 타이머 연계">
+    <figcaption>그림 08-7. 타이머 연계 — TIM1(Master)이 TRGO로 TIM2(Slave)를 제어</figcaption>
+  </figure>
+
+  <h3>Master-Slave 동작 원리</h3>
+
+  <p>
+    Master 타이머는 <strong>TRGO(Trigger Output)</strong> 신호를 생성합니다.
+    이 신호는 MCU 내부 연결선(ITR)을 통해 Slave 타이머로 전달됩니다.
+    외부 핀이 필요 없습니다 — 칩 내부에서 직접 연결됩니다.
+  </p>
+
+  <p>
+    Slave 타이머는 TRGO를 받아서 세 가지 중 하나를 수행합니다:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Slave 모드</th><th>TRGO 수신 시 동작</th><th>용도</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Trigger</strong></td><td>카운터 시작 (Enable)</td><td>특정 시점에 타이머 시작</td></tr>
+      <tr><td><strong>Reset</strong></td><td>카운터 0으로 리셋</td><td>주기 동기화</td></tr>
+      <tr><td><strong>Gated</strong></td><td>TRGO HIGH 동안만 카운트</td><td>특정 구간만 측정</td></tr>
+    </tbody>
+  </table>
+
+  <pre><code class="language-c">/* ch08_04_master_slave.c — 타이머 연계 핵심 코드 */
+
+extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim2;
+
+void master_slave_start(void)
+{
+    /* 순서 중요: Slave 먼저 대기, Master 나중에 시작 */
+
+    /* Slave: TIM2 PWM 대기 (Trigger 수신 시 자동 시작) */
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+    LOG_I("Slave(TIM2) PWM 대기");
+
+    /* Master: TIM1 시작 → 1초마다 TRGO 출력 */
+    HAL_TIM_Base_Start(&htim1);
+    LOG_I("Master(TIM1) 시작 — 1초마다 TRGO");
+
+    LOG_D("TIM1(1s UEV) → TRGO → ITR0 → TIM2(PWM)");
+}
+  </code></pre>
+
+  <h3>TRGO → ITR 매핑 표</h3>
+
+  <p>
+    "어떤 Master가 어떤 ITR 번호로 Slave에 연결되는가?" — 이 표를 알아야 CubeMX에서 올바르게 설정할 수 있습니다.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Master 타이머</th><th>TRGO 연결</th><th>Slave가 받는 ITR</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>TIM1</strong></td><td>ITR0</td><td>TIM2 / TIM3 / TIM4 / TIM5</td></tr>
+      <tr><td><strong>TIM2</strong></td><td>ITR1</td><td>TIM3 / TIM4 / TIM5 (또는 TIM1 역방향)</td></tr>
+      <tr><td><strong>TIM3</strong></td><td>ITR2</td><td>TIM4 / TIM5</td></tr>
+      <tr><td><strong>TIM4</strong></td><td>ITR3</td><td>TIM5</td></tr>
+    </tbody>
+  </table>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    Master-Slave 연계의 가장 흔한 실무 사례는 <strong>ADC 정밀 샘플링</strong>입니다.
+    타이머가 정확한 간격으로 TRGO → ADC 시작을 트리거하면,
+    소프트웨어 지연 없이 정밀한 샘플링 주기를 보장합니다.
+    이 패턴은 Ch17(아키텍처 심화)에서 다시 만납니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    <strong>Q.</strong> "타이머 Master-Slave 모드를 설명하고, 사용 사례를 들어주세요."<br>
+    <strong>A.</strong> 하나의 타이머(Master)가 TRGO 신호로 다른 타이머(Slave)를 트리거/게이팅/리셋.
+    내부 연결(ITR)로 핀 불필요.
+    사례: ADC 정밀 샘플링, 복수 PWM 동기화, 모터 제어 시퀀싱.
+  </aside>
+</section>
+
+
+<!-- ===== §8.6 Stopwatch FSM 설계 ===== -->
+<section id="sec-06">
+  <h2>§8.6 Stopwatch FSM 설계 — "상태 전이표를 직접 그리다"</h2>
+
+  <p>
+    이 챕터의 <strong>핵심 성취 구간</strong>에 왔습니다.
+    Ch03 §3.4에서 FSM의 4요소를 이론으로 배웠습니다 — 상태(State), 전이(Transition), 이벤트(Event), 액션(Action).
+    Ch06에서 TX_IDLE/TX_BUSY를 암묵적으로 사용했지만, <strong>명시적 FSM 설계 → 구현 → 검증</strong>은 지금이 처음입니다.
+  </p>
+
+  <p>
+    Ch03에서 자판기 비유를 기억하시나요?
+    동전을 넣으면 대기 → 선택가능, 버튼을 누르면 선택가능 → 배출.
+    스톱워치도 같은 구조입니다.
+    버튼을 누르면 IDLE → RUNNING, 다시 누르면 RUNNING → PAUSED.
+    <strong>같은 FSM 패턴, 다른 도메인</strong>입니다.
+  </p>
+
+  <h3>Step 1: 상태 정의</h3>
+
+  <p>
+    핸드폰 스톱워치를 관찰하면 세 가지 상태가 보입니다:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>상태</th><th>enum 값</th><th>화면 표시</th><th>타이머 상태</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>IDLE</strong></td><td>SW_STATE_IDLE</td><td>00:00.000</td><td>정지, 시간=0</td></tr>
+      <tr><td><strong>RUNNING</strong></td><td>SW_STATE_RUNNING</td><td>숫자 증가 중</td><td>동작, 시간 누적</td></tr>
+      <tr><td><strong>PAUSED</strong></td><td>SW_STATE_PAUSED</td><td>숫자 멈춤</td><td>정지, 시간 유지</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Step 2: 이벤트 정의</h3>
+
+  <p>
+    NUCLEO의 파란 버튼(B1, PC13) 하나로 모든 동작을 수행합니다:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>이벤트</th><th>enum 값</th><th>발생 조건</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>BTN_SHORT</strong></td><td>SW_EVT_BTN_SHORT</td><td>버튼 짧게 누름 (&lt;2초)</td></tr>
+      <tr><td><strong>BTN_LONG</strong></td><td>SW_EVT_BTN_LONG</td><td>버튼 길게 누름 (&ge;2초)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Step 3: 상태 전이표 — "빈 칸 채우기"</h3>
+
+  <p>
+    FSM 설계의 핵심은 <strong>상태 전이표</strong>입니다.
+    행은 현재 상태, 열은 이벤트.
+    모든 칸을 채워야 합니다 — <strong>빈 칸이 곧 버그</strong>입니다.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>현재 상태 ╲ 이벤트</th><th>BTN_SHORT</th><th>BTN_LONG</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>IDLE</strong></td>
+        <td>→ RUNNING<br><small>/ tim_start, elapsed=0</small></td>
+        <td>(무시)<br><small>이미 리셋 상태</small></td>
+      </tr>
+      <tr>
+        <td><strong>RUNNING</strong></td>
+        <td>→ PAUSED<br><small>/ tim_stop, 누적 저장</small></td>
+        <td>→ IDLE<br><small>/ tim_stop, elapsed=0</small></td>
+      </tr>
+      <tr>
+        <td><strong>PAUSED</strong></td>
+        <td>→ RUNNING<br><small>/ tim_start (누적 이어가기)</small></td>
+        <td>→ IDLE<br><small>/ elapsed=0</small></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    상태 전이표를 작성할 때 <strong>모든 (상태, 이벤트) 조합</strong>을 검토하세요.
+    빈 칸은 "이 상황에서 이 이벤트가 발생하면 어떻게 해야 하지?"라는 질문입니다.
+    답이 "무시"라면 그것도 명시적으로 적어야 합니다.
+    코드에서는 switch-case에 해당 case가 없으면 자연스럽게 무시됩니다.
+  </aside>
+
+  <h3>Step 4: 상태 전이도 (FSM 다이어그램)</h3>
+
+  <figure>
+    <img src="../../figures/ch08_sec6_stopwatch_fsm.svg" width="100%" height="auto" alt="Stopwatch FSM 상태 전이도">
+    <figcaption>그림 08-8. Stopwatch FSM — 3개 상태, 버튼 이벤트로 전이, 각 전이에 액션 명시</figcaption>
+  </figure>
+
+  <h3>Step 5: 타이머와 FSM 동기화 설계</h3>
+
+  <p>
+    각 상태 전이에서 타이머 드라이버를 어떻게 호출하는지 정리합니다:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>전이</th><th>타이머 제어</th><th>시간 처리</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>IDLE → RUNNING</td><td><code>tim_start()</code></td><td><code>elapsed=0, tick=0</code></td></tr>
+      <tr><td>RUNNING → PAUSED</td><td><code>tim_stop()</code></td><td><code>elapsed += tick, tick=0</code></td></tr>
+      <tr><td>PAUSED → RUNNING</td><td><code>tim_start()</code></td><td><code>tick=0</code> (elapsed 유지)</td></tr>
+      <tr><td>PAUSED → IDLE</td><td>(이미 정지)</td><td><code>elapsed=0, tick=0</code></td></tr>
+      <tr><td>RUNNING → IDLE</td><td><code>tim_stop()</code></td><td><code>elapsed=0, tick=0</code></td></tr>
+    </tbody>
+  </table>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    상태 전이표를 <strong>학생이 직접 작성하는 시간(15~20분)</strong>을 반드시 확보하세요.
+    빈 표를 나눠주고 "3개 상태 × 2개 이벤트 = 6칸, 모두 채우세요."
+    특히 "IDLE에서 BTN_LONG이 오면?"을 물었을 때 "무시"라고 답하는 학생이
+    FSM을 제대로 이해한 것입니다.
+    빈 칸을 모두 채운 후에 코드로 넘어가세요 — 설계 없는 구현은 버그의 씨앗입니다.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> PAUSED에서 다시 RUNNING으로 갈 때 카운터는 어떻게 되나요?<br>
+    <strong>A.</strong> 핵심은 <strong>누적 처리</strong>입니다.
+    Pause 시 <code>elapsed += tick_count</code>로 현재까지 시간을 누적 저장하고,
+    Resume 시 <code>tick_count = 0</code>으로 리셋한 뒤 타이머를 다시 시작합니다.
+    이전 누적값(elapsed)에 새로운 구간 틱이 더해지므로 시간이 이어집니다.
+    흔한 실수: Resume 시 elapsed를 0으로 초기화하면 이전 시간이 날아갑니다!
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>상태 전이표에서 "무시"가 적힌 칸이 왜 중요한지 설명할 수 있나요?</li>
+      <li>RUNNING → PAUSED → RUNNING 재개 시 누적 시간이 이어지는 원리를 코드로 설명할 수 있나요?</li>
+      <li>FSM의 4요소(상태, 전이, 이벤트, 액션)를 스톱워치에 대입하여 각각 나열할 수 있나요?</li>
+    </ul>
+  </aside>
+</section>
+
+
+<!-- ===== §8.7 Stopwatch FSM 구현 ===== -->
+<section id="sec-07">
+  <h2>§8.7 Stopwatch FSM 구현 — "설계를 코드로 옮기다"</h2>
+
+  <p>
+    §8.6에서 설계를 완료했습니다.
+    상태 3개, 이벤트 2개, 전이 5개, 각 전이의 액션까지 명확합니다.
+    이제 코드로 옮깁니다.
+    그리고 이 코드는 Driver(tim_driver)가 아닌 <strong>Service(stopwatch_service)</strong>에 위치합니다.
+  </p>
+
+  <h3>왜 Service 레이어인가?</h3>
+
+  <p>
+    Ch03에서 배운 4계층 원칙을 복습합시다:
+  </p>
+  <ul>
+    <li><strong>Driver</strong> = 하드웨어 추상화. "타이머를 시작/정지/설정" → <code>tim_driver</code></li>
+    <li><strong>Service</strong> = 비즈니스 로직. "언제 시작하고, 언제 정지하고, 상태를 어떻게 관리할까?" → <code>stopwatch_service</code></li>
+  </ul>
+
+  <p>
+    "Driver에 FSM을 넣으면 안 되나요?"
+    안 됩니다.
+    Driver에 비즈니스 로직을 넣으면, tim_driver가 스톱워치 전용이 되어 다른 용도(알람, 모터)로 재사용할 수 없습니다.
+    Driver는 <strong>어떤 목적으로든 사용 가능한 범용 인터페이스</strong>를 유지해야 합니다.
+  </p>
+
+  <h3>stopwatch_service.h — 인터페이스</h3>
+
+  <pre><code class="language-c">/* ch08_05_stopwatch_service.h — Service 레이어 공개 API */
+
+typedef enum {
+    SW_STATE_IDLE    = 0,   /* 초기 상태, 00:00.000 */
+    SW_STATE_RUNNING = 1,   /* 시간 측정 중 */
+    SW_STATE_PAUSED  = 2    /* 일시 정지 */
+} sw_state_t;
+
+typedef enum {
+    SW_EVT_BTN_SHORT = 0,   /* 버튼 짧게 누름 (&lt;2초) */
+    SW_EVT_BTN_LONG  = 1,   /* 버튼 길게 누름 (&ge;2초) */
+    SW_EVT_TICK      = 2    /* 타이머 1ms 틱 (내부용) */
+} sw_event_t;
+
+typedef struct {
+    uint32_t total_ms;       /* 총 경과 밀리초 */
+    uint8_t  minutes;        /* 분 (0~59) */
+    uint8_t  seconds;        /* 초 (0~59) */
+    uint16_t milliseconds;   /* 밀리초 (0~999) */
+} sw_time_t;
+
+void       stopwatch_init(void);
+void       stopwatch_handle_event(sw_event_t evt);
+sw_state_t stopwatch_get_time(sw_time_t *time);
+sw_state_t stopwatch_get_state(void);
+  </code></pre>
+
+  <h3>stopwatch_service.c — FSM 구현 (switch-case 패턴)</h3>
+
+  <pre><code class="language-c">/* ch08_05_stopwatch_service.c — FSM 핵심 구현 */
+
+#include "stopwatch_service.h"
+#include "tim_driver.h"
+#include "log.h"
+
+static volatile sw_state_t s_state      = SW_STATE_IDLE;
+static volatile uint32_t   s_elapsed_ms = 0;
+static volatile uint32_t   s_tick_count = 0;
+
+static const char * const STATE_NAMES[] = {
+    "IDLE", "RUNNING", "PAUSED"
+};
+
+/* 1ms 타이머 콜백 — RUNNING 상태에서만 카운트 */
+static void stopwatch_tick_callback(void)
+{
+    if (s_state == SW_STATE_RUNNING) {
+        s_tick_count++;
+    }
+}
+
+void stopwatch_init(void)
+{
+    s_state      = SW_STATE_IDLE;
+    s_elapsed_ms = 0;
+    s_tick_count = 0;
+
+    tim_set_period_ms(1);                     /* 1ms 주기 */
+    tim_register_callback(stopwatch_tick_callback);
+    LOG_I("stopwatch_service 초기화 완료");
+}
+
+void stopwatch_handle_event(sw_event_t evt)
+{
+    sw_state_t prev = s_state;
+
+    switch (s_state) {
+
+    case SW_STATE_IDLE:
+        if (evt == SW_EVT_BTN_SHORT) {
+            /* IDLE → RUNNING: 시작 */
+            s_elapsed_ms = 0;
+            s_tick_count = 0;
+            tim_start();
+            s_state = SW_STATE_RUNNING;
+            LOG_I("스톱워치 시작!");
+        }
+        break;
+
+    case SW_STATE_RUNNING:
+        if (evt == SW_EVT_BTN_SHORT) {
+            /* RUNNING → PAUSED: 일시정지 */
+            tim_stop();
+            s_elapsed_ms += s_tick_count;
+            s_tick_count = 0;
+            s_state = SW_STATE_PAUSED;
+            LOG_I("일시정지 (%lu ms)", s_elapsed_ms);
+        }
+        else if (evt == SW_EVT_BTN_LONG) {
+            /* RUNNING → IDLE: 리셋 */
+            tim_stop();
+            s_elapsed_ms = 0;
+            s_tick_count = 0;
+            s_state = SW_STATE_IDLE;
+            LOG_I("리셋 (RUNNING → IDLE)");
+        }
+        break;
+
+    case SW_STATE_PAUSED:
+        if (evt == SW_EVT_BTN_SHORT) {
+            /* PAUSED → RUNNING: 재개 (누적) */
+            s_tick_count = 0;
+            tim_start();
+            s_state = SW_STATE_RUNNING;
+            LOG_I("재개 (%lu ms부터)", s_elapsed_ms);
+        }
+        else if (evt == SW_EVT_BTN_LONG) {
+            /* PAUSED → IDLE: 리셋 */
+            s_elapsed_ms = 0;
+            s_tick_count = 0;
+            s_state = SW_STATE_IDLE;
+            LOG_I("리셋 (00:00.000)");
+        }
+        break;
+    }
+
+    if (prev != s_state) {
+        LOG_D("FSM: %s → %s",
+              STATE_NAMES[prev], STATE_NAMES[s_state]);
+    }
+}
+
+sw_state_t stopwatch_get_time(sw_time_t *time)
+{
+    uint32_t total = s_elapsed_ms + s_tick_count;
+    if (time != NULL) {
+        time->total_ms     = total;
+        time->minutes      = (uint8_t)(total / 60000);
+        time->seconds      = (uint8_t)((total % 60000) / 1000);
+        time->milliseconds = (uint16_t)(total % 1000);
+    }
+    return s_state;
+}
+  </code></pre>
+
+  <h3>App 레이어에서 사용하기 — Button → FSM</h3>
+
+  <pre><code class="language-c">/* main.c — App 레이어에서 Stopwatch 사용 */
+
+#include "stopwatch_service.h"
+
+/* 버튼 이벤트 플래그 (EXTI ISR에서 세트) */
+static volatile uint8_t  g_btn_pressed  = 0;
+static volatile uint32_t g_btn_press_ms = 0;
+
+/* EXTI 콜백 — ISR 컨텍스트, 플래그만 세트 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == B1_Pin) {
+        g_btn_pressed  = 1;
+        g_btn_press_ms = HAL_GetTick();
+    }
+}
+
+/* 메인 루프 */
+int main(void)
+{
+    HAL_Init();
+    SystemClock_Config();
+    MX_GPIO_Init();
+    MX_TIM2_Init();
+
+    tim_driver_init();
+    stopwatch_init();
+
+    LOG_I("=== Stopwatch 시작 ===");
+
+    while (1) {
+        /* 버튼 이벤트 처리 — 메인 루프에서 FSM 호출 */
+        /* ⚠️ 주의: 이 로직은 "개념 설명용" 스켈레톤입니다.
+         * 실제 실무에서는 Button Press → Release 타이밍을 명확히 하기 위해
+         * 별도의 상태 머신(예: IDLE → PRESSING → PRESSED → RELEASED)을 씁니다.
+         * Ch10(모터) 이후에 실제 패턴을 배웁니다. */
+        if (g_btn_pressed) {
+            g_btn_pressed = 0;
+            uint32_t duration = HAL_GetTick() - g_btn_press_ms;
+
+            if (duration >= 2000) {
+                stopwatch_handle_event(SW_EVT_BTN_LONG);
+            } else {
+                stopwatch_handle_event(SW_EVT_BTN_SHORT);
+            }
+        }
+
+        /* 주기적 시간 표시 (예: 500ms마다) */
+        static uint32_t last_print = 0;
+        if (HAL_GetTick() - last_print >= 500) {
+            last_print = HAL_GetTick();
+
+            sw_time_t t;
+            sw_state_t st = stopwatch_get_time(&t);
+            if (st == SW_STATE_RUNNING) {
+                LOG_I("%02d:%02d.%03d",
+                      t.minutes, t.seconds, t.milliseconds);
+            }
+        }
+    }
+}
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    <strong>ISR에서 FSM 전이를 직접 하지 마세요.</strong>
+    EXTI 콜백에서 <code>stopwatch_handle_event()</code>를 호출하면,
+    ISR 안에서 <code>tim_start()</code>/<code>tim_stop()</code>이 실행됩니다.
+    중첩 인터럽트 문제가 발생할 수 있습니다.
+    <br><br>
+    왜일까요? 만약 ISR 도중에 상태를 바꾸고, 동시에 메인 루프가 그 상태를 읽는다면?
+    MCU가 값을 읽는 도중에 ISR이 값을 바꾸면 → 중간 상태 읽기 → 논리 에러.
+    따라서 ISR은 "깃발(flag)을 세운다"만 하고, 메인 루프가 "깃발을 보고 상태를 바꾼다"는 분리가 필수입니다.
+    Ch01에서 배운 패턴을 따르세요: "인터럽트에서는 플래그만, 처리는 메인에서."
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> 버튼 하나로 Start/Pause/Resume/Reset을 어떻게 구분하나요?<br>
+    <strong>A.</strong> 두 가지 기법을 조합합니다:
+    <strong>1) FSM 상태에 따른 해석</strong> — 같은 BTN_SHORT라도 IDLE에서는 Start, RUNNING에서는 Pause, PAUSED에서는 Resume입니다. FSM이 맥락을 제공합니다.
+    <strong>2) 길게 누르기</strong> — BTN_LONG(2초 이상)은 Reset 전용입니다.
+    이것이 FSM의 힘입니다 — "현재 상태"가 입력의 의미를 결정합니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    <strong>Q.</strong> "FSM(유한 상태 머신)을 실무에서 어떻게 구현하셨나요?"<br>
+    <strong>A.</strong> enum으로 상태 정의, switch-case로 전이 처리, 이벤트와 액션 분리.
+    "인터럽트에서는 이벤트 플래그만 세트하고, 메인 루프에서 FSM 처리" 패턴.
+    상태 전이표를 먼저 작성하고, 모든 (상태, 이벤트) 조합을 검증한 후 코드로 옮김.
+    핵심: 설계 → 구현 순서를 지키면 전이 누락 버그를 예방할 수 있다.
+  </aside>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    FSM 구현 실습은 <strong>스켈레톤 코드</strong>를 제공하세요.
+    전체 구조(enum, switch-case 틀, init 함수)는 주고,
+    학생은 <strong>전이 로직(case 안의 if-else)</strong>만 채우는 방식입니다.
+    30분 안에 완성하려면 이 방법이 현실적입니다.
+    완성 후 "Button 누르면 시리얼 모니터에 시간이 올라가는" 것을 확인하면 큰 성취감을 느낍니다.
+  </aside>
+
+  <p>
+    <strong>축하합니다!</strong>
+    지금까지 우리는 타이머만 다뤘다면, 이제 <strong>Service 레이어 첫 모듈</strong>을 완성했습니다.
+    이것이 v0.8의 핵심입니다.
+    앞으로 v0.9, v1.0, v1.1로 진행하면서 같은 방식으로 RTC, 모터, 센서, LCD 각각의 Service를 쌓게 됩니다.
+  </p>
+</section>
+
+
+<!-- ===== §8.8 누적 통합 ===== -->
+<section id="sec-08">
+  <h2>§8.8 누적 통합 — v0.7에서 v0.8로</h2>
+
+  <p>
+    Ch08에서 추가한 컴포넌트를 정리하고, 아키텍처 v0.8을 확정합니다.
+  </p>
+
+  <h3>코드 변경 요약</h3>
+
+  <table>
+    <thead>
+      <tr><th>파일</th><th>레이어</th><th>변경 내용</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>tim_driver.h/c</code></td><td><span class="layer-driver">Driver</span></td>
+          <td>+<code>cpwm_start/stop/set_duty</code>(TIM1), +<code>ic_start/stop/get_frequency</code>(TIM3)</td></tr>
+      <tr><td><code>stopwatch_service.h/c</code></td><td><span class="layer-service">Service</span></td>
+          <td><strong>신규</strong> — FSM 기반 스톱워치 (IDLE/RUNNING/PAUSED)</td></tr>
+      <tr><td><code>main.c</code></td><td><span class="layer-app">App</span></td>
+          <td>+Button EXTI → FSM 이벤트, +500ms 시간 표시</td></tr>
+    </tbody>
+  </table>
+
+  <h3>v0.8 최종 아키텍처</h3>
+
+  <figure>
+    <img src="../../figures/ch08_sec8_v08_final.svg" width="100%" height="auto" alt="v0.8 최종 아키텍처">
+    <figcaption>그림 08-9. v0.8 아키텍처 — Service 레이어(stopwatch_service) 실체화, tim_driver 확장</figcaption>
+  </figure>
+
+  <h3>tim_driver 확장 코드</h3>
+
+  <pre><code class="language-c">/* ch08_06_tim_driver_extended.c — v0.8 확장 핵심 */
+
+/* Complementary PWM (TIM1) */
+tim_status_t cpwm_start(void)
+{
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);       /* CH1 */
+    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);    /* CH1N */
+    LOG_I("CPWM 시작 (PA8 + PB13)");
+    return TIM_OK;
+}
+
+tim_status_t cpwm_set_duty(uint8_t percent)
+{
+    uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&htim1);
+    uint32_t ccr = (arr + 1) * percent / 100;
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, ccr);
+    LOG_D("CPWM 듀티: %d%%", percent);
+    return TIM_OK;
+}
+
+/* Input Capture (TIM3) */
+tim_status_t ic_start(void)
+{
+    HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_1);
+    LOG_I("IC 시작 (PA6)");
+    return TIM_OK;
+}
+
+uint32_t ic_get_frequency(void)
+{
+    /* 캡처 차이로 주파수 계산 */
+    if (!s_ic_ready || s_ic_period_us == 0) return 0;
+    return IC_CNT_FREQ_HZ / s_ic_period_us;
+}
+  </code></pre>
+
+  <h3>아키텍처 원칙 확인</h3>
+
+  <ul>
+    <li><strong>레이어 규칙 준수</strong>: stopwatch_service → tim_driver → HAL. 역방향 참조 없음.</li>
+    <li><strong>인터페이스 불변</strong>: 기존 tim_driver API(tim_start/stop, pwm_start/stop) 변경 없이 새 함수만 추가.</li>
+    <li><strong>관심사 분리</strong>: FSM 로직은 Service에, 타이머 제어는 Driver에. Service가 HAL을 직접 호출하지 않음.</li>
+    <li><strong>ISR 안전</strong>: EXTI에서 플래그만 세트, FSM 전이는 메인 루프에서 처리.</li>
+  </ul>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    이 패턴(Service → Driver → HAL)은 이후 챕터에서 반복됩니다:
+    <strong>Ch10</strong>: clock_service → rtc_driver → HAL_RTC
+    <strong>Ch11</strong>: sensor_service → i2c_driver → HAL_I2C
+    <strong>Ch13</strong>: ui_service → spi_driver → HAL_SPI
+    패턴을 한 번 익히면, 새로운 서비스를 만들 때 구조가 자연스럽게 나옵니다.
+  </aside>
+</section>
+
+
+<!-- ===== 핵심 정리 ===== -->
+<section class="chapter-summary-section">
+  <h2>핵심 정리</h2>
+  <ul>
+    <li><strong>TIM1(Advanced)</strong>은 GP Timer의 모든 기능 + Complementary PWM + Dead-time + Break + MOE를 가진다.</li>
+    <li><strong>Complementary PWM</strong>은 CH1과 CH1N이 항상 반전된 파형을 출력하며, <strong>Dead-time</strong>은 전환 순간 "둘 다 OFF" 구간을 삽입하여 shoot-through를 방지한다.</li>
+    <li><strong>Input Capture</strong>는 외부 신호의 Rising/Falling Edge 시점에 CNT 값을 CCR에 저장하여 주파수/주기를 정밀 측정한다.</li>
+    <li><strong>Output Compare</strong>는 CNT == CCR 시점에 이벤트를 발생시키고, <strong>One-Pulse</strong>는 트리거 1회에 펄스 1개를 자동 생성한다.</li>
+    <li><strong>Master-Slave 연계</strong>는 TRGO/ITR 내부 연결을 통해 타이머 간 동기화를 구현한다.</li>
+    <li><strong>Stopwatch FSM</strong>은 IDLE/RUNNING/PAUSED 3개 상태로 구성되며, switch-case 패턴으로 Service 레이어에 구현한다.</li>
+    <li><strong>Service 레이어</strong>는 Driver(하드웨어 추상화) 위에 비즈니스 로직(FSM)을 배치하여 관심사를 분리한다. Driver 재사용성 보장.</li>
+  </ul>
+
+  <h3>아키텍처 업데이트</h3>
+  <p>이 챕터 완료 후 전체 아키텍처에 <code>stopwatch_service</code>(Service)가 추가되고,
+    <code>tim_driver</code>(Driver)에 CPWM/IC 기능이 확장되었습니다.</p>
+  <figure>
+    <img src="../../figures/ch08_sec8_v08_final.svg" width="100%" height="auto" alt="v0.8 아키텍처">
+    <figcaption>그림 08-10. v0.8 아키텍처 현황 — App → Service → Driver → HAL 4계층 실현</figcaption>
+  </figure>
+</section>
+
+<!-- ===== 연습문제 ===== -->
+<section class="exercises">
+  <h2>연습문제</h2>
+
+  <div class="exercise">
+    <span class="level">이해</span>
+    <strong>1.</strong> TIM1과 TIM2의 차이를 3가지 이상 설명하시오. Dead-time이 없으면 H-브리지에서 어떤 문제가 발생하는지 서술하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">적용</span>
+    <strong>2.</strong> TIM1으로 20kHz Complementary PWM(듀티 60%, Dead-time 500ns)을 설정하시오.
+    84MHz 클럭 기준으로 PSC, ARR, CCR, DTG 값을 계산하고 CubeMX 설정 과정을 기술하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">분석</span>
+    <strong>3.</strong> GPIO EXTI + HAL_GetTick() 방식과 Input Capture 방식의 주파수 측정을 비교하시오.
+    정확도, CPU 부하, 측정 가능한 최대 주파수 관점에서 각각의 장단점을 분석하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">분석</span>
+    <strong>4.</strong> Stopwatch FSM에서 PAUSED 상태에서 RESET과 START 이벤트가 거의 동시에 발생하면 어떻게 동작하는가?
+    이벤트 우선순위 방안을 제시하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">창조</span>
+    <strong>5.</strong> Stopwatch FSM에 Lap(구간 기록) 기능을 추가하시오.
+    RUNNING 상태에서 두 번째 버튼 누름 시 Lap 기록. 최대 10개 Lap을 배열에 저장하는 코드를 구현하시오.
+    상태 전이표를 수정하고, 필요한 데이터 구조를 설계하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">평가</span>
+    <strong>6.</strong> "TIM2가 100ms마다 TIM3 One-Pulse 50us를 트리거하는" Master-Slave 구성을 제안하시오.
+    이 구성의 소프트웨어 대비 장점을 CPU 부하와 타이밍 정확도 관점에서 평가하시오.
+  </div>
+</section>
+
+<!-- ===== 다음 챕터 예고 ===== -->
+<section class="next-chapter">
+  <h2>다음 챕터 예고</h2>
+  <p>
+    현재 프로젝트는 <strong>v0.8</strong> 상태로,
+    정밀 주기 타이머 + PWM + Complementary PWM + Input Capture + <strong>Stopwatch FSM</strong>까지 구현되었습니다.
+  </p>
+  <p>
+    스톱워치는 <strong>경과 시간</strong>을 측정합니다.
+    하지만 "지금 몇 시 몇 분인가?"라는 <strong>절대 시각</strong>은 알 수 없습니다.
+    전원을 끄면 시간이 사라집니다.
+  </p>
+  <p>
+    다음 <strong>Ch09. RTC (Real-Time Clock)</strong>에서는
+    전원이 꺼져도 시간이 유지되는 <strong>실시간 시계</strong>를 구현하여 프로젝트를 <strong>v0.9</strong>로 업그레이드합니다.
+    스톱워치에서 진짜 시계로 — "경과 시간"에서 "절대 시각"으로의 도약입니다.
+    Alarm FSM도 등장합니다 — Stopwatch FSM과 거의 같은 구조입니다!
+  </p>
+</section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+</body>
+</html>

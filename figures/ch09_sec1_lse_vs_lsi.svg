@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 420" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <text x="390" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">LSE vs LSI — 클럭 소스 비교</text>
+  <text x="390" y="50" text-anchor="middle" font-size="12" fill="#555">"석영 시계 vs 기계식 시계" — 정확도와 비용의 트레이드오프</text>
+
+  <!-- LSE 블록 -->
+  <rect x="40" y="70" width="340" height="310" rx="10" fill="#E3F2FD" stroke="#1A73E8" stroke-width="2"/>
+  <text x="210" y="100" text-anchor="middle" font-size="16" font-weight="bold" fill="#1A73E8">LSE (Low-Speed External)</text>
+  <text x="210" y="120" text-anchor="middle" font-size="12" fill="#0D47A1">32.768kHz 외부 크리스탈</text>
+
+  <!-- LSE 아이콘 (크리스탈) -->
+  <rect x="155" y="135" width="110" height="40" rx="4" fill="#BBDEFB" stroke="#1A73E8"/>
+  <text x="210" y="160" text-anchor="middle" font-size="20">🔮</text>
+
+  <!-- LSE 특성 -->
+  <text x="70" y="200" font-size="12" fill="#0D47A1">정확도: ±20 ppm (월 ~1초 오차)</text>
+  <text x="70" y="225" font-size="12" fill="#0D47A1">주파수: 정확히 32,768 Hz</text>
+  <text x="70" y="250" font-size="12" fill="#0D47A1">외부 부품: 크리스탈 필요</text>
+  <text x="70" y="275" font-size="12" fill="#0D47A1">비용: ↑ (크리스탈 + PCB)</text>
+  <text x="70" y="300" font-size="12" fill="#0D47A1">NUCLEO: 미장착 (SB48/SB49)</text>
+
+  <rect x="70" y="320" width="280" height="40" rx="5" fill="#1A73E8" opacity="0.15"/>
+  <text x="210" y="345" text-anchor="middle" font-size="13" font-weight="bold" fill="#0D47A1">용도: 양산 제품, 정밀 시계</text>
+
+  <!-- LSI 블록 -->
+  <rect x="400" y="70" width="340" height="310" rx="10" fill="#E8F5E9" stroke="#34A853" stroke-width="2"/>
+  <text x="570" y="100" text-anchor="middle" font-size="16" font-weight="bold" fill="#34A853">LSI (Low-Speed Internal)</text>
+  <text x="570" y="120" text-anchor="middle" font-size="12" fill="#1B5E20">~32kHz 내부 RC 오실레이터</text>
+
+  <!-- LSI 아이콘 -->
+  <rect x="515" y="135" width="110" height="40" rx="4" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="570" y="160" text-anchor="middle" font-size="20">⚡</text>
+
+  <!-- LSI 특성 -->
+  <text x="430" y="200" font-size="12" fill="#1B5E20">정확도: ±5% (하루 ~72분 오차)</text>
+  <text x="430" y="225" font-size="12" fill="#1B5E20">주파수: 약 32,000 Hz (변동)</text>
+  <text x="430" y="250" font-size="12" fill="#1B5E20">외부 부품: 없음 (내장)</text>
+  <text x="430" y="275" font-size="12" fill="#1B5E20">비용: ↓ (무료, 즉시 사용)</text>
+  <text x="430" y="300" font-size="12" fill="#1B5E20">NUCLEO: 즉시 사용 가능 ✅</text>
+
+  <rect x="430" y="320" width="280" height="40" rx="5" fill="#34A853" opacity="0.15"/>
+  <text x="570" y="345" text-anchor="middle" font-size="13" font-weight="bold" fill="#1B5E20">용도: 프로토타입, 교육, 저비용</text>
+
+  <!-- VS 구분자 -->
+  <circle cx="390" cy="220" r="25" fill="#FFF8E1" stroke="#E65100" stroke-width="2"/>
+  <text x="390" y="226" text-anchor="middle" font-size="14" font-weight="bold" fill="#E65100">VS</text>
+
+  <!-- 결론 -->
+  <rect x="80" y="390" width="620" height="25" rx="5" fill="#FFF3E0" stroke="#E65100"/>
+  <text x="390" y="408" text-anchor="middle" font-size="12" font-weight="bold" fill="#BF360C">오늘 실습: LSI 사용 (추가 부품 불필요) | 제품 양산: LSE 필수 (정밀도 요구)</text>
+</svg>

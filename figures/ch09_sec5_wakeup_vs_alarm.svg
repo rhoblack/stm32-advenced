@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 400" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <text x="390" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">Alarm vs Wake-up Timer — "몇 시에" vs "몇 초마다"</text>
+
+  <!-- Alarm 영역 -->
+  <rect x="30" y="55" width="350" height="300" rx="10" fill="#FCE4EC" stroke="#EA4335" stroke-width="2"/>
+  <text x="205" y="82" text-anchor="middle" font-size="16" font-weight="bold" fill="#C62828">Alarm A / B</text>
+  <text x="205" y="100" text-anchor="middle" font-size="12" fill="#C62828">"알람 시계" — 특정 시각에 울림</text>
+
+  <!-- 알람 시계 아이콘 -->
+  <rect x="155" y="110" width="100" height="35" rx="5" fill="#FFCDD2"/>
+  <text x="205" y="133" text-anchor="middle" font-size="18">⏰</text>
+
+  <text x="55" y="170" font-size="12" fill="#333">트리거: 특정 시:분:초 매칭</text>
+  <text x="55" y="192" font-size="12" fill="#333">마스킹: 초/분/시/요일 개별 설정</text>
+  <text x="55" y="214" font-size="12" fill="#333">개수: 2개 (AlarmA + AlarmB)</text>
+  <text x="55" y="236" font-size="12" fill="#333">주기: 마스크로 매일/매시/매분</text>
+  <text x="55" y="258" font-size="12" fill="#333">ISR: RTC_Alarm_IRQHandler</text>
+  <text x="55" y="280" font-size="12" fill="#333">저전력: Stop 모드 깨우기 가능</text>
+
+  <rect x="55" y="295" width="300" height="45" rx="5" fill="#C62828" opacity="0.1"/>
+  <text x="205" y="313" text-anchor="middle" font-size="11" font-weight="bold" fill="#C62828">사용 사례</text>
+  <text x="205" y="330" text-anchor="middle" font-size="10" fill="#C62828">"매일 7시 알람" / "매시 정각 로그" / "특정 날짜 이벤트"</text>
+
+  <!-- Wake-up 영역 -->
+  <rect x="400" y="55" width="350" height="300" rx="10" fill="#E8F5E9" stroke="#34A853" stroke-width="2"/>
+  <text x="575" y="82" text-anchor="middle" font-size="16" font-weight="bold" fill="#1B5E20">Wake-up Timer</text>
+  <text x="575" y="100" text-anchor="middle" font-size="12" fill="#1B5E20">"주방 타이머" — 일정 주기마다 울림</text>
+
+  <!-- 타이머 아이콘 -->
+  <rect x="525" y="110" width="100" height="35" rx="5" fill="#C8E6C9"/>
+  <text x="575" y="133" text-anchor="middle" font-size="18">⏲️</text>
+
+  <text x="425" y="170" font-size="12" fill="#333">트리거: 카운트다운 완료 (주기적)</text>
+  <text x="425" y="192" font-size="12" fill="#333">설정: 카운트 값 (16비트)</text>
+  <text x="425" y="214" font-size="12" fill="#333">개수: 1개</text>
+  <text x="425" y="236" font-size="12" fill="#333">주기: 약 122us ~ 36시간</text>
+  <text x="425" y="258" font-size="12" fill="#333">ISR: RTC_WKUP_IRQHandler</text>
+  <text x="425" y="280" font-size="12" fill="#333">저전력: Stop 모드 깨우기 가능</text>
+
+  <rect x="425" y="295" width="300" height="45" rx="5" fill="#1B5E20" opacity="0.1"/>
+  <text x="575" y="313" text-anchor="middle" font-size="11" font-weight="bold" fill="#1B5E20">사용 사례</text>
+  <text x="575" y="330" text-anchor="middle" font-size="10" fill="#1B5E20">"10초마다 센서 읽기" / "1분마다 깨우기" / "저전력 주기 동작"</text>
+
+  <!-- VS -->
+  <circle cx="390" cy="200" r="25" fill="#FFF8E1" stroke="#E65100" stroke-width="2"/>
+  <text x="390" y="206" text-anchor="middle" font-size="14" font-weight="bold" fill="#E65100">VS</text>
+
+  <!-- 핵심 비교 -->
+  <rect x="80" y="365" width="620" height="28" rx="5" fill="#E8EAF6" stroke="#3F51B5"/>
+  <text x="390" y="384" text-anchor="middle" font-size="12" font-weight="bold" fill="#1A237E">Alarm = "몇 시에" (절대 시각) | Wake-up = "몇 초마다" (상대 주기) — TIM 인터럽트와 달리 32kHz로 저전력 동작!</text>
+</svg>

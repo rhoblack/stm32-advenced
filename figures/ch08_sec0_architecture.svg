@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">v0.7 vs v0.8 아키텍처 비교</text>
+
+  <!-- v0.7 (왼쪽) -->
+  <rect x="30" y="50" width="340" height="420" rx="8" fill="#F5F5F5" stroke="#BDBDBD"/>
+  <text x="200" y="75" text-anchor="middle" font-size="16" font-weight="bold" fill="#555">v0.7 (Ch07)</text>
+
+  <!-- App -->
+  <rect x="70" y="100" width="260" height="50" rx="6" fill="#EA4335" opacity="0.15" stroke="#EA4335" stroke-width="2"/>
+  <text x="200" y="130" text-anchor="middle" font-weight="bold" fill="#EA4335">App (main.c)</text>
+
+  <line x1="200" y1="150" x2="200" y2="180" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Driver -->
+  <rect x="70" y="185" width="120" height="50" rx="6" fill="#34A853" opacity="0.15" stroke="#34A853" stroke-width="2"/>
+  <text x="130" y="215" text-anchor="middle" font-size="12" font-weight="bold" fill="#34A853">uart_driver</text>
+
+  <rect x="210" y="185" width="120" height="50" rx="6" fill="#34A853" opacity="0.15" stroke="#34A853" stroke-width="2"/>
+  <text x="270" y="215" text-anchor="middle" font-size="12" font-weight="bold" fill="#34A853">tim_driver</text>
+
+  <line x1="200" y1="235" x2="200" y2="265" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- HAL -->
+  <rect x="70" y="270" width="260" height="50" rx="6" fill="#1A73E8" opacity="0.15" stroke="#1A73E8" stroke-width="2"/>
+  <text x="200" y="300" text-anchor="middle" font-weight="bold" fill="#1A73E8">HAL (STM32 HAL)</text>
+
+  <!-- Service 없음 표시 -->
+  <rect x="70" y="350" width="260" height="40" rx="6" fill="none" stroke="#BDBDBD" stroke-dasharray="6,3"/>
+  <text x="200" y="375" text-anchor="middle" font-size="12" fill="#999">Service 레이어 없음</text>
+
+  <!-- v0.8 (오른쪽) -->
+  <rect x="420" y="50" width="360" height="420" rx="8" fill="#E8F5E9" stroke="#34A853"/>
+  <text x="600" y="75" text-anchor="middle" font-size="16" font-weight="bold" fill="#34A853">v0.8 (Ch08) ★ NEW</text>
+
+  <!-- App -->
+  <rect x="460" y="100" width="280" height="50" rx="6" fill="#EA4335" opacity="0.15" stroke="#EA4335" stroke-width="2"/>
+  <text x="600" y="130" text-anchor="middle" font-weight="bold" fill="#EA4335">App (main.c + Button EXTI)</text>
+
+  <line x1="600" y1="150" x2="600" y2="175" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Service (NEW!) -->
+  <rect x="500" y="180" width="200" height="50" rx="6" fill="#FBBC04" opacity="0.25" stroke="#FBBC04" stroke-width="3"/>
+  <text x="600" y="205" text-anchor="middle" font-size="13" font-weight="bold" fill="#E65100">stopwatch_service</text>
+  <text x="600" y="222" text-anchor="middle" font-size="10" fill="#E65100">★ Service 레이어 첫 등장!</text>
+
+  <line x1="600" y1="230" x2="600" y2="260" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Driver -->
+  <rect x="460" y="265" width="110" height="50" rx="6" fill="#34A853" opacity="0.15" stroke="#34A853" stroke-width="2"/>
+  <text x="515" y="295" text-anchor="middle" font-size="11" font-weight="bold" fill="#34A853">uart_driver</text>
+
+  <rect x="580" y="265" width="160" height="50" rx="6" fill="#34A853" opacity="0.25" stroke="#34A853" stroke-width="3"/>
+  <text x="660" y="288" text-anchor="middle" font-size="11" font-weight="bold" fill="#34A853">tim_driver</text>
+  <text x="660" y="305" text-anchor="middle" font-size="9" fill="#34A853">(+CPWM, +IC 확장)</text>
+
+  <line x1="600" y1="315" x2="600" y2="345" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- HAL -->
+  <rect x="460" y="350" width="280" height="50" rx="6" fill="#1A73E8" opacity="0.15" stroke="#1A73E8" stroke-width="2"/>
+  <text x="600" y="380" text-anchor="middle" font-weight="bold" fill="#1A73E8">HAL (STM32 HAL + HAL_TIMEx)</text>
+
+  <!-- 범례 -->
+  <rect x="460" y="420" width="15" height="12" fill="#EA4335" opacity="0.3"/>
+  <text x="480" y="431" font-size="11" fill="#555">App</text>
+  <rect x="530" y="420" width="15" height="12" fill="#FBBC04" opacity="0.3"/>
+  <text x="550" y="431" font-size="11" fill="#555">Service</text>
+  <rect x="610" y="420" width="15" height="12" fill="#34A853" opacity="0.3"/>
+  <text x="630" y="431" font-size="11" fill="#555">Driver</text>
+  <rect x="680" y="420" width="15" height="12" fill="#1A73E8" opacity="0.3"/>
+  <text x="700" y="431" font-size="11" fill="#555">HAL</text>
+</svg>

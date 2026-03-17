@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 480" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <defs>
+    <marker id="arr9b" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="390" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">RTC 내부 블록 다이어그램 — 백업 도메인</text>
+
+  <!-- 백업 도메인 영역 -->
+  <rect x="30" y="50" width="720" height="370" rx="10" fill="#FFF3E0" stroke="#E65100" stroke-width="2" stroke-dasharray="8,4"/>
+  <text x="60" y="75" font-size="14" font-weight="bold" fill="#E65100">백업 도메인 (Backup Domain) — VBAT 전원으로 독립 유지</text>
+
+  <!-- 클럭 소스 -->
+  <rect x="60" y="100" width="140" height="60" rx="6" fill="#E3F2FD" stroke="#1A73E8" stroke-width="2"/>
+  <text x="130" y="125" text-anchor="middle" font-size="12" font-weight="bold" fill="#1A73E8">LSE</text>
+  <text x="130" y="142" text-anchor="middle" font-size="10" fill="#0D47A1">32.768kHz 크리스탈</text>
+
+  <rect x="60" y="175" width="140" height="60" rx="6" fill="#E8F5E9" stroke="#34A853" stroke-width="2"/>
+  <text x="130" y="200" text-anchor="middle" font-size="12" font-weight="bold" fill="#34A853">LSI</text>
+  <text x="130" y="217" text-anchor="middle" font-size="10" fill="#1B5E20">~32kHz RC 내부</text>
+
+  <!-- MUX -->
+  <polygon points="230,130 230,210 270,180 270,160" fill="#F5F5F5" stroke="#555" stroke-width="1.5"/>
+  <text x="248" y="175" text-anchor="middle" font-size="10" fill="#555">MUX</text>
+
+  <line x1="200" y1="130" x2="230" y2="155" stroke="#555" stroke-width="1.5" marker-end="url(#arr9b)"/>
+  <line x1="200" y1="205" x2="230" y2="185" stroke="#555" stroke-width="1.5" marker-end="url(#arr9b)"/>
+
+  <!-- Prescaler -->
+  <line x1="270" y1="170" x2="305" y2="170" stroke="#555" stroke-width="1.5" marker-end="url(#arr9b)"/>
+
+  <rect x="310" y="130" width="160" height="80" rx="6" fill="#E3F2FD" stroke="#1A73E8" stroke-width="2"/>
+  <text x="390" y="155" text-anchor="middle" font-size="12" font-weight="bold" fill="#1A73E8">비동기 프리스케일러</text>
+  <text x="390" y="175" text-anchor="middle" font-size="11" fill="#0D47A1">PREDIV_A (7비트)</text>
+  <text x="390" y="192" text-anchor="middle" font-size="10" fill="#555">기본값: 127</text>
+
+  <line x1="470" y1="170" x2="505" y2="170" stroke="#555" stroke-width="1.5" marker-end="url(#arr9b)"/>
+
+  <rect x="510" y="130" width="160" height="80" rx="6" fill="#E3F2FD" stroke="#1A73E8" stroke-width="2"/>
+  <text x="590" y="155" text-anchor="middle" font-size="12" font-weight="bold" fill="#1A73E8">동기 프리스케일러</text>
+  <text x="590" y="175" text-anchor="middle" font-size="11" fill="#0D47A1">PREDIV_S (15비트)</text>
+  <text x="590" y="192" text-anchor="middle" font-size="10" fill="#555">기본값: 255</text>
+
+  <!-- 1Hz 출력 -->
+  <line x1="670" y1="170" x2="710" y2="170" stroke="#1A73E8" stroke-width="2" marker-end="url(#arr9b)"/>
+  <text x="720" y="165" font-size="11" font-weight="bold" fill="#1A73E8">1Hz</text>
+  <text x="720" y="180" font-size="9" fill="#555">ck_spre</text>
+
+  <!-- 공식 -->
+  <rect x="310" y="225" width="360" height="35" rx="5" fill="#E8EAF6" stroke="#3F51B5"/>
+  <text x="490" y="248" text-anchor="middle" font-size="12" fill="#1A237E">f_ck_spre = f_RTCCLK / ((PREDIV_A+1) × (PREDIV_S+1))</text>
+
+  <!-- Calendar (BCD) -->
+  <line x1="590" y1="210" x2="590" y2="275" stroke="#555" stroke-width="1.5" marker-end="url(#arr9b)"/>
+
+  <rect x="430" y="280" width="280" height="80" rx="6" fill="#C8E6C9" stroke="#34A853" stroke-width="2"/>
+  <text x="570" y="302" text-anchor="middle" font-size="13" font-weight="bold" fill="#1B5E20">캘린더 (BCD 레지스터)</text>
+  <text x="570" y="322" text-anchor="middle" font-size="11" fill="#555">RTC_TR: 시:분:초 (BCD)</text>
+  <text x="570" y="340" text-anchor="middle" font-size="11" fill="#555">RTC_DR: 년:월:일:요일 (BCD)</text>
+  <text x="570" y="355" text-anchor="middle" font-size="9" fill="#34A853">Shadow Register → 동기 읽기</text>
+
+  <!-- Alarm -->
+  <rect x="60" y="280" width="160" height="55" rx="6" fill="#FCE4EC" stroke="#EA4335" stroke-width="2"/>
+  <text x="140" y="302" text-anchor="middle" font-size="12" font-weight="bold" fill="#C62828">Alarm A / B</text>
+  <text x="140" y="320" text-anchor="middle" font-size="10" fill="#C62828">시각 매칭 → 인터럽트</text>
+  <text x="140" y="332" text-anchor="middle" font-size="9" fill="#555">마스크 비트로 반복 설정</text>
+
+  <line x1="430" y1="310" x2="225" y2="310" stroke="#EA4335" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr9b)"/>
+  <text x="330" y="303" font-size="9" fill="#EA4335">비교</text>
+
+  <!-- Wake-up Timer -->
+  <rect x="240" y="280" width="170" height="55" rx="6" fill="#E8F5E9" stroke="#34A853" stroke-width="2"/>
+  <text x="325" y="302" text-anchor="middle" font-size="12" font-weight="bold" fill="#1B5E20">Wake-up Timer</text>
+  <text x="325" y="320" text-anchor="middle" font-size="10" fill="#1B5E20">주기적 인터럽트</text>
+  <text x="325" y="332" text-anchor="middle" font-size="9" fill="#555">0.5초 ~ 36시간</text>
+
+  <!-- 백업 레지스터 -->
+  <rect x="60" y="350" width="350" height="50" rx="6" fill="#FFF8E1" stroke="#FBBC04" stroke-width="2"/>
+  <text x="235" y="372" text-anchor="middle" font-size="12" font-weight="bold" fill="#E65100">백업 레지스터 (BKP_DR0~19)</text>
+  <text x="235" y="390" text-anchor="middle" font-size="10" fill="#E65100">20개 × 32비트 — 전원 차단 시에도 유지 (VBAT)</text>
+
+  <!-- 외부 전원 영역 -->
+  <rect x="30" y="430" width="340" height="40" rx="6" fill="#E3F2FD" stroke="#1A73E8"/>
+  <text x="200" y="455" text-anchor="middle" font-size="12" fill="#0D47A1">VDD (메인 전원) — 정상 동작 시</text>
+
+  <rect x="400" y="430" width="350" height="40" rx="6" fill="#FFF3E0" stroke="#E65100"/>
+  <text x="575" y="455" text-anchor="middle" font-size="12" fill="#E65100">VBAT (백업 전원) — 코인셀 배터리, 정전 시 자동 전환</text>
+</svg>

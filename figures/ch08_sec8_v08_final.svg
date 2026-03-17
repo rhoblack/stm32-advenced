@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <defs>
+    <marker id="arr8" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">v0.8 최종 아키텍처 — Stopwatch + Advanced TIM</text>
+
+  <!-- App Layer -->
+  <rect x="50" y="50" width="700" height="70" rx="8" fill="#EA4335" opacity="0.12" stroke="#EA4335" stroke-width="2"/>
+  <text x="80" y="72" font-size="11" fill="#EA4335" font-weight="bold">App Layer</text>
+
+  <rect x="70" y="80" width="150" height="30" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="145" y="100" text-anchor="middle" font-size="11" fill="#C62828">main.c (슈퍼루프)</text>
+
+  <rect x="240" y="80" width="160" height="30" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="320" y="100" text-anchor="middle" font-size="11" fill="#C62828">Button EXTI (PC13)</text>
+
+  <rect x="420" y="80" width="130" height="30" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="485" y="100" text-anchor="middle" font-size="11" fill="#C62828">CLI (Ch06)</text>
+
+  <rect x="570" y="80" width="160" height="30" rx="5" fill="#FFCDD2" stroke="#EA4335"/>
+  <text x="650" y="100" text-anchor="middle" font-size="11" fill="#C62828">Log 출력 (Ch02)</text>
+
+  <!-- 화살표: App → Service -->
+  <line x1="320" y1="120" x2="320" y2="155" stroke="#555" stroke-width="1.5" marker-end="url(#arr8)"/>
+  <line x1="145" y1="120" x2="145" y2="250" stroke="#555" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr8)"/>
+
+  <!-- Service Layer (NEW) -->
+  <rect x="50" y="160" width="700" height="75" rx="8" fill="#FBBC04" opacity="0.12" stroke="#FBBC04" stroke-width="2"/>
+  <text x="80" y="182" font-size="11" fill="#E65100" font-weight="bold">Service Layer ★ NEW</text>
+
+  <rect x="230" y="190" width="250" height="35" rx="5" fill="#FFF8E1" stroke="#FBBC04" stroke-width="2"/>
+  <text x="355" y="208" text-anchor="middle" font-size="12" font-weight="bold" fill="#E65100">stopwatch_service</text>
+  <text x="355" y="222" text-anchor="middle" font-size="9" fill="#E65100">FSM: IDLE/RUNNING/PAUSED</text>
+
+  <!-- 미래 Service (점선) -->
+  <rect x="500" y="190" width="120" height="35" rx="5" fill="none" stroke="#FBBC04" stroke-dasharray="5,3"/>
+  <text x="560" y="210" text-anchor="middle" font-size="10" fill="#999">Ch10: clock</text>
+
+  <rect x="630" y="190" width="110" height="35" rx="5" fill="none" stroke="#FBBC04" stroke-dasharray="5,3"/>
+  <text x="685" y="210" text-anchor="middle" font-size="10" fill="#999">Ch11: sensor</text>
+
+  <!-- 화살표: Service → Driver -->
+  <line x1="355" y1="235" x2="355" y2="265" stroke="#555" stroke-width="1.5" marker-end="url(#arr8)"/>
+
+  <!-- Driver Layer -->
+  <rect x="50" y="270" width="700" height="75" rx="8" fill="#34A853" opacity="0.12" stroke="#34A853" stroke-width="2"/>
+  <text x="80" y="292" font-size="11" fill="#1B5E20" font-weight="bold">Driver Layer</text>
+
+  <rect x="70" y="300" width="130" height="35" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="135" y="318" text-anchor="middle" font-size="11" fill="#1B5E20">uart_driver</text>
+  <text x="135" y="332" text-anchor="middle" font-size="9" fill="#555">Ch04 (v0.4~)</text>
+
+  <rect x="220" y="300" width="130" height="35" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="285" y="318" text-anchor="middle" font-size="11" fill="#1B5E20">dma_driver</text>
+  <text x="285" y="332" text-anchor="middle" font-size="9" fill="#555">Ch05 (v0.5~)</text>
+
+  <rect x="370" y="300" width="200" height="35" rx="5" fill="#A5D6A7" stroke="#34A853" stroke-width="2"/>
+  <text x="470" y="318" text-anchor="middle" font-size="12" font-weight="bold" fill="#1B5E20">tim_driver (확장)</text>
+  <text x="470" y="332" text-anchor="middle" font-size="9" fill="#1B5E20">+CPWM +IC +TIM1 (v0.8)</text>
+
+  <rect x="590" y="300" width="120" height="35" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="650" y="318" text-anchor="middle" font-size="11" fill="#1B5E20">log_driver</text>
+  <text x="650" y="332" text-anchor="middle" font-size="9" fill="#555">Ch02 (v0.2~)</text>
+
+  <!-- 화살표: Driver → HAL -->
+  <line x1="400" y1="345" x2="400" y2="380" stroke="#555" stroke-width="1.5" marker-end="url(#arr8)"/>
+
+  <!-- HAL Layer -->
+  <rect x="50" y="385" width="700" height="55" rx="8" fill="#1A73E8" opacity="0.12" stroke="#1A73E8" stroke-width="2"/>
+  <text x="80" y="407" font-size="11" fill="#1A73E8" font-weight="bold">HAL Layer</text>
+
+  <rect x="70" y="410" width="110" height="22" rx="4" fill="#BBDEFB"/>
+  <text x="125" y="425" text-anchor="middle" font-size="10" fill="#0D47A1">HAL_UART</text>
+
+  <rect x="195" y="410" width="100" height="22" rx="4" fill="#BBDEFB"/>
+  <text x="245" y="425" text-anchor="middle" font-size="10" fill="#0D47A1">HAL_DMA</text>
+
+  <rect x="310" y="410" width="100" height="22" rx="4" fill="#BBDEFB"/>
+  <text x="360" y="425" text-anchor="middle" font-size="10" fill="#0D47A1">HAL_TIM</text>
+
+  <rect x="425" y="410" width="110" height="22" rx="4" fill="#90CAF9" stroke="#1A73E8"/>
+  <text x="480" y="425" text-anchor="middle" font-size="10" font-weight="bold" fill="#0D47A1">HAL_TIMEx</text>
+
+  <rect x="550" y="410" width="100" height="22" rx="4" fill="#BBDEFB"/>
+  <text x="600" y="425" text-anchor="middle" font-size="10" fill="#0D47A1">HAL_GPIO</text>
+
+  <rect x="665" y="410" width="70" height="22" rx="4" fill="#BBDEFB"/>
+  <text x="700" y="425" text-anchor="middle" font-size="10" fill="#0D47A1">SWO/ITM</text>
+
+  <!-- 버전 뱃지 -->
+  <rect x="300" y="455" width="200" height="22" rx="11" fill="#1A73E8"/>
+  <text x="400" y="470" text-anchor="middle" font-size="12" font-weight="bold" fill="white">v0.8 — Ch08 완성</text>
+</svg>

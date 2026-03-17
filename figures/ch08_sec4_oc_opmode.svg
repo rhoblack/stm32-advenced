@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 360" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <text x="390" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">Output Compare &amp; One-Pulse 모드 비교</text>
+
+  <!-- Output Compare -->
+  <rect x="30" y="55" width="340" height="280" rx="8" fill="#E3F2FD" stroke="#1A73E8" stroke-width="2"/>
+  <text x="200" y="80" text-anchor="middle" font-size="15" font-weight="bold" fill="#1A73E8">Output Compare (OC)</text>
+  <text x="200" y="100" text-anchor="middle" font-size="12" fill="#555">"알람 시계" — CCR 도달 시 이벤트</text>
+
+  <!-- OC 파형 -->
+  <text x="50" y="130" font-size="11" fill="#1A73E8">CNT:</text>
+  <polyline points="85,190 170,120 170,190 255,120 255,190 340,120" fill="none" stroke="#1A73E8" stroke-width="2"/>
+
+  <!-- CCR 라인 -->
+  <line x1="85" y1="150" x2="340" y2="150" stroke="#EA4335" stroke-dasharray="5,3"/>
+  <text x="350" y="155" font-size="10" fill="#EA4335">CCR</text>
+
+  <!-- 이벤트 표시 -->
+  <line x1="130" y1="150" x2="130" y2="210" stroke="#EA4335" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="130" y="225" text-anchor="middle" font-size="10" fill="#EA4335">이벤트!</text>
+  <line x1="215" y1="150" x2="215" y2="210" stroke="#EA4335" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="215" y="225" text-anchor="middle" font-size="10" fill="#EA4335">이벤트!</text>
+  <line x1="300" y1="150" x2="300" y2="210" stroke="#EA4335" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="300" y="225" text-anchor="middle" font-size="10" fill="#EA4335">이벤트!</text>
+
+  <!-- OC 설명 -->
+  <text x="200" y="255" text-anchor="middle" font-size="12" fill="#333">CNT == CCR 되면:</text>
+  <text x="200" y="275" text-anchor="middle" font-size="11" fill="#555">- 핀 Toggle/Set/Clear</text>
+  <text x="200" y="292" text-anchor="middle" font-size="11" fill="#555">- 인터럽트/DMA 트리거</text>
+  <text x="200" y="309" text-anchor="middle" font-size="11" fill="#555">- 반복 발생 (매 주기)</text>
+  <text x="200" y="326" text-anchor="middle" font-size="11" fill="#1A73E8" font-weight="bold">용도: 정밀 타이밍 이벤트</text>
+
+  <!-- One-Pulse Mode -->
+  <rect x="410" y="55" width="350" height="280" rx="8" fill="#FCE4EC" stroke="#EA4335" stroke-width="2"/>
+  <text x="585" y="80" text-anchor="middle" font-size="15" font-weight="bold" fill="#EA4335">One-Pulse Mode (OPM)</text>
+  <text x="585" y="100" text-anchor="middle" font-size="12" fill="#555">"카메라 플래시" — 트리거 1회 → 펄스 1개</text>
+
+  <!-- OPM 파형 -->
+  <text x="430" y="130" font-size="11" fill="#34A853">트리거:</text>
+  <polyline points="490,170 530,170 530,140 540,140 540,170 730,170" fill="none" stroke="#34A853" stroke-width="2"/>
+  <text x="535" y="135" text-anchor="middle" font-size="10" fill="#34A853">외부 신호</text>
+
+  <text x="430" y="195" font-size="11" fill="#EA4335">출력:</text>
+  <polyline points="490,230 560,230 560,195 660,195 660,230 730,230" fill="none" stroke="#EA4335" stroke-width="2.5"/>
+  <text x="610" y="190" text-anchor="middle" font-size="11" fill="#EA4335" font-weight="bold">딱 1개 펄스!</text>
+
+  <!-- 지연 + 폭 표시 -->
+  <line x1="535" y1="240" x2="560" y2="240" stroke="#999" stroke-width="1"/>
+  <text x="548" y="255" text-anchor="middle" font-size="9" fill="#999">지연</text>
+  <line x1="560" y1="240" x2="660" y2="240" stroke="#EA4335" stroke-width="1.5"/>
+  <text x="610" y="255" text-anchor="middle" font-size="9" fill="#EA4335">펄스 폭</text>
+
+  <!-- OPM 설명 -->
+  <text x="585" y="280" text-anchor="middle" font-size="12" fill="#333">트리거 후 자동 정지:</text>
+  <text x="585" y="298" text-anchor="middle" font-size="11" fill="#555">- HAL_TIM_OnePulse_Start()</text>
+  <text x="585" y="315" text-anchor="middle" font-size="11" fill="#555">- OPM 비트 = 1 (자동 ARR 후 정지)</text>
+  <text x="585" y="332" text-anchor="middle" font-size="11" fill="#EA4335" font-weight="bold">용도: 플래시, 서보, 부저 단음</text>
+</svg>

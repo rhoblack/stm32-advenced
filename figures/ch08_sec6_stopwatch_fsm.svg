@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 520" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <defs>
+    <marker id="arr6" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+    <marker id="arr6b" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#1A73E8"/>
+    </marker>
+  </defs>
+
+  <text x="390" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">Stopwatch FSM — 상태 전이 다이어그램</text>
+
+  <!-- IDLE 상태 -->
+  <circle cx="160" cy="150" r="55" fill="#E3F2FD" stroke="#1A73E8" stroke-width="3"/>
+  <text x="160" y="145" text-anchor="middle" font-size="15" font-weight="bold" fill="#1A73E8">IDLE</text>
+  <text x="160" y="165" text-anchor="middle" font-size="10" fill="#555">00:00.000</text>
+
+  <!-- RUNNING 상태 -->
+  <circle cx="560" cy="150" r="55" fill="#E8F5E9" stroke="#34A853" stroke-width="3"/>
+  <text x="560" y="145" text-anchor="middle" font-size="15" font-weight="bold" fill="#34A853">RUNNING</text>
+  <text x="560" y="165" text-anchor="middle" font-size="10" fill="#555">시간 증가 중</text>
+
+  <!-- PAUSED 상태 -->
+  <circle cx="560" cy="380" r="55" fill="#FFF8E1" stroke="#FBBC04" stroke-width="3"/>
+  <text x="560" y="375" text-anchor="middle" font-size="15" font-weight="bold" fill="#E65100">PAUSED</text>
+  <text x="560" y="395" text-anchor="middle" font-size="10" fill="#555">시간 멈춤</text>
+
+  <!-- 초기 진입 화살표 -->
+  <line x1="40" y1="150" x2="100" y2="150" stroke="#333" stroke-width="2" marker-end="url(#arr6)"/>
+  <text x="55" y="140" font-size="10" fill="#333">시작</text>
+
+  <!-- IDLE → RUNNING (Start) -->
+  <line x1="215" y1="135" x2="500" y2="135" stroke="#34A853" stroke-width="2.5" marker-end="url(#arr6)"/>
+  <rect x="290" y="110" width="140" height="40" rx="5" fill="#E8F5E9" stroke="#34A853"/>
+  <text x="360" y="128" text-anchor="middle" font-size="11" font-weight="bold" fill="#1B5E20">BTN_SHORT</text>
+  <text x="360" y="143" text-anchor="middle" font-size="10" fill="#34A853">/ tim_start, t=0</text>
+
+  <!-- RUNNING → PAUSED (Pause) -->
+  <line x1="575" y1="205" x2="575" y2="320" stroke="#E65100" stroke-width="2.5" marker-end="url(#arr6)"/>
+  <rect x="585" y="240" width="140" height="40" rx="5" fill="#FFF8E1" stroke="#FBBC04"/>
+  <text x="655" y="258" text-anchor="middle" font-size="11" font-weight="bold" fill="#E65100">BTN_SHORT</text>
+  <text x="655" y="273" text-anchor="middle" font-size="10" fill="#E65100">/ tim_stop, 누적저장</text>
+
+  <!-- PAUSED → RUNNING (Resume) -->
+  <line x1="540" y1="325" x2="540" y2="210" stroke="#34A853" stroke-width="2.5" marker-end="url(#arr6)"/>
+  <rect x="425" y="240" width="110" height="40" rx="5" fill="#E8F5E9" stroke="#34A853"/>
+  <text x="480" y="258" text-anchor="middle" font-size="11" font-weight="bold" fill="#1B5E20">BTN_SHORT</text>
+  <text x="480" y="273" text-anchor="middle" font-size="10" fill="#34A853">/ tim_start</text>
+
+  <!-- PAUSED → IDLE (Reset) -->
+  <path d="M 505,380 Q 300,430 160,210" fill="none" stroke="#EA4335" stroke-width="2.5" marker-end="url(#arr6)"/>
+  <rect x="260" y="395" width="140" height="40" rx="5" fill="#FCE4EC" stroke="#EA4335"/>
+  <text x="330" y="413" text-anchor="middle" font-size="11" font-weight="bold" fill="#C62828">BTN_LONG</text>
+  <text x="330" y="428" text-anchor="middle" font-size="10" fill="#C62828">/ tim_stop, t=0</text>
+
+  <!-- RUNNING → IDLE (Reset from Running) -->
+  <path d="M 510,165 Q 360,210 175,205" fill="none" stroke="#EA4335" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arr6)"/>
+  <rect x="300" y="180" width="120" height="30" rx="5" fill="#FCE4EC" stroke="#EA4335" stroke-dasharray="4,2"/>
+  <text x="360" y="200" text-anchor="middle" font-size="10" fill="#C62828">BTN_LONG / 리셋</text>
+
+  <!-- 상태 전이 표 -->
+  <rect x="50" y="450" width="680" height="60" rx="6" fill="#F5F5F5" stroke="#BDBDBD"/>
+  <text x="390" y="472" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">상태 전이 요약</text>
+  <text x="110" y="498" font-size="11" fill="#555">IDLE + BTN_SHORT → RUNNING</text>
+  <text x="310" y="498" font-size="11" fill="#555">RUNNING + BTN_SHORT → PAUSED</text>
+  <text x="550" y="498" font-size="11" fill="#555">PAUSED + BTN_LONG → IDLE</text>
+
+  <!-- 버튼 범례 -->
+  <text x="55" y="385" font-size="11" fill="#555">BTN_SHORT: 짧게 누름 (&lt;2초)</text>
+  <text x="55" y="400" font-size="11" fill="#555">BTN_LONG: 길게 누름 (&ge;2초)</text>
+  <text x="55" y="415" font-size="11" fill="#555">NUCLEO B1 (PC13) 사용</text>
+</svg>

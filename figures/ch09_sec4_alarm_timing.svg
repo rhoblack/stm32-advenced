@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 450" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <defs>
+    <marker id="arr9d" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#C62828"/>
+    </marker>
+  </defs>
+
+  <text x="390" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">RTC 알람 매칭 — 마스크 비트의 역할</text>
+
+  <!-- 시나리오 1: 정확한 시각 -->
+  <rect x="30" y="50" width="720" height="110" rx="8" fill="#E3F2FD" stroke="#1A73E8"/>
+  <text x="50" y="75" font-size="13" font-weight="bold" fill="#1A73E8">시나리오 1: 모든 마스크 OFF — 정확한 시각 한 번</text>
+  <text x="50" y="95" font-size="11" fill="#555">설정: 시=07, 분=30, 초=00, 요일=무시 | 마스크: 시✗ 분✗ 초✗ (모두 비교)</text>
+
+  <rect x="50" y="110" width="80" height="30" rx="4" fill="#BBDEFB"/>
+  <text x="90" y="130" text-anchor="middle" font-size="11" fill="#0D47A1">07:29:59</text>
+  <rect x="150" y="110" width="80" height="30" rx="4" fill="#BBDEFB"/>
+  <text x="190" y="130" text-anchor="middle" font-size="11" fill="#0D47A1">07:30:00</text>
+  <rect x="250" y="110" width="80" height="30" rx="4" fill="#BBDEFB"/>
+  <text x="290" y="130" text-anchor="middle" font-size="11" fill="#0D47A1">07:30:01</text>
+
+  <!-- 트리거 표시 -->
+  <line x1="190" y1="140" x2="190" y2="155" stroke="#C62828" stroke-width="2" marker-end="url(#arr9d)"/>
+  <text x="190" y="150" text-anchor="middle" font-size="20" fill="#C62828">⚡</text>
+  <text x="300" y="150" font-size="10" fill="#C62828">→ 매일 07:30:00에 정확히 1회 트리거</text>
+
+  <!-- 시나리오 2: 매시간 -->
+  <rect x="30" y="175" width="720" height="110" rx="8" fill="#E8F5E9" stroke="#34A853"/>
+  <text x="50" y="200" font-size="13" font-weight="bold" fill="#34A853">시나리오 2: 시 마스크 ON — 매시간 반복</text>
+  <text x="50" y="220" font-size="11" fill="#555">설정: 시=무시, 분=30, 초=00 | 마스크: 시✓(무시) 분✗ 초✗</text>
+
+  <rect x="50" y="235" width="80" height="30" rx="4" fill="#C8E6C9"/>
+  <text x="90" y="255" text-anchor="middle" font-size="11" fill="#1B5E20">01:30:00</text>
+  <text x="90" y="260" text-anchor="middle" font-size="16" fill="#C62828">⚡</text>
+
+  <rect x="160" y="235" width="80" height="30" rx="4" fill="#C8E6C9"/>
+  <text x="200" y="255" text-anchor="middle" font-size="11" fill="#1B5E20">02:30:00</text>
+  <text x="200" y="260" text-anchor="middle" font-size="16" fill="#C62828">⚡</text>
+
+  <rect x="270" y="235" width="80" height="30" rx="4" fill="#C8E6C9"/>
+  <text x="310" y="255" text-anchor="middle" font-size="11" fill="#1B5E20">03:30:00</text>
+  <text x="310" y="260" text-anchor="middle" font-size="16" fill="#C62828">⚡</text>
+
+  <text x="370" y="255" font-size="14" fill="#555">...</text>
+
+  <rect x="400" y="235" width="80" height="30" rx="4" fill="#C8E6C9"/>
+  <text x="440" y="255" text-anchor="middle" font-size="11" fill="#1B5E20">23:30:00</text>
+  <text x="440" y="260" text-anchor="middle" font-size="16" fill="#C62828">⚡</text>
+
+  <text x="510" y="255" font-size="10" fill="#34A853">→ 매시 정각 30분에 트리거 (24회/일)</text>
+
+  <!-- 시나리오 3: 매분 -->
+  <rect x="30" y="300" width="720" height="100" rx="8" fill="#FFF8E1" stroke="#FBBC04"/>
+  <text x="50" y="325" font-size="13" font-weight="bold" fill="#E65100">시나리오 3: 시+분 마스크 ON — 매분 반복</text>
+  <text x="50" y="345" font-size="11" fill="#555">설정: 시=무시, 분=무시, 초=30 | 마스크: 시✓ 분✓ 초✗</text>
+
+  <rect x="50" y="355" width="80" height="30" rx="4" fill="#FFF8E1"/>
+  <text x="90" y="375" text-anchor="middle" font-size="11" fill="#E65100">xx:xx:30</text>
+  <text x="90" y="382" text-anchor="middle" font-size="14" fill="#C62828">⚡</text>
+
+  <text x="160" y="375" font-size="10" fill="#E65100">→ 매분 30초에 트리거 (1440회/일)</text>
+
+  <!-- 마스크 진리표 -->
+  <rect x="350" y="350" width="380" height="40" rx="5" fill="#F5F5F5" stroke="#BDBDBD"/>
+  <text x="540" y="367" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">마스크 규칙</text>
+  <text x="540" y="383" text-anchor="middle" font-size="10" fill="#555">마스크 ON = "이 필드는 무시(=항상 매칭)" | OFF = "정확히 비교"</text>
+
+  <!-- 핵심 문장 -->
+  <rect x="60" y="410" width="660" height="30" rx="5" fill="#FCE4EC" stroke="#EA4335"/>
+  <text x="390" y="430" text-anchor="middle" font-size="12" font-weight="bold" fill="#C62828">마스크를 많이 켤수록 알람이 자주 울린다 — 스마트폰 "매일 반복" 설정과 동일 원리!</text>
+</svg>

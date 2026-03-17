@@ -74,29 +74,28 @@ tim_status_t tim_set_period_ms(uint32_t period_ms)
      *   T = (PSC+1) × (ARR+1) / f_clk
      *   → (PSC+1) × (ARR+1) = T × f_clk
      *
-     * 전략: PSC로 1kHz 카운터를 만들고, ARR로 ms 설정
-     *   PSC = (f_clk / 1000) - 1 = 83999
-     *   ARR = period_ms - 1
+     * 전략: PSC로 10kHz 카운터를 만들고, ARR로 ms 설정
+     *   PSC = 8399 → 84MHz / 8400 = 10kHz
+     *   ARR = period_ms × 10 - 1
      *
-     * 단, period_ms가 짧을 때는 PSC를 줄여 해상도 확보
+     * ※ 주의: PSC 레지스터는 16비트(max 65535)
+     *   84000000/1000-1 = 83999 → 오버플로! 사용 금지
      */
     uint32_t psc, arr;
 
-    if (period_ms >= 10) {
-        /* 10ms 이상: PSC로 1kHz 카운터 */
-        psc = (TIM2_CLK_HZ / 1000) - 1;  /* 83999 */
-        arr = period_ms - 1;
-    } else {
-        /* 1~9ms: PSC로 10kHz 카운터 */
-        psc = (TIM2_CLK_HZ / 10000) - 1; /* 8399 */
-        arr = period_ms * 10 - 1;
-    }
+    /* 10kHz 카운터 기준 (PSC=8399, 16비트 범위 안전) */
+    psc = (TIM2_CLK_HZ / 10000) - 1;  /* 8399 */
+    arr = period_ms * 10 - 1;
 
     __HAL_TIM_SET_PRESCALER(&htim2, psc);
     __HAL_TIM_SET_AUTORELOAD(&htim2, arr);
 
     /* 새 설정 즉시 반영 (UG 비트 세트) */
-    htim2.Instance->EGR = TIM_EGR_UG;
+    __HAL_TIM_GENERATE_SOFTWARE_UPDATE_EVENT(&htim2);
+
+    /* UIF 클리어: UG 세트 시 UIF도 함께 세트되어
+     * 의도치 않은 콜백이 1회 호출될 수 있으므로 제거 */
+    __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
 
     LOG_D("주기 변경: %lu ms (PSC=%lu, ARR=%lu)",
           period_ms, psc, arr);

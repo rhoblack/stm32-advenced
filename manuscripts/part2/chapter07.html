@@ -192,7 +192,7 @@ void         tim_register_callback(tim_callback_t cb);
       </tr>
       <tr>
         <td><strong>Advanced Control (고급)</strong></td>
-        <td>TIM1</td><td>16비트</td><td>APB2 (100MHz)</td>
+        <td>TIM1</td><td>16비트</td><td>APB2 (84MHz)</td>
         <td>GP 기능 + Complementary PWM + Dead-time</td>
       </tr>
       <tr>
@@ -571,6 +571,16 @@ while (1)
     대기 시간 동안 CPU가 다른 작업을 수행할 수 없어 실시간 응답성이 저하된다.
     타이머 인터럽트를 사용하면 CPU가 자유롭게 다른 작업을 수행하다가 정확한 시점에 콜백을 받을 수 있다.
   </aside>
+
+  <aside class="tip">
+    💡 <strong>LED가 깜빡이지 않으면?</strong><br>
+    <ol>
+      <li><strong>CubeMX 설정 확인</strong>: TIM2 → NVIC → "TIM2 global interrupt" <strong>Enable</strong> 되어 있는지 확인하세요. 가장 흔한 실수입니다.</li>
+      <li><strong>코드 확인</strong>: <code>HAL_TIM_Base_Start_IT()</code>에서 <strong><code>_IT</code> 접미사</strong>를 빠뜨리지 않았나요? <code>HAL_TIM_Base_Start()</code>는 인터럽트를 활성화하지 않습니다.</li>
+      <li><strong>PSC/ARR 값 확인</strong>: LOG_D로 실제 설정된 PSC/ARR 값을 출력하여 계산 표와 대조하세요.</li>
+      <li><strong>콜백 함수명</strong>: <code>HAL_TIM_PeriodElapsedCallback</code> — 오타가 있으면 HAL이 기본(빈) 구현을 호출합니다. 빌드 에러 없이 동작하지 않는 가장 찾기 어려운 버그입니다.</li>
+    </ol>
+  </aside>
 </section>
 
 
@@ -873,17 +883,14 @@ tim_status_t tim_set_period_ms(uint32_t period_ms)
     }
 
     uint32_t psc, arr;
-    if (period_ms >= 10) {
-        psc = (TIM2_CLK_HZ / 1000) - 1;  /* 83999 */
-        arr = period_ms - 1;
-    } else {
-        psc = (TIM2_CLK_HZ / 10000) - 1; /* 8399 */
-        arr = period_ms * 10 - 1;
-    }
+    /* 10kHz 카운터 (PSC=8399, 16비트 범위 안전) */
+    psc = (TIM2_CLK_HZ / 10000) - 1;  /* 8399 */
+    arr = period_ms * 10 - 1;
 
     __HAL_TIM_SET_PRESCALER(&htim2, psc);
     __HAL_TIM_SET_AUTORELOAD(&htim2, arr);
-    htim2.Instance->EGR = TIM_EGR_UG;  /* 즉시 반영 */
+    __HAL_TIM_GENERATE_SOFTWARE_UPDATE_EVENT(&htim2);
+    __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
 
     LOG_D("주기 변경: %lu ms (PSC=%lu, ARR=%lu)",
           period_ms, psc, arr);
@@ -945,10 +952,11 @@ int main(void)
 
   <aside class="tip">
     💡 <strong>실무 팁</strong><br>
-    <code>tim_set_period_ms()</code>에서 <code>htim2.Instance->EGR = TIM_EGR_UG</code>를 설정하는 이유:
+    <code>tim_set_period_ms()</code>에서 <code>__HAL_TIM_GENERATE_SOFTWARE_UPDATE_EVENT()</code>를 호출하는 이유:
     PSC와 ARR은 <strong>쉐도우 레지스터</strong>에 먼저 쓰여지고, 다음 UEV에서 실제 레지스터로 복사됩니다.
-    EGR의 UG 비트를 세트하면 <strong>소프트웨어 UEV</strong>를 발생시켜 즉시 반영합니다.
-    단, 이때 인터럽트도 발생할 수 있으므로 필요시 인터럽트를 잠시 비활성화하세요.
+    소프트웨어 UEV(UG 비트 세트)를 발생시키면 즉시 반영됩니다.
+    <strong>중요:</strong> UG 세트 시 UIF(Update Interrupt Flag)도 함께 세트되어 의도치 않은 콜백이 1회 호출될 수 있습니다.
+    반드시 <code>__HAL_TIM_CLEAR_FLAG(&amp;htim2, TIM_FLAG_UPDATE)</code>로 UIF를 클리어하세요.
   </aside>
 
   <aside class="faq">
