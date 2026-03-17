@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 520" font-family="'Noto Sans KR', sans-serif" font-size="13">
+  <text x="375" y="25" text-anchor="middle" font-size="16" font-weight="700" fill="#1A1A2E">STM32F411 DMA 컨트롤러 구조</text>
+
+  <!-- DMA1 Box -->
+  <rect x="20" y="45" width="340" height="450" rx="10" fill="#FF6D00" opacity="0.08" stroke="#FF6D00" stroke-width="2"/>
+  <text x="190" y="70" text-anchor="middle" font-size="16" font-weight="700" fill="#FF6D00">DMA1</text>
+  <text x="190" y="88" text-anchor="middle" font-size="11" fill="#E65100">APB1 주변장치 전용</text>
+
+  <!-- DMA1 Streams -->
+  <g>
+    <rect x="40" y="100" width="300" height="28" rx="5" fill="#FFE0B2" stroke="#FF6D00" stroke-width="1"/>
+    <text x="55" y="119" font-size="11" font-weight="600" fill="#E65100">Stream 0</text>
+    <text x="160" y="119" font-size="10" fill="#666">Ch4: SPI2_RX</text>
+  </g>
+  <g>
+    <rect x="40" y="133" width="300" height="28" rx="5" fill="#FFE0B2" stroke="#FF6D00" stroke-width="1"/>
+    <text x="55" y="152" font-size="11" font-weight="600" fill="#E65100">Stream 1</text>
+    <text x="160" y="152" font-size="10" fill="#666">Ch4: USART3_RX</text>
+  </g>
+  <g>
+    <rect x="40" y="166" width="300" height="28" rx="5" fill="#FFE0B2" stroke="#FF6D00" stroke-width="1"/>
+    <text x="55" y="185" font-size="11" font-weight="600" fill="#E65100">Stream 2</text>
+    <text x="160" y="185" font-size="10" fill="#666">Ch4: TIM3_CH4/UP</text>
+  </g>
+  <g>
+    <rect x="40" y="199" width="300" height="28" rx="5" fill="#FFE0B2" stroke="#FF6D00" stroke-width="1"/>
+    <text x="55" y="218" font-size="11" font-weight="600" fill="#E65100">Stream 3</text>
+    <text x="160" y="218" font-size="10" fill="#666">Ch4: SPI2_TX</text>
+  </g>
+  <g>
+    <rect x="40" y="232" width="300" height="28" rx="5" fill="#FFE0B2" stroke="#FF6D00" stroke-width="1"/>
+    <text x="55" y="251" font-size="11" font-weight="600" fill="#E65100">Stream 4</text>
+    <text x="160" y="251" font-size="10" fill="#666">Ch4: TIM3_CH1</text>
+  </g>
+  <g>
+    <rect x="40" y="265" width="300" height="28" rx="5" fill="#FFF3E0" stroke="#FF6D00" stroke-width="2"/>
+    <text x="55" y="284" font-size="11" font-weight="700" fill="#E65100">Stream 5</text>
+    <text x="160" y="284" font-size="10" fill="#E65100" font-weight="600">Ch4: USART2_RX ← Ch06</text>
+  </g>
+  <g>
+    <rect x="40" y="298" width="300" height="28" rx="5" fill="#FFF3E0" stroke="#FF6D00" stroke-width="2"/>
+    <text x="55" y="317" font-size="11" font-weight="700" fill="#E65100">Stream 6</text>
+    <text x="160" y="317" font-size="10" fill="#E65100" font-weight="600">Ch4: USART2_TX ← Ch06</text>
+  </g>
+  <g>
+    <rect x="40" y="331" width="300" height="28" rx="5" fill="#FFE0B2" stroke="#FF6D00" stroke-width="1"/>
+    <text x="55" y="350" font-size="11" font-weight="600" fill="#E65100">Stream 7</text>
+    <text x="160" y="350" font-size="10" fill="#666">Ch1: I2C1_TX</text>
+  </g>
+
+  <!-- DMA1 note -->
+  <rect x="40" y="370" width="300" height="25" rx="5" fill="#FFCCBC" stroke="#FF6D00"/>
+  <text x="190" y="387" text-anchor="middle" font-size="11" font-weight="600" fill="#BF360C">Mem-to-Mem 불가</text>
+
+  <!-- Arbiter DMA1 -->
+  <rect x="40" y="405" width="300" height="30" rx="5" fill="#FF6D00" opacity="0.3"/>
+  <text x="190" y="425" text-anchor="middle" font-size="12" font-weight="600" fill="#E65100">Arbiter (우선순위 중재기)</text>
+  <text x="190" y="460" text-anchor="middle" font-size="10" fill="#999">Very High > High > Medium > Low</text>
+  <text x="190" y="475" text-anchor="middle" font-size="10" fill="#999">같은 우선순위 → Stream 번호 낮은 쪽 우선</text>
+
+  <!-- DMA2 Box -->
+  <rect x="390" y="45" width="340" height="450" rx="10" fill="#FF6D00" opacity="0.08" stroke="#FF6D00" stroke-width="2"/>
+  <text x="560" y="70" text-anchor="middle" font-size="16" font-weight="700" fill="#FF6D00">DMA2</text>
+  <text x="560" y="88" text-anchor="middle" font-size="11" fill="#E65100">APB2 주변장치 + Mem-to-Mem</text>
+
+  <!-- DMA2 Streams -->
+  <g>
+    <rect x="410" y="100" width="300" height="28" rx="5" fill="#E3F2FD" stroke="#FF6D00" stroke-width="2"/>
+    <text x="425" y="119" font-size="11" font-weight="700" fill="#E65100">Stream 0</text>
+    <text x="530" y="119" font-size="10" fill="#1565C0" font-weight="600">MEMTOMEM ← 이번 장!</text>
+  </g>
+  <g>
+    <rect x="410" y="133" width="300" height="28" rx="5" fill="#FFE0B2" stroke="#FF6D00" stroke-width="1"/>
+    <text x="425" y="152" font-size="11" font-weight="600" fill="#E65100">Stream 1</text>
+    <text x="530" y="152" font-size="10" fill="#666">Ch4: USART6_RX</text>
+  </g>
+  <g>
+    <rect x="410" y="166" width="300" height="28" rx="5" fill="#FFE0B2" stroke="#FF6D00" stroke-width="1"/>
+    <text x="425" y="185" font-size="11" font-weight="600" fill="#E65100">Stream 2</text>
+    <text x="530" y="185" font-size="10" fill="#666">Ch3: SPI1_RX (Ch12)</text>
+  </g>
+  <g>
+    <rect x="410" y="199" width="300" height="28" rx="5" fill="#FFE0B2" stroke="#FF6D00" stroke-width="1"/>
+    <text x="425" y="218" font-size="11" font-weight="600" fill="#E65100">Stream 3</text>
+    <text x="530" y="218" font-size="10" fill="#666">Ch3: SPI1_TX (Ch12)</text>
+  </g>
+  <g>
+    <rect x="410" y="232" width="300" height="28" rx="5" fill="#FFE0B2" stroke="#FF6D00" stroke-width="1"/>
+    <text x="425" y="251" font-size="11" font-weight="600" fill="#E65100">Stream 4</text>
+    <text x="530" y="251" font-size="10" fill="#666">Ch0: ADC1</text>
+  </g>
+  <g>
+    <rect x="410" y="265" width="300" height="28" rx="5" fill="#FFE0B2" stroke="#FF6D00" stroke-width="1"/>
+    <text x="425" y="284" font-size="11" font-weight="600" fill="#E65100">Stream 5</text>
+    <text x="530" y="284" font-size="10" fill="#666">Ch4: USART1_RX</text>
+  </g>
+  <g>
+    <rect x="410" y="298" width="300" height="28" rx="5" fill="#FFE0B2" stroke="#FF6D00" stroke-width="1"/>
+    <text x="425" y="317" font-size="11" font-weight="600" fill="#E65100">Stream 6</text>
+    <text x="530" y="317" font-size="10" fill="#666">Ch6: TIM1_CH1</text>
+  </g>
+  <g>
+    <rect x="410" y="331" width="300" height="28" rx="5" fill="#FFE0B2" stroke="#FF6D00" stroke-width="1"/>
+    <text x="425" y="350" font-size="11" font-weight="600" fill="#E65100">Stream 7</text>
+    <text x="530" y="350" font-size="10" fill="#666">Ch4: USART1_TX</text>
+  </g>
+
+  <!-- DMA2 note -->
+  <rect x="410" y="370" width="300" height="25" rx="5" fill="#C8E6C9" stroke="#34A853"/>
+  <text x="560" y="387" text-anchor="middle" font-size="11" font-weight="600" fill="#1B5E20">Mem-to-Mem 가능!</text>
+
+  <!-- Arbiter DMA2 -->
+  <rect x="410" y="405" width="300" height="30" rx="5" fill="#FF6D00" opacity="0.3"/>
+  <text x="560" y="425" text-anchor="middle" font-size="12" font-weight="600" fill="#E65100">Arbiter (우선순위 중재기)</text>
+
+  <!-- AHB Bus -->
+  <rect x="150" y="495" width="450" height="20" rx="4" fill="#616161"/>
+  <text x="375" y="510" text-anchor="middle" fill="white" font-size="11" font-weight="600">AHB Bus Matrix</text>
+  <line x1="190" y1="480" x2="190" y2="495" stroke="#616161" stroke-width="2"/>
+  <line x1="560" y1="480" x2="560" y2="495" stroke="#616161" stroke-width="2"/>
+</svg>

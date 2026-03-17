@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 300" font-family="'Noto Sans KR', sans-serif" font-size="12">
+  <text x="350" y="25" text-anchor="middle" font-size="16" font-weight="700" fill="#1A1A2E">교재 주변장치 DMA 매핑 (STM32F411RE)</text>
+
+  <!-- Table Header -->
+  <rect x="20" y="40" width="660" height="30" rx="4" fill="#1A1A2E"/>
+  <text x="80" y="60" text-anchor="middle" fill="white" font-weight="700" font-size="12">주변장치</text>
+  <text x="190" y="60" text-anchor="middle" fill="white" font-weight="700" font-size="12">방향</text>
+  <text x="300" y="60" text-anchor="middle" fill="white" font-weight="700" font-size="12">DMA</text>
+  <text x="400" y="60" text-anchor="middle" fill="white" font-weight="700" font-size="12">Stream</text>
+  <text x="500" y="60" text-anchor="middle" fill="white" font-weight="700" font-size="12">Channel</text>
+  <text x="610" y="60" text-anchor="middle" fill="white" font-weight="700" font-size="12">챕터</text>
+
+  <!-- Row 1: MEMTOMEM -->
+  <rect x="20" y="75" width="660" height="28" rx="0" fill="#E3F2FD"/>
+  <text x="80" y="93" text-anchor="middle" font-weight="600" fill="#1565C0">MEMTOMEM</text>
+  <text x="190" y="93" text-anchor="middle" fill="#333">Mem→Mem</text>
+  <text x="300" y="93" text-anchor="middle" fill="#333">DMA2</text>
+  <text x="400" y="93" text-anchor="middle" fill="#333">Stream 0</text>
+  <text x="500" y="93" text-anchor="middle" fill="#333">—</text>
+  <rect x="580" y="79" width="60" height="20" rx="10" fill="#FF6D00"/>
+  <text x="610" y="93" text-anchor="middle" fill="white" font-weight="600" font-size="11">Ch05</text>
+
+  <!-- Row 2: USART2 RX -->
+  <rect x="20" y="108" width="660" height="28" rx="0" fill="#FFF3E0"/>
+  <text x="80" y="126" text-anchor="middle" font-weight="600" fill="#E65100">USART2 RX</text>
+  <text x="190" y="126" text-anchor="middle" fill="#333">Periph→Mem</text>
+  <text x="300" y="126" text-anchor="middle" fill="#333">DMA1</text>
+  <text x="400" y="126" text-anchor="middle" fill="#333">Stream 5</text>
+  <text x="500" y="126" text-anchor="middle" fill="#333">Ch 4</text>
+  <rect x="580" y="112" width="60" height="20" rx="10" fill="#34A853"/>
+  <text x="610" y="126" text-anchor="middle" fill="white" font-weight="600" font-size="11">Ch06</text>
+
+  <!-- Row 3: USART2 TX -->
+  <rect x="20" y="141" width="660" height="28" rx="0" fill="#FFF3E0"/>
+  <text x="80" y="159" text-anchor="middle" font-weight="600" fill="#E65100">USART2 TX</text>
+  <text x="190" y="159" text-anchor="middle" fill="#333">Mem→Periph</text>
+  <text x="300" y="159" text-anchor="middle" fill="#333">DMA1</text>
+  <text x="400" y="159" text-anchor="middle" fill="#333">Stream 6</text>
+  <text x="500" y="159" text-anchor="middle" fill="#333">Ch 4</text>
+  <rect x="580" y="145" width="60" height="20" rx="10" fill="#34A853"/>
+  <text x="610" y="159" text-anchor="middle" fill="white" font-weight="600" font-size="11">Ch06</text>
+
+  <!-- Row 4: SPI1 RX -->
+  <rect x="20" y="174" width="660" height="28" rx="0" fill="#E8F5E9"/>
+  <text x="80" y="192" text-anchor="middle" font-weight="600" fill="#2E7D32">SPI1 RX</text>
+  <text x="190" y="192" text-anchor="middle" fill="#333">Periph→Mem</text>
+  <text x="300" y="192" text-anchor="middle" fill="#333">DMA2</text>
+  <text x="400" y="192" text-anchor="middle" fill="#333">Stream 2</text>
+  <text x="500" y="192" text-anchor="middle" fill="#333">Ch 3</text>
+  <rect x="580" y="178" width="60" height="20" rx="10" fill="#1A73E8"/>
+  <text x="610" y="192" text-anchor="middle" fill="white" font-weight="600" font-size="11">Ch12</text>
+
+  <!-- Row 5: SPI1 TX -->
+  <rect x="20" y="207" width="660" height="28" rx="0" fill="#E8F5E9"/>
+  <text x="80" y="225" text-anchor="middle" font-weight="600" fill="#2E7D32">SPI1 TX</text>
+  <text x="190" y="225" text-anchor="middle" fill="#333">Mem→Periph</text>
+  <text x="300" y="225" text-anchor="middle" fill="#333">DMA2</text>
+  <text x="400" y="225" text-anchor="middle" fill="#333">Stream 3</text>
+  <text x="500" y="225" text-anchor="middle" fill="#333">Ch 3</text>
+  <rect x="580" y="211" width="60" height="20" rx="10" fill="#1A73E8"/>
+  <text x="610" y="225" text-anchor="middle" fill="white" font-weight="600" font-size="11">Ch12</text>
+
+  <!-- Row 6: I2C1 -->
+  <rect x="20" y="240" width="660" height="28" rx="0" fill="#F3E5F5"/>
+  <text x="80" y="258" text-anchor="middle" font-weight="600" fill="#6A1B9A">I2C1 RX</text>
+  <text x="190" y="258" text-anchor="middle" fill="#333">Periph→Mem</text>
+  <text x="300" y="258" text-anchor="middle" fill="#333">DMA1</text>
+  <text x="400" y="258" text-anchor="middle" fill="#333">Stream 0</text>
+  <text x="500" y="258" text-anchor="middle" fill="#333">Ch 1</text>
+  <rect x="580" y="244" width="60" height="20" rx="10" fill="#9C27B0"/>
+  <text x="610" y="258" text-anchor="middle" fill="white" font-weight="600" font-size="11">Ch14</text>
+
+  <!-- Legend -->
+  <text x="350" y="290" text-anchor="middle" font-size="11" fill="#999">색상 = 해당 챕터에서 실습 | DMA1: APB1 주변장치 | DMA2: APB2 + Mem-to-Mem</text>
+</svg>

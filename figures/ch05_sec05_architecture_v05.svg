@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 440" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <text x="350" y="25" text-anchor="middle" font-size="18" font-weight="700" fill="#1A1A2E">아키텍처 v0.5 최종 — DMA Controller 추가</text>
+
+  <!-- App Layer -->
+  <rect x="50" y="50" width="600" height="55" rx="8" fill="#EA4335" opacity="0.12" stroke="#EA4335" stroke-width="2"/>
+  <text x="70" y="75" font-weight="700" fill="#EA4335">App</text>
+  <rect x="200" y="58" width="100" height="38" rx="6" fill="#EA4335"/>
+  <text x="250" y="82" text-anchor="middle" fill="white" font-size="12" font-weight="600">main.c</text>
+
+  <!-- Service Layer -->
+  <rect x="50" y="118" width="600" height="55" rx="8" fill="#FBBC04" opacity="0.10" stroke="#FBBC04" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <text x="70" y="143" font-weight="700" fill="#E65100" opacity="0.5">Service</text>
+  <text x="250" y="150" font-size="11" fill="#999">(Ch07 이후 추가 예정)</text>
+
+  <!-- Driver Layer -->
+  <rect x="50" y="186" width="600" height="55" rx="8" fill="#34A853" opacity="0.15" stroke="#34A853" stroke-width="2"/>
+  <text x="70" y="211" font-weight="700" fill="#34A853">Driver</text>
+  <rect x="200" y="194" width="130" height="38" rx="6" fill="#34A853"/>
+  <text x="265" y="218" text-anchor="middle" fill="white" font-size="12" font-weight="600">uart_driver</text>
+  <text x="265" y="225" text-anchor="middle" fill="white" font-size="9">Ch04</text>
+
+  <!-- HAL Layer -->
+  <rect x="50" y="254" width="600" height="55" rx="8" fill="#1A73E8" opacity="0.12" stroke="#1A73E8" stroke-width="2"/>
+  <text x="70" y="279" font-weight="700" fill="#1A73E8">HAL</text>
+  <rect x="200" y="262" width="100" height="38" rx="6" fill="#1A73E8"/>
+  <text x="250" y="286" text-anchor="middle" fill="white" font-size="12">HAL_UART</text>
+  <rect x="320" y="262" width="100" height="38" rx="6" fill="#1A73E8"/>
+  <text x="370" y="286" text-anchor="middle" fill="white" font-size="12">HAL_DMA</text>
+
+  <!-- DMA Controller Layer -->
+  <rect x="50" y="325" width="600" height="50" rx="8" fill="#FF6D00" opacity="0.15" stroke="#FF6D00" stroke-width="3"/>
+  <text x="70" y="348" font-weight="700" fill="#FF6D00">DMA</text>
+  <rect x="200" y="332" width="100" height="35" rx="6" fill="#FF6D00"/>
+  <text x="250" y="354" text-anchor="middle" fill="white" font-size="12" font-weight="700">DMA1</text>
+  <rect x="320" y="332" width="100" height="35" rx="6" fill="#FF6D00"/>
+  <text x="370" y="354" text-anchor="middle" fill="white" font-size="12" font-weight="700">DMA2</text>
+  <rect x="440" y="336" width="55" height="22" rx="11" fill="#FF6D00"/>
+  <text x="467" y="351" text-anchor="middle" fill="white" font-size="10" font-weight="700">v0.5</text>
+
+  <!-- Hardware -->
+  <rect x="50" y="390" width="600" height="40" rx="8" fill="#616161" opacity="0.12" stroke="#616161" stroke-width="1.5"/>
+  <text x="70" y="415" font-weight="700" fill="#616161">HW</text>
+  <text x="250" y="415" fill="#616161" font-size="12">USART2 · GPIO · SRAM · Flash</text>
+
+  <!-- Arrows -->
+  <line x1="250" y1="105" x2="265" y2="186" stroke="#666" stroke-width="1.5" marker-end="url(#v05a)"/>
+  <line x1="265" y1="241" x2="250" y2="254" stroke="#666" stroke-width="1.5" marker-end="url(#v05a)"/>
+  <line x1="370" y1="300" x2="370" y2="325" stroke="#FF6D00" stroke-width="2" marker-end="url(#v05o)"/>
+  <line x1="300" y1="367" x2="300" y2="390" stroke="#616161" stroke-width="1.5" marker-end="url(#v05a)"/>
+
+  <defs>
+    <marker id="v05a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/>
+    </marker>
+    <marker id="v05o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#FF6D00"/>
+    </marker>
+  </defs>
+</svg>

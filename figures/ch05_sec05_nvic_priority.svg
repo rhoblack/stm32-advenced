@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 350" font-family="'Noto Sans KR', sans-serif" font-size="13">
+  <text x="350" y="25" text-anchor="middle" font-size="16" font-weight="700" fill="#1A1A2E">v0.5 인터럽트 우선순위 배치</text>
+  <text x="350" y="45" text-anchor="middle" font-size="11" fill="#999">숫자가 작을수록 높은 우선순위 (선점 가능)</text>
+
+  <!-- Priority scale -->
+  <rect x="50" y="60" width="600" height="30" rx="6" fill="linear-gradient(90deg, #EA4335, #FF6D00, #FBBC04, #34A853, #1A73E8)"/>
+  <rect x="50" y="60" width="600" height="30" rx="6" fill="url(#grad05)"/>
+  <text x="80" y="80" fill="white" font-size="11" font-weight="700">높은 우선순위 (0)</text>
+  <text x="570" y="80" fill="white" font-size="11" font-weight="700">낮은 우선순위 (15)</text>
+
+  <!-- Priority entries -->
+  <!-- Priority 0: Reserved (Fault handlers) -->
+  <rect x="50" y="110" width="600" height="40" rx="6" fill="#f5f5f5" stroke="#ccc"/>
+  <rect x="50" y="110" width="50" height="40" rx="6" fill="#616161"/>
+  <text x="75" y="135" text-anchor="middle" fill="white" font-weight="700">0</text>
+  <text x="130" y="128" font-weight="600" fill="#616161">HardFault / NMI</text>
+  <text x="130" y="143" font-size="10" fill="#999">시스템 예약 — 변경 금지</text>
+  <rect x="500" y="117" width="130" height="24" rx="12" fill="#616161" opacity="0.2"/>
+  <text x="565" y="133" text-anchor="middle" font-size="10" fill="#616161">예약 (시스템)</text>
+
+  <!-- Priority 1: DMA -->
+  <rect x="50" y="158" width="600" height="40" rx="6" fill="#FFF3E0" stroke="#FF6D00" stroke-width="2"/>
+  <rect x="50" y="158" width="50" height="40" rx="6" fill="#FF6D00"/>
+  <text x="75" y="183" text-anchor="middle" fill="white" font-weight="700">1</text>
+  <text x="130" y="176" font-weight="700" fill="#FF6D00">DMA2 Stream 0 (Mem-to-Mem)</text>
+  <text x="130" y="191" font-size="10" fill="#E65100">데이터 전송 완료 즉시 처리 — 유실 방지</text>
+  <rect x="500" y="165" width="130" height="24" rx="12" fill="#FF6D00"/>
+  <text x="565" y="181" text-anchor="middle" fill="white" font-size="10" font-weight="600">Ch05 NEW!</text>
+
+  <!-- Priority 2: UART -->
+  <rect x="50" y="206" width="600" height="40" rx="6" fill="#E8F5E9" stroke="#34A853" stroke-width="1.5"/>
+  <rect x="50" y="206" width="50" height="40" rx="6" fill="#34A853"/>
+  <text x="75" y="231" text-anchor="middle" fill="white" font-weight="700">2</text>
+  <text x="130" y="224" font-weight="600" fill="#34A853">USART2 (UART RX 인터럽트)</text>
+  <text x="130" y="239" font-size="10" fill="#2E7D32">1바이트 수신 후 재등록 — 놓치면 데이터 유실</text>
+  <rect x="500" y="213" width="130" height="24" rx="12" fill="#34A853"/>
+  <text x="565" y="229" text-anchor="middle" fill="white" font-size="10" font-weight="600">Ch04</text>
+
+  <!-- Priority 3: EXTI -->
+  <rect x="50" y="254" width="600" height="40" rx="6" fill="#E3F2FD" stroke="#1A73E8" stroke-width="1.5"/>
+  <rect x="50" y="254" width="50" height="40" rx="6" fill="#1A73E8"/>
+  <text x="75" y="279" text-anchor="middle" fill="white" font-weight="700">3</text>
+  <text x="130" y="272" font-weight="600" fill="#1A73E8">EXTI (Button 인터럽트)</text>
+  <text x="130" y="287" font-size="10" fill="#0D47A1">사람 반응 ~100ms, 약간 지연 허용</text>
+  <rect x="500" y="261" width="130" height="24" rx="12" fill="#1A73E8"/>
+  <text x="565" y="277" text-anchor="middle" fill="white" font-size="10" font-weight="600">Ch01</text>
+
+  <!-- Priority 15: SysTick -->
+  <rect x="50" y="302" width="600" height="40" rx="6" fill="#f5f5f5" stroke="#ccc"/>
+  <rect x="50" y="302" width="50" height="40" rx="6" fill="#9E9E9E"/>
+  <text x="75" y="327" text-anchor="middle" fill="white" font-weight="700">15</text>
+  <text x="130" y="320" font-weight="600" fill="#616161">SysTick (HAL_GetTick)</text>
+  <text x="130" y="335" font-size="10" fill="#999">1ms 주기 — 최저 우선순위로 항상 동작</text>
+  <rect x="500" y="309" width="130" height="24" rx="12" fill="#9E9E9E"/>
+  <text x="565" y="325" text-anchor="middle" fill="white" font-size="10">기본값</text>
+
+  <defs>
+    <linearGradient id="grad05" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#EA4335;stop-opacity:0.8"/>
+      <stop offset="30%" style="stop-color:#FF6D00;stop-opacity:0.6"/>
+      <stop offset="60%" style="stop-color:#FBBC04;stop-opacity:0.4"/>
+      <stop offset="100%" style="stop-color:#34A853;stop-opacity:0.3"/>
+    </linearGradient>
+  </defs>
+</svg>

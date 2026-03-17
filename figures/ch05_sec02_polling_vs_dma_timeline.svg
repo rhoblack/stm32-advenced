@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 340" font-family="'Noto Sans KR', sans-serif" font-size="13">
+  <text x="360" y="25" text-anchor="middle" font-size="16" font-weight="700" fill="#1A1A2E">CPU 타임라인 비교 — 폴링 vs DMA</text>
+
+  <!-- Timeline axis -->
+  <text x="50" y="55" font-size="12" fill="#999">시간 →</text>
+
+  <!-- ===== Polling Section ===== -->
+  <text x="30" y="90" font-weight="700" fill="#EA4335" font-size="14">폴링</text>
+
+  <!-- CPU timeline - Polling -->
+  <text x="30" y="115" font-size="11" fill="#666">CPU</text>
+  <rect x="80" y="100" width="580" height="25" rx="4" fill="#f5f5f5" stroke="#ccc"/>
+  <!-- Copy phase (CPU busy) -->
+  <rect x="80" y="100" width="400" height="25" rx="4" fill="#EA4335" opacity="0.8"/>
+  <text x="280" y="117" text-anchor="middle" fill="white" font-size="11" font-weight="600">CPU: for 루프 복사 (100% 점유)</text>
+  <!-- After copy -->
+  <rect x="480" y="100" width="180" height="25" rx="4" fill="#34A853" opacity="0.3"/>
+  <text x="570" y="117" text-anchor="middle" fill="#2E7D32" font-size="10">다른 작업 가능</text>
+
+  <!-- LED timeline - Polling -->
+  <text x="30" y="147" font-size="11" fill="#666">LED</text>
+  <rect x="80" y="132" width="580" height="25" rx="4" fill="#f5f5f5" stroke="#ccc"/>
+  <rect x="80" y="132" width="400" height="25" rx="4" fill="#FFCDD2"/>
+  <text x="280" y="149" text-anchor="middle" fill="#C62828" font-size="10">토글 불가 (CPU 블로킹)</text>
+  <rect x="520" y="132" width="30" height="25" rx="2" fill="#FBBC04"/>
+  <rect x="570" y="132" width="30" height="25" rx="2" fill="#FBBC04"/>
+  <rect x="620" y="132" width="30" height="25" rx="2" fill="#FBBC04"/>
+
+  <!-- Time marker -->
+  <line x1="480" y1="95" x2="480" y2="165" stroke="#EA4335" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="485" y="172" font-size="10" fill="#EA4335">~50us</text>
+
+  <!-- ===== DMA Section ===== -->
+  <text x="30" y="210" font-weight="700" fill="#FF6D00" font-size="14">DMA</text>
+
+  <!-- CPU timeline - DMA -->
+  <text x="30" y="235" font-size="11" fill="#666">CPU</text>
+  <rect x="80" y="220" width="580" height="25" rx="4" fill="#f5f5f5" stroke="#ccc"/>
+  <!-- Start command (short) -->
+  <rect x="80" y="220" width="40" height="25" rx="4" fill="#1A73E8"/>
+  <text x="100" y="237" text-anchor="middle" fill="white" font-size="9">설정</text>
+  <!-- CPU free -->
+  <rect x="120" y="220" width="280" height="25" rx="4" fill="#34A853" opacity="0.3"/>
+  <text x="260" y="237" text-anchor="middle" fill="#2E7D32" font-size="11" font-weight="600">CPU 자유! (LED 토글, 센서 읽기...)</text>
+  <!-- Callback -->
+  <rect x="400" y="220" width="40" height="25" rx="4" fill="#FF6D00"/>
+  <text x="420" y="237" text-anchor="middle" fill="white" font-size="9">콜백</text>
+  <!-- After -->
+  <rect x="440" y="220" width="220" height="25" rx="4" fill="#34A853" opacity="0.3"/>
+  <text x="550" y="237" text-anchor="middle" fill="#2E7D32" font-size="10">다른 작업 계속</text>
+
+  <!-- DMA engine timeline -->
+  <text x="30" y="267" font-size="11" fill="#666">DMA</text>
+  <rect x="80" y="252" width="580" height="25" rx="4" fill="#f5f5f5" stroke="#ccc"/>
+  <rect x="120" y="252" width="280" height="25" rx="4" fill="#FF6D00" opacity="0.7"/>
+  <text x="260" y="269" text-anchor="middle" fill="white" font-size="11" font-weight="600">DMA 컨트롤러: 자동 전송</text>
+
+  <!-- LED timeline - DMA -->
+  <text x="30" y="299" font-size="11" fill="#666">LED</text>
+  <rect x="80" y="284" width="580" height="25" rx="4" fill="#f5f5f5" stroke="#ccc"/>
+  <rect x="120" y="284" width="30" height="25" rx="2" fill="#FBBC04"/>
+  <rect x="170" y="284" width="30" height="25" rx="2" fill="#FBBC04"/>
+  <rect x="220" y="284" width="30" height="25" rx="2" fill="#FBBC04"/>
+  <rect x="270" y="284" width="30" height="25" rx="2" fill="#FBBC04"/>
+  <rect x="320" y="284" width="30" height="25" rx="2" fill="#FBBC04"/>
+  <rect x="370" y="284" width="30" height="25" rx="2" fill="#FBBC04"/>
+  <rect x="440" y="284" width="30" height="25" rx="2" fill="#FBBC04"/>
+  <rect x="490" y="284" width="30" height="25" rx="2" fill="#FBBC04"/>
+  <rect x="540" y="284" width="30" height="25" rx="2" fill="#FBBC04"/>
+  <rect x="590" y="284" width="30" height="25" rx="2" fill="#FBBC04"/>
+
+  <!-- Time marker -->
+  <line x1="400" y1="215" x2="400" y2="285" stroke="#FF6D00" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="405" y="320" font-size="10" fill="#FF6D00">TC 인터럽트</text>
+
+  <!-- Key message -->
+  <rect x="200" y="325" width="320" height="22" rx="11" fill="#34A853"/>
+  <text x="360" y="340" text-anchor="middle" fill="white" font-size="12" font-weight="700">DMA의 핵심 가치 = CPU 해방</text>
+</svg>
