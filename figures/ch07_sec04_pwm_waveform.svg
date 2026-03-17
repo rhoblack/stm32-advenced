@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <text x="400" y="25" text-anchor="middle" font-size="18" font-weight="700" fill="#212121">Edge-Aligned PWM 파형 — 카운터 vs CCR 비교</text>
+
+  <!-- ===== 상단: 카운터 삼각파 + CCR 수평선 ===== -->
+  <text x="30" y="65" font-size="12" fill="#555" font-weight="600">CNT</text>
+
+  <!-- Y축 -->
+  <line x1="70" y1="50" x2="70" y2="190" stroke="#999" stroke-width="1"/>
+  <text x="55" y="58" text-anchor="end" font-size="10" fill="#999">ARR</text>
+  <text x="55" y="193" text-anchor="end" font-size="10" fill="#999">0</text>
+
+  <!-- X축 -->
+  <line x1="70" y1="185" x2="760" y2="185" stroke="#999" stroke-width="1"/>
+
+  <!-- ARR 수평선 -->
+  <line x1="70" y1="55" x2="760" y2="55" stroke="#EA4335" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="770" y="59" font-size="9" fill="#EA4335">ARR</text>
+
+  <!-- CCR 50% 수평선 -->
+  <line x1="70" y1="120" x2="760" y2="120" stroke="#1A73E8" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="770" y="124" font-size="10" fill="#1A73E8" font-weight="600">CCR (50%)</text>
+
+  <!-- 카운터 삼각파 (2.5주기) -->
+  <polyline points="70,185 300,55 302,185 532,55 534,185 760,57" stroke="#34A853" stroke-width="2.5" fill="none"/>
+
+  <!-- CNT < CCR 영역 (채움) -->
+  <!-- 주기 1: CNT<CCR 구간 -->
+  <polygon points="70,185 185,120 185,185" fill="#1A73E8" fill-opacity="0.1" stroke="none"/>
+  <!-- CNT>CCR 구간 (더 밝게) -->
+  <polygon points="185,120 300,55 300,120" fill="#EA4335" fill-opacity="0.08" stroke="none"/>
+
+  <!-- 교차 지점 세로선 -->
+  <line x1="185" y1="120" x2="185" y2="340" stroke="#1A73E8" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="300" y1="55" x2="300" y2="340" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="415" y1="120" x2="415" y2="340" stroke="#1A73E8" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="532" y1="55" x2="532" y2="340" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="647" y1="120" x2="647" y2="340" stroke="#1A73E8" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <!-- ===== 하단: PWM 출력 파형 ===== -->
+  <text x="30" y="260" font-size="12" fill="#555" font-weight="600">PWM</text>
+  <text x="30" y="275" font-size="12" fill="#555" font-weight="600">출력</text>
+
+  <text x="55" y="245" text-anchor="end" font-size="10" fill="#999">High</text>
+  <text x="55" y="310" text-anchor="end" font-size="10" fill="#999">Low</text>
+
+  <!-- PWM 파형 (PWM Mode 1: CNT < CCR → High) -->
+  <!-- 주기 1 -->
+  <polyline points="70,240 70,240 185,240 185,305 300,305 300,240 415,240 415,305 532,305 532,240 647,240 647,305 760,305" stroke="#1A73E8" stroke-width="3" fill="none"/>
+
+  <!-- 듀티 표시 -->
+  <line x1="70" y1="330" x2="185" y2="330" stroke="#1A73E8" stroke-width="2"/>
+  <line x1="70" y1="325" x2="70" y2="335" stroke="#1A73E8" stroke-width="1.5"/>
+  <line x1="185" y1="325" x2="185" y2="335" stroke="#1A73E8" stroke-width="1.5"/>
+  <text x="128" y="348" text-anchor="middle" font-size="11" fill="#1A73E8" font-weight="600">Duty (50%)</text>
+
+  <line x1="70" y1="360" x2="300" y2="360" stroke="#333" stroke-width="1.5"/>
+  <line x1="70" y1="355" x2="70" y2="365" stroke="#333" stroke-width="1.5"/>
+  <line x1="300" y1="355" x2="300" y2="365" stroke="#333" stroke-width="1.5"/>
+  <text x="185" y="378" text-anchor="middle" font-size="11" fill="#333" font-weight="600">1주기 (T)</text>
+
+  <!-- 설명 -->
+  <rect x="530" y="355" width="240" height="55" rx="6" fill="#E3F2FD" stroke="#1A73E8" stroke-width="1"/>
+  <text x="650" y="375" text-anchor="middle" font-size="12" fill="#333" font-weight="600">PWM Mode 1 (Edge-Aligned)</text>
+  <text x="650" y="393" text-anchor="middle" font-size="11" fill="#1A73E8">CNT &lt; CCR → High</text>
+  <text x="650" y="407" text-anchor="middle" font-size="11" fill="#EA4335">CNT ≥ CCR → Low</text>
+</svg>

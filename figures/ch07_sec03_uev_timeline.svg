@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <text x="400" y="25" text-anchor="middle" font-size="18" font-weight="700" fill="#212121">UEV(Update Event) 타임라인 — 카운터 동작 흐름</text>
+
+  <!-- 축 레이블 -->
+  <text x="30" y="80" font-size="12" fill="#555" font-weight="600">CNT</text>
+  <text x="30" y="260" font-size="12" fill="#555" font-weight="600">IRQ</text>
+
+  <!-- Y축: CNT 값 -->
+  <line x1="70" y1="50" x2="70" y2="200" stroke="#999" stroke-width="1"/>
+  <text x="55" y="60" text-anchor="end" font-size="10" fill="#999">ARR</text>
+  <line x1="65" y1="60" x2="75" y2="60" stroke="#999" stroke-width="1"/>
+  <text x="55" y="195" text-anchor="end" font-size="10" fill="#999">0</text>
+  <line x1="65" y1="190" x2="75" y2="190" stroke="#999" stroke-width="1"/>
+
+  <!-- X축: 시간 -->
+  <line x1="70" y1="190" x2="760" y2="190" stroke="#999" stroke-width="1"/>
+  <text x="760" y="208" text-anchor="end" font-size="10" fill="#999">시간 →</text>
+
+  <!-- 카운터 삼각파 (Up-counting) -->
+  <!-- 주기 1 -->
+  <polyline points="70,190 230,60" stroke="#34A853" stroke-width="2.5" fill="none"/>
+  <polyline points="230,60 232,190" stroke="#EA4335" stroke-width="2.5" fill="none" stroke-dasharray="3,2"/>
+  <!-- 주기 2 -->
+  <polyline points="232,190 392,60" stroke="#34A853" stroke-width="2.5" fill="none"/>
+  <polyline points="392,60 394,190" stroke="#EA4335" stroke-width="2.5" fill="none" stroke-dasharray="3,2"/>
+  <!-- 주기 3 -->
+  <polyline points="394,190 554,60" stroke="#34A853" stroke-width="2.5" fill="none"/>
+  <polyline points="554,60 556,190" stroke="#EA4335" stroke-width="2.5" fill="none" stroke-dasharray="3,2"/>
+  <!-- 주기 4 (진행 중) -->
+  <polyline points="556,190 716,60" stroke="#34A853" stroke-width="2.5" fill="none"/>
+
+  <!-- ARR 도달 지점 표시 -->
+  <line x1="70" y1="60" x2="760" y2="60" stroke="#EA4335" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="770" y="64" font-size="10" fill="#EA4335" font-weight="600">ARR</text>
+
+  <!-- UEV 발생 화살표 -->
+  <line x1="230" y1="60" x2="230" y2="240" stroke="#EA4335" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <line x1="392" y1="60" x2="392" y2="240" stroke="#EA4335" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <line x1="554" y1="60" x2="554" y2="240" stroke="#EA4335" stroke-width="1.5" stroke-dasharray="3,2"/>
+
+  <!-- 인터럽트 펄스 -->
+  <line x1="70" y1="270" x2="760" y2="270" stroke="#999" stroke-width="1"/>
+  <!-- UEV 1 -->
+  <polyline points="225,270 225,245 235,245 235,270" stroke="#EA4335" stroke-width="2.5" fill="#EA4335" fill-opacity="0.3"/>
+  <text x="230" y="290" text-anchor="middle" font-size="10" fill="#EA4335" font-weight="600">UEV!</text>
+  <!-- UEV 2 -->
+  <polyline points="387,270 387,245 397,245 397,270" stroke="#EA4335" stroke-width="2.5" fill="#EA4335" fill-opacity="0.3"/>
+  <text x="392" y="290" text-anchor="middle" font-size="10" fill="#EA4335" font-weight="600">UEV!</text>
+  <!-- UEV 3 -->
+  <polyline points="549,270 549,245 559,245 559,270" stroke="#EA4335" stroke-width="2.5" fill="#EA4335" fill-opacity="0.3"/>
+  <text x="554" y="290" text-anchor="middle" font-size="10" fill="#EA4335" font-weight="600">UEV!</text>
+
+  <!-- 주기 표시 -->
+  <line x1="70" y1="310" x2="232" y2="310" stroke="#333" stroke-width="1"/>
+  <line x1="70" y1="305" x2="70" y2="315" stroke="#333" stroke-width="1"/>
+  <line x1="232" y1="305" x2="232" y2="315" stroke="#333" stroke-width="1"/>
+  <text x="151" y="330" text-anchor="middle" font-size="12" fill="#333" font-weight="600">T = (PSC+1)×(ARR+1) / f_clk</text>
+
+  <!-- 설명 박스 -->
+  <rect x="580" y="300" width="200" height="40" rx="6" fill="#E8F5E9" stroke="#34A853" stroke-width="1"/>
+  <text x="680" y="318" text-anchor="middle" font-size="11" fill="#333">카운터가 ARR에 도달하면</text>
+  <text x="680" y="333" text-anchor="middle" font-size="11" fill="#EA4335" font-weight="600">0으로 리셋 + UEV 인터럽트</text>
+</svg>

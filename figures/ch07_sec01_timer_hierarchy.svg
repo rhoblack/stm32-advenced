@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="700" fill="#212121">STM32F411RE 타이머 계층 구조</text>
+  <text x="400" y="48" text-anchor="middle" font-size="12" fill="#888">F411RE에는 Basic 타이머(TIM6/7)가 없습니다</text>
+
+  <!-- General Purpose 타이머 그룹 -->
+  <rect x="40" y="70" width="350" height="310" rx="10" fill="#E8F5E9" stroke="#34A853" stroke-width="2"/>
+  <text x="215" y="95" text-anchor="middle" font-size="16" font-weight="700" fill="#34A853">General Purpose (범용)</text>
+  <text x="215" y="115" text-anchor="middle" font-size="12" fill="#555">주기 타이머 + PWM + 캡처/비교</text>
+
+  <!-- TIM2 -->
+  <rect x="60" y="130" width="150" height="70" rx="6" fill="#34A853" opacity="0.85" stroke="#FFD600" stroke-width="3"/>
+  <text x="135" y="150" text-anchor="middle" font-size="13" fill="white" font-weight="700">TIM2</text>
+  <text x="135" y="168" text-anchor="middle" font-size="11" fill="white">32비트 | APB1(84MHz)</text>
+  <text x="135" y="186" text-anchor="middle" font-size="10" fill="#FFD600" font-weight="600">★ 이 챕터 실습용</text>
+
+  <!-- TIM5 -->
+  <rect x="220" y="130" width="150" height="70" rx="6" fill="#34A853" opacity="0.6"/>
+  <text x="295" y="150" text-anchor="middle" font-size="13" fill="white" font-weight="700">TIM5</text>
+  <text x="295" y="168" text-anchor="middle" font-size="11" fill="white">32비트 | APB1(84MHz)</text>
+  <text x="295" y="186" text-anchor="middle" font-size="10" fill="white">긴 주기 가능</text>
+
+  <!-- TIM3 -->
+  <rect x="60" y="215" width="150" height="60" rx="6" fill="#34A853" opacity="0.5"/>
+  <text x="135" y="238" text-anchor="middle" font-size="13" fill="white" font-weight="700">TIM3</text>
+  <text x="135" y="256" text-anchor="middle" font-size="11" fill="white">16비트 | APB1(84MHz)</text>
+
+  <!-- TIM4 -->
+  <rect x="220" y="215" width="150" height="60" rx="6" fill="#34A853" opacity="0.5"/>
+  <text x="295" y="238" text-anchor="middle" font-size="13" fill="white" font-weight="700">TIM4</text>
+  <text x="295" y="256" text-anchor="middle" font-size="11" fill="white">16비트 | APB1(84MHz)</text>
+
+  <!-- 기능 목록 -->
+  <rect x="60" y="290" width="310" height="70" rx="4" fill="white" opacity="0.8" stroke="#34A853" stroke-width="1"/>
+  <text x="215" y="310" text-anchor="middle" font-size="12" fill="#333" font-weight="600">주요 기능</text>
+  <text x="80" y="330" font-size="11" fill="#555">- Up/Down/Center-aligned 카운팅</text>
+  <text x="80" y="348" font-size="11" fill="#555">- PWM (최대 4채널) / 캡처 / 비교</text>
+
+  <!-- Advanced Control 타이머 그룹 -->
+  <rect x="420" y="70" width="350" height="200" rx="10" fill="#FFEBEE" stroke="#EA4335" stroke-width="2"/>
+  <text x="595" y="95" text-anchor="middle" font-size="16" font-weight="700" fill="#EA4335">Advanced Control (고급)</text>
+  <text x="595" y="115" text-anchor="middle" font-size="12" fill="#555">GP 기능 + Complementary + Dead-time</text>
+
+  <!-- TIM1 -->
+  <rect x="470" y="130" width="250" height="60" rx="6" fill="#EA4335" opacity="0.6"/>
+  <text x="595" y="155" text-anchor="middle" font-size="13" fill="white" font-weight="700">TIM1</text>
+  <text x="595" y="175" text-anchor="middle" font-size="11" fill="white">16비트 | APB2(100MHz) | Ch08에서 학습</text>
+
+  <rect x="470" y="200" width="250" height="50" rx="4" fill="white" opacity="0.8" stroke="#EA4335" stroke-width="1"/>
+  <text x="595" y="220" text-anchor="middle" font-size="12" fill="#333" font-weight="600">추가 기능</text>
+  <text x="490" y="240" font-size="11" fill="#555">Complementary PWM / Dead-time / Break</text>
+
+  <!-- Basic 타이머 (없음!) -->
+  <rect x="420" y="280" width="350" height="100" rx="10" fill="#F5F5F5" stroke="#BDBDBD" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="595" y="310" text-anchor="middle" font-size="16" font-weight="700" fill="#BDBDBD">Basic (기본)</text>
+  <text x="595" y="335" text-anchor="middle" font-size="14" fill="#E53935" font-weight="700">F411RE에 없음!</text>
+  <text x="595" y="355" text-anchor="middle" font-size="11" fill="#999">TIM6/TIM7 — F4xx 상위 모델에만 존재</text>
+  <text x="595" y="370" text-anchor="middle" font-size="10" fill="#999">DAC 트리거 전용 (카운터만, PWM 없음)</text>
+
+  <!-- 화살표: GP → Advanced -->
+  <text x="400" y="175" text-anchor="middle" font-size="24" fill="#888">→</text>
+  <text x="400" y="195" text-anchor="middle" font-size="10" fill="#888">기능 확장</text>
+</svg>
