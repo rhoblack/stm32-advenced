@@ -31,35 +31,33 @@
 
   <!-- 전이 1: IDLE → BUSY (uart_send + 데이터 있음) -->
   <path d="M 290,150 C 340,100 370,100 390,150" fill="none" stroke="#34A853" stroke-width="2" marker-end="url(#fsmArrowGreen)"/>
-  <rect x="300" y="85"  rx="4" fill="white" stroke="#34A853" stroke-width="1"/>
+  <rect x="300" y="85" width="180" height="38" rx="4" fill="white" stroke="#34A853" stroke-width="1"/>
   <text x="390" y="100" text-anchor="middle" font-size="10" fill="#2E7D32" font-weight="600">uart_send() 호출</text>
   <text x="390" y="115" text-anchor="middle" font-size="9" fill="#555">/ 링 버퍼 저장 + DMA 시작</text>
 
   <!-- 전이 2: BUSY → IDLE (TxCplt + 링 버퍼 비어있음) -->
   <path d="M 390,195 C 370,250 340,250 290,195" fill="none" stroke="#FFA500" stroke-width="2" marker-end="url(#fsmArrowOrange)"/>
-  <rect x="290" y="240"  rx="4" fill="white" stroke="#FFA500" stroke-width="1"/>
-  <text x="390" y="255" text-anchor="middle" font-size="10" fill="#E65100" font-weight="600">TxCpltCallback + 링 버퍼 비어있음</text>
-  <text x="390" y="270" text-anchor="middle" font-size="9" fill="#555">/ s_tx_state = TX_IDLE</text>
+  <rect x="290" y="238" width="200" height="38" rx="4" fill="white" stroke="#FFA500" stroke-width="1"/>
+  <text x="390" y="253" text-anchor="middle" font-size="10" fill="#E65100" font-weight="600">TxCpltCallback + 링 버퍼 비어있음</text>
+  <text x="390" y="268" text-anchor="middle" font-size="9" fill="#555">/ s_tx_state = TX_IDLE</text>
 
   <!-- 자기 전이: BUSY → BUSY (TxCplt + 링 버퍼 남아있음) -->
   <path d="M 550,155 C 600,120 600,220 550,185" fill="none" stroke="#FFA500" stroke-width="2" marker-end="url(#fsmArrowOrange)"/>
-  <rect x="575" y="135"  rx="4" fill="white" stroke="#FFA500" stroke-width="1"/>
-  <text x="605" y="152" text-anchor="middle" font-size="9" fill="#E65100" font-weight="600">TxCplt</text>
-  <text x="605" y="164" text-anchor="middle" font-size="8" fill="#555">+ 남은</text>
-  <text x="605" y="176" text-anchor="middle" font-size="8" fill="#555">데이터</text>
-
-  <!-- 자기 전이: IDLE에서 uart_send (데이터 없을 때 = 없음) -->
+  <rect x="575" y="135" width="70" height="55" rx="4" fill="white" stroke="#FFA500" stroke-width="1"/>
+  <text x="610" y="152" text-anchor="middle" font-size="9" fill="#E65100" font-weight="600">TxCplt</text>
+  <text x="610" y="164" text-anchor="middle" font-size="8" fill="#555">+ 남은</text>
+  <text x="610" y="176" text-anchor="middle" font-size="8" fill="#555">데이터</text>
 
   <!-- 자기 전이: BUSY에서 uart_send → 링 버퍼에만 저장 -->
   <path d="M 470,120 C 430,70 510,70 470,120" fill="none" stroke="#34A853" stroke-width="1.5" stroke-dasharray="4,2"/>
   <text x="470" y="65" text-anchor="middle" font-size="9" fill="#2E7D32">uart_send() → 큐잉만</text>
 
   <!-- 범례 -->
-  <rect x="30" y="300"  rx="6" fill="#F5F5F5" stroke="#E0E0E0"/>
+  <rect x="30" y="300" width="580" height="35" rx="6" fill="#F5F5F5" stroke="#E0E0E0"/>
   <circle cx="55" cy="320" r="8" fill="#34A853" opacity="0.7"/>
   <text x="70" y="324" font-size="10" fill="#555">사용자 호출 (uart_send)</text>
   <circle cx="250" cy="320" r="8" fill="#FFA500" opacity="0.7"/>
   <text x="265" y="324" font-size="10" fill="#555">DMA 완료 콜백 (ISR)</text>
-  <rect x="430" y="312"  rx="3" fill="white" stroke="#999" stroke-dasharray="3,2"/>
-  <text x="480" y="324" font-size="10" fill="#555">큐잉만 (DMA 미시작)</text>
+  <rect x="430" y="312" width="100" height="20" rx="3" fill="white" stroke="#999" stroke-dasharray="3,2"/>
+  <text x="480" y="326" text-anchor="middle" font-size="10" fill="#555">큐잉만 (DMA 미시작)</text>
 </svg>

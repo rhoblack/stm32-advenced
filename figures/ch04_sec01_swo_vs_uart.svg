@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" font-family="'Noto Sans KR', sans-serif" font-size="13">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="340"  font-family="'Noto Sans KR', sans-serif" font-size="13" viewBox="0 0 800 340">
   <text x="400" y="28" text-anchor="middle" font-size="16" font-weight="700" fill="#212121">SWO(Ch02) vs UART(Ch04) — 두 가지 출력 경로 비교</text>
 
   <!-- MCU 블록 -->

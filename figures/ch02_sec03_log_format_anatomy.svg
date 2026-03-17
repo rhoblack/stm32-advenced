@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" font-family='"Noto Sans KR", "Malgun Gothic", sans-serif'>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500"  font-family='"Noto Sans KR", "Malgun Gothic", sans-serif' viewBox="0 0 800 500">
   <defs>
     <marker id="arrow-up" markerWidth="10" markerHeight="7" refX="5" refY="7" orient="auto">
       <polygon points="0 7, 5 0, 10 7" fill="#555555"/>

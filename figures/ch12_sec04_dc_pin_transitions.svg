@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="380" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380">
+  <defs>
+    <style>
+      text { font-family: 'Noto Sans KR', sans-serif; }
+      .title { font-size: 16px; font-weight: 700; fill: #1A1A2E; }
+      .label { font-size: 13px; fill: #333; font-weight: 600; }
+      .small { font-size: 11px; fill: #555; }
+      .cmd   { font-size: 11px; fill: #EA4335; font-weight: 700; }
+      .data  { font-size: 11px; fill: #1A73E8; font-weight: 700; }
+    </style>
+  </defs>
+
+  <rect width="800" height="380" fill="#FAFAFA" rx="8"/>
+  <rect x="20" y="20" width="760" height="340" fill="white" rx="6" stroke="#E0E0E0" stroke-width="1"/>
+
+  <text x="400" y="50" text-anchor="middle" class="title">D/C 핀 전이 패턴 — 명령어 → 데이터 반복</text>
+  <text x="400" y="68" text-anchor="middle" class="small">ILI9341 초기화: 명령어(D/C=0) → 파라미터 데이터(D/C=1) 패턴 반복</text>
+
+  <!-- CS 신호 -->
+  <text x="55" y="105" text-anchor="middle" class="label" fill="#EA4335">CS</text>
+  <polyline points="90,93 120,93 120,112 710,112 710,93 750,93" fill="none" stroke="#EA4335" stroke-width="2"/>
+
+  <!-- D/C 신호 -->
+  <text x="55" y="158" text-anchor="middle" class="label" fill="#34A853">D/C</text>
+
+  <!-- 명령1 D/C=0 -->
+  <polyline points="90,170 120,170 120,145 195,145" fill="none" stroke="#34A853" stroke-width="2.5"/>
+  <!-- 데이터1 D/C=1 -->
+  <polyline points="195,145 195,170 300,170" fill="none" stroke="#34A853" stroke-width="2.5"/>
+  <!-- 명령2 D/C=0 -->
+  <polyline points="300,170 300,145 380,145" fill="none" stroke="#34A853" stroke-width="2.5"/>
+  <!-- 데이터2 D/C=1 -->
+  <polyline points="380,145 380,170 530,170" fill="none" stroke="#34A853" stroke-width="2.5"/>
+  <!-- 명령3 D/C=0 -->
+  <polyline points="530,170 530,145 610,145" fill="none" stroke="#34A853" stroke-width="2.5"/>
+  <!-- 데이터3 D/C=1 -->
+  <polyline points="610,145 610,170 710,170" fill="none" stroke="#34A853" stroke-width="2.5"/>
+
+  <!-- D/C 레이블 -->
+  <text x="157" y="140" text-anchor="middle" class="cmd">CMD</text>
+  <text x="247" y="183" text-anchor="middle" class="data">DATA</text>
+  <text x="340" y="140" text-anchor="middle" class="cmd">CMD</text>
+  <text x="455" y="183" text-anchor="middle" class="data">DATA×2</text>
+  <text x="570" y="140" text-anchor="middle" class="cmd">CMD</text>
+  <text x="660" y="183" text-anchor="middle" class="data">DATA</text>
+
+  <!-- MOSI 데이터 -->
+  <text x="55" y="225" text-anchor="middle" class="label" fill="#1A73E8">MOSI</text>
+
+  <rect x="120" y="210" width="75" height="22" fill="#FFEBEE" stroke="#EA4335" stroke-width="1.5" rx="2"/>
+  <text x="157" y="223" text-anchor="middle" class="cmd">0x36</text>
+  <rect x="195" y="210" width="105" height="22" fill="#E3F2FD" stroke="#1A73E8" stroke-width="1.5" rx="2"/>
+  <text x="247" y="223" text-anchor="middle" class="data">0x48</text>
+  <rect x="300" y="210" width="80" height="22" fill="#FFEBEE" stroke="#EA4335" stroke-width="1.5" rx="2"/>
+  <text x="340" y="223" text-anchor="middle" class="cmd">0x3A</text>
+  <rect x="380" y="210" width="150" height="22" fill="#E3F2FD" stroke="#1A73E8" stroke-width="1.5" rx="2"/>
+  <text x="455" y="223" text-anchor="middle" class="data">0x55, 0x??</text>
+  <rect x="530" y="210" width="80" height="22" fill="#FFEBEE" stroke="#EA4335" stroke-width="1.5" rx="2"/>
+  <text x="570" y="223" text-anchor="middle" class="cmd">0x29</text>
+  <rect x="610" y="210" width="100" height="22" fill="#E3F2FD" stroke="#1A73E8" stroke-width="1.5" rx="2"/>
+  <text x="660" y="223" text-anchor="middle" class="data">(없음)</text>
+
+  <!-- 설명 -->
+  <text x="157" y="248" text-anchor="middle" class="small">MADCTL</text>
+  <text x="247" y="248" text-anchor="middle" class="small">방향설정</text>
+  <text x="340" y="248" text-anchor="middle" class="small">색상포맷</text>
+  <text x="455" y="248" text-anchor="middle" class="small">RGB565</text>
+  <text x="570" y="248" text-anchor="middle" class="small">Display ON</text>
+
+  <!-- 수직선 -->
+  <line x1="195" y1="120" x2="195" y2="235" stroke="#34A853" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="300" y1="120" x2="300" y2="235" stroke="#34A853" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="380" y1="120" x2="380" y2="235" stroke="#34A853" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="530" y1="120" x2="530" y2="235" stroke="#34A853" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="610" y1="120" x2="610" y2="235" stroke="#34A853" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- 팁 -->
+  <rect x="40" y="270" width="720" height="48" fill="#E8F5E9" rx="5" stroke="#34A853" stroke-width="1"/>
+  <text x="400" y="288" text-anchor="middle" class="label" fill="#34A853">💡 실무 패턴</text>
+  <text x="400" y="305" text-anchor="middle" class="small">함수 ILI9341_WriteCmd(uint8_t cmd): DC=0 → SPI 전송 → DC=1</text>
+  <text x="400" y="320" text-anchor="middle" class="small">함수 ILI9341_WriteData(uint8_t* data, uint16_t len): DC=1 → SPI DMA 전송 → 콜백에서 CS=HIGH</text>
+</svg>

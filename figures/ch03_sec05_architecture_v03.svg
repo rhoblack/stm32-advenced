@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" font-family="'Noto Sans KR', sans-serif" font-size="14">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="520"  font-family="'Noto Sans KR', sans-serif" font-size="14" viewBox="0 0 800 520">
   <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="700" fill="#212121">프로젝트 아키텍처 v0.3 — 전체 시스템 설계도</text>
   <text x="400" y="48" text-anchor="middle" font-size="12" fill="#888">색상 블록 = 현재 구현됨 | 회색 블록 = 향후 추가 예정</text>
 

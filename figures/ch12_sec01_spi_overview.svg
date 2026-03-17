@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="420" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420">
+  <defs>
+    <style>
+      text { font-family: 'Noto Sans KR', sans-serif; }
+      .title { font-size: 16px; font-weight: 700; fill: #1A1A2E; }
+      .label { font-size: 13px; fill: #333; font-weight: 600; }
+      .small { font-size: 11px; fill: #666; }
+      .note { font-size: 12px; fill: #1A73E8; font-weight: 600; }
+    </style>
+  </defs>
+
+  <!-- 배경 -->
+  <rect width="800" height="420" fill="#FAFAFA" rx="8"/>
+  <rect x="20" y="20" width="760" height="380" fill="white" rx="6" stroke="#E0E0E0" stroke-width="1"/>
+
+  <!-- 제목 -->
+  <text x="400" y="52" text-anchor="middle" class="title">SPI 신호 구조 — SCLK / MOSI / MISO / CS</text>
+  <text x="400" y="70" text-anchor="middle" class="small">4선 동기 직렬 통신 | Mode 0 (CPOL=0, CPHA=0) 기준</text>
+
+  <!-- Y 축 신호 레이블 -->
+  <text x="60" y="115" text-anchor="middle" class="label" fill="#EA4335">CS</text>
+  <text x="60" y="175" text-anchor="middle" class="label" fill="#1A73E8">SCLK</text>
+  <text x="60" y="240" text-anchor="middle" class="label" fill="#34A853">MOSI</text>
+  <text x="60" y="305" text-anchor="middle" class="label" fill="#FBBC04">MISO</text>
+
+  <!-- 수평 기준선 -->
+  <line x1="100" y1="90" x2="750" y2="90" stroke="#ddd" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="100" y1="150" x2="750" y2="150" stroke="#ddd" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="100" y1="215" x2="750" y2="215" stroke="#ddd" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="100" y1="280" x2="750" y2="280" stroke="#ddd" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- CS 신호: HIGH → LOW(활성) → HIGH -->
+  <polyline points="100,95 190,95 190,120 620,120 620,95 750,95" fill="none" stroke="#EA4335" stroke-width="2.5"/>
+  <text x="145" y="88" text-anchor="middle" class="small" fill="#EA4335">HIGH(비활성)</text>
+  <text x="405" y="140" text-anchor="middle" class="small" fill="#EA4335">LOW (전송 중)</text>
+
+  <!-- SCLK 신호 (8클럭) -->
+  <polyline points="100,165 195,165" fill="none" stroke="#1A73E8" stroke-width="2.5"/>
+  <!-- 8개 클럭 펄스 -->
+  <polyline points="195,165 195,145 225,145 225,165 255,165 255,145 285,145 285,165 315,165 315,145 345,145 345,165 375,165 375,145 405,145 405,165 435,165 435,145 465,145 465,165 495,165 495,145 525,145 525,165 555,165 555,145 585,145 585,165" fill="none" stroke="#1A73E8" stroke-width="2.5"/>
+  <polyline points="585,165 750,165" fill="none" stroke="#1A73E8" stroke-width="2.5"/>
+
+  <!-- MOSI 데이터 비트 (D7~D0) -->
+  <line x1="100" y1="230" x2="195" y2="230" stroke="#34A853" stroke-width="2.5"/>
+  <!-- 비트 심볼 -->
+  <rect x="195" y="218" width="60" height="24" fill="#E8F5E9" stroke="#34A853" stroke-width="1.5" rx="2"/>
+  <text x="225" y="232" text-anchor="middle" class="small" fill="#34A853">D7</text>
+  <rect x="255" y="218" width="60" height="24" fill="#C8E6C9" stroke="#34A853" stroke-width="1.5" rx="2"/>
+  <text x="285" y="232" text-anchor="middle" class="small" fill="#34A853">D6</text>
+  <rect x="315" y="218" width="60" height="24" fill="#E8F5E9" stroke="#34A853" stroke-width="1.5" rx="2"/>
+  <text x="345" y="232" text-anchor="middle" class="small" fill="#34A853">D5</text>
+  <rect x="375" y="218" width="60" height="24" fill="#C8E6C9" stroke="#34A853" stroke-width="1.5" rx="2"/>
+  <text x="405" y="232" text-anchor="middle" class="small" fill="#34A853">D4</text>
+  <rect x="435" y="218" width="60" height="24" fill="#E8F5E9" stroke="#34A853" stroke-width="1.5" rx="2"/>
+  <text x="465" y="232" text-anchor="middle" class="small" fill="#34A853">D3</text>
+  <rect x="495" y="218" width="60" height="24" fill="#C8E6C9" stroke="#34A853" stroke-width="1.5" rx="2"/>
+  <text x="525" y="232" text-anchor="middle" class="small" fill="#34A853">D2</text>
+  <rect x="555" y="218" width="30" height="24" fill="#E8F5E9" stroke="#34A853" stroke-width="1.5" rx="2"/>
+  <text x="570" y="232" text-anchor="middle" class="small" fill="#34A853">D1</text>
+  <line x1="585" y1="230" x2="750" y2="230" stroke="#34A853" stroke-width="2.5"/>
+
+  <!-- MISO 데이터 비트 (슬레이브 → 마스터) -->
+  <line x1="100" y1="295" x2="195" y2="295" stroke="#FBBC04" stroke-width="2.5"/>
+  <rect x="195" y="283" width="60" height="24" fill="#FFF9E6" stroke="#FBBC04" stroke-width="1.5" rx="2"/>
+  <text x="225" y="297" text-anchor="middle" class="small" fill="#9a7000">R7</text>
+  <rect x="255" y="283" width="60" height="24" fill="#FFF3C4" stroke="#FBBC04" stroke-width="1.5" rx="2"/>
+  <text x="285" y="297" text-anchor="middle" class="small" fill="#9a7000">R6</text>
+  <rect x="315" y="283" width="60" height="24" fill="#FFF9E6" stroke="#FBBC04" stroke-width="1.5" rx="2"/>
+  <text x="345" y="297" text-anchor="middle" class="small" fill="#9a7000">R5</text>
+  <rect x="375" y="283" width="120" height="24" fill="#FFF3C4" stroke="#FBBC04" stroke-width="1.5" rx="2"/>
+  <text x="435" y="297" text-anchor="middle" class="small" fill="#9a7000">R4 ~ R1</text>
+  <line x1="495" y1="295" x2="750" y2="295" stroke="#FBBC04" stroke-width="2.5"/>
+
+  <!-- 설명 박스 -->
+  <rect x="110" y="340" width="560" height="48" fill="#E3F2FD" rx="5" stroke="#1A73E8" stroke-width="1"/>
+  <text x="390" y="359" text-anchor="middle" class="note">SPI 특징: 전이중(Full-Duplex) — MOSI(마스터→슬레이브)와 MISO(슬레이브→마스터) 동시 전송</text>
+  <text x="390" y="378" text-anchor="middle" class="small">ILI9341 LCD는 MISO 미사용 (단방향 쓰기 전용) | CS LOW 동안 전송, HIGH에서 비활성</text>
+</svg>

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" font-family="'Noto Sans KR', sans-serif" font-size="13">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350"  font-family="'Noto Sans KR', sans-serif" font-size="13" viewBox="0 0 800 350">
   <text x="400" y="24" text-anchor="middle" font-size="16" font-weight="700" fill="#212121">CPU 타임라인 비교: 폴링 vs 인터럽트 수신</text>
 
   <!-- ===== 폴링 방식 ===== -->

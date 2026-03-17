@@ -332,12 +332,11 @@ figcaption {
   border-radius: var(--radius);
   padding: 1rem 1.25rem;
   margin-bottom: 0.75rem;
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
+  line-height: 1.7;
 }
 
 .exercise .level {
+  display: inline-block;
   background: var(--color-hal);
   color: white;
   padding: 2px 10px;
@@ -345,7 +344,8 @@ figcaption {
   font-size: 0.75rem;
   font-weight: 700;
   white-space: nowrap;
-  margin-top: 3px;
+  vertical-align: middle;
+  margin-right: 0.4rem;
 }
 
 /* ===== 다음 챕터 예고 ===== */

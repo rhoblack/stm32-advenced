@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" font-family="'Noto Sans KR', sans-serif" font-size="14">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="520"  font-family="'Noto Sans KR', sans-serif" font-size="14" viewBox="0 0 800 520">
   <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="700" fill="#212121">프로젝트 아키텍처 v0.4 — 최종 (Ch04 완료)</text>
   <text x="400" y="48" text-anchor="middle" font-size="12" fill="#888">v0.3 대비 변경: uart_driver 추가 (Driver 레이어 첫 번째 통신 모듈)</text>
 

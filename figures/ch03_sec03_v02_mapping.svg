@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 420" font-family="'Noto Sans KR', sans-serif" font-size="14">
+<svg xmlns="http://www.w3.org/2000/svg" width="750" height="420"  font-family="'Noto Sans KR', sans-serif" font-size="14" viewBox="0 0 750 420">
   <text x="375" y="28" text-anchor="middle" font-size="18" font-weight="700" fill="#212121">Ch01~02 코드의 4계층 배치도 (v0.2)</text>
 
   <!-- App 레이어 -->

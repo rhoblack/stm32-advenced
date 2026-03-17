@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" font-family="'Noto Sans KR', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="620"  font-family="'Noto Sans KR', sans-serif" viewBox="0 0 900 620">
   <!-- 배경 -->
   <rect width="900" height="620" fill="#F8F9FA" rx="12"/>
   <text x="450" y="38" text-anchor="middle" font-size="18" font-weight="bold" fill="#1A1A2E">아키텍처 진화 타임라인 (Ch03 v1 → v2.0)</text>

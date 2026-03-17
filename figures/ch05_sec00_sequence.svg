@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" font-family="'Noto Sans KR', sans-serif" font-size="13">
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="400"  font-family="'Noto Sans KR', sans-serif" font-size="13" viewBox="0 0 720 400">
   <text x="360" y="25" text-anchor="middle" font-size="16" font-weight="700" fill="#1A1A2E">DMA Mem-to-Mem 전송 시퀀스</text>
 
   <!-- Lifelines -->

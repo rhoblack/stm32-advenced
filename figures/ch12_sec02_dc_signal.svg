@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="380" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380">
+  <defs>
+    <style>
+      text { font-family: 'Noto Sans KR', sans-serif; }
+      .title { font-size: 16px; font-weight: 700; fill: #1A1A2E; }
+      .label { font-size: 13px; fill: #333; font-weight: 600; }
+      .small { font-size: 11px; fill: #555; }
+      .cmd   { font-size: 12px; fill: #EA4335; font-weight: 700; }
+      .data  { font-size: 12px; fill: #1A73E8; font-weight: 700; }
+    </style>
+  </defs>
+
+  <rect width="800" height="380" fill="#FAFAFA" rx="8"/>
+  <rect x="20" y="20" width="760" height="340" fill="white" rx="6" stroke="#E0E0E0" stroke-width="1"/>
+
+  <text x="400" y="50" text-anchor="middle" class="title">D/C (Data/Command) 신호 — ILI9341 제어 핀</text>
+  <text x="400" y="68" text-anchor="middle" class="small">D/C = 0 → 명령어(Command) | D/C = 1 → 데이터(Data) | CS LOW 동안 유효</text>
+
+  <!-- 신호 레이블 -->
+  <text x="60" y="115" text-anchor="middle" class="label" fill="#EA4335">CS</text>
+  <text x="60" y="175" text-anchor="middle" class="label" fill="#34A853">D/C</text>
+  <text x="60" y="240" text-anchor="middle" class="label" fill="#1A73E8">MOSI</text>
+
+  <!-- CS 신호 -->
+  <polyline points="100,100 150,100 150,125 640,125 640,100 750,100" fill="none" stroke="#EA4335" stroke-width="2.5"/>
+
+  <!-- D/C 신호 -->
+  <!-- D/C=0 (명령어) -->
+  <polyline points="100,185 150,185 150,160 300,160 300,185" fill="none" stroke="#34A853" stroke-width="2.5"/>
+  <!-- D/C=1 (데이터) -->
+  <polyline points="300,185 300,160" fill="none" stroke="#34A853" stroke-width="2.5"/>
+  <polyline points="300,160 640,160 640,185 750,185" fill="none" stroke="#34A853" stroke-width="2.5"/>
+
+  <!-- D/C 레이블 -->
+  <text x="225" y="155" text-anchor="middle" class="cmd">D/C = 0</text>
+  <text x="225" y="195" text-anchor="middle" class="small" fill="#EA4335">명령어</text>
+  <text x="470" y="155" text-anchor="middle" class="data">D/C = 1</text>
+  <text x="470" y="195" text-anchor="middle" class="small" fill="#1A73E8">데이터</text>
+
+  <!-- MOSI 데이터 -->
+  <!-- 명령어 바이트 -->
+  <rect x="150" y="222" width="150" height="28" fill="#FFEBEE" stroke="#EA4335" stroke-width="2" rx="3"/>
+  <text x="225" y="239" text-anchor="middle" class="cmd">0x2A (명령어)</text>
+  <text x="225" y="252" text-anchor="middle" class="small" fill="#EA4335">Column Address Set</text>
+
+  <!-- 데이터 바이트들 -->
+  <rect x="300" y="222" width="85" height="28" fill="#E3F2FD" stroke="#1A73E8" stroke-width="1.5" rx="3"/>
+  <text x="342" y="239" text-anchor="middle" class="data" font-size="11">0x00</text>
+  <rect x="385" y="222" width="85" height="28" fill="#E3F2FD" stroke="#1A73E8" stroke-width="1.5" rx="3"/>
+  <text x="427" y="239" text-anchor="middle" class="data" font-size="11">0x00</text>
+  <rect x="470" y="222" width="85" height="28" fill="#E3F2FD" stroke="#1A73E8" stroke-width="1.5" rx="3"/>
+  <text x="512" y="239" text-anchor="middle" class="data" font-size="11">0x00</text>
+  <rect x="555" y="222" width="85" height="28" fill="#E3F2FD" stroke="#1A73E8" stroke-width="1.5" rx="3"/>
+  <text x="597" y="239" text-anchor="middle" class="data" font-size="11">0xEF</text>
+
+  <!-- 데이터 설명 -->
+  <text x="490" y="262" text-anchor="middle" class="small" fill="#1A73E8">파라미터 데이터 (SC_H, SC_L, EC_H, EC_L)</text>
+
+  <!-- 코드 예시 -->
+  <rect x="40" y="285" width="720" height="58" fill="#1A1A2E" rx="5"/>
+  <text x="60" y="305" class="small" fill="#98C379" font-family="monospace">// D/C 핀 제어 — HAL GPIO 직접 조작</text>
+  <text x="60" y="322" class="small" fill="#61AFEF" font-family="monospace">HAL_GPIO_WritePin(LCD_DC_GPIO_Port, LCD_DC_Pin, GPIO_PIN_RESET);  </text>
+  <text x="500" y="322" class="small" fill="#98C379" font-family="monospace">// D/C=0: 명령어</text>
+  <text x="60" y="338" class="small" fill="#61AFEF" font-family="monospace">HAL_GPIO_WritePin(LCD_DC_GPIO_Port, LCD_DC_Pin, GPIO_PIN_SET);    </text>
+  <text x="500" y="338" class="small" fill="#98C379" font-family="monospace">// D/C=1: 데이터</text>
+</svg>

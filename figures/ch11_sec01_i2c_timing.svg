@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500">
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="500"  viewBox="0 0 1000 500">
   <defs>
     <style>
       .scl-line { stroke: #1A73E8; stroke-width: 2; }

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="420" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420">
+  <defs>
+    <style>
+      text { font-family: 'Noto Sans KR', sans-serif; }
+      .title { font-size: 16px; font-weight: 700; fill: #1A1A2E; }
+      .box   { font-size: 12px; font-weight: 700; fill: white; }
+      .label { font-size: 12px; fill: #333; font-weight: 600; }
+      .small { font-size: 11px; fill: #555; }
+      .code  { font-size: 11px; fill: #ABB2BF; font-family: monospace; }
+      .green { font-size: 11px; fill: #98C379; font-family: monospace; }
+      .blue  { font-size: 11px; fill: #61AFEF; font-family: monospace; }
+    </style>
+    <marker id="a3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect width="800" height="420" fill="#FAFAFA" rx="8"/>
+  <rect x="20" y="20" width="760" height="380" fill="white" rx="6" stroke="#E0E0E0" stroke-width="1"/>
+
+  <text x="400" y="50" text-anchor="middle" class="title">픽셀 쓰기 시퀀스 — Column/Row 설정 → 색상 데이터 전송</text>
+  <text x="400" y="68" text-anchor="middle" class="small">ILI9341 화면 갱신 3단계: ① 열 주소 설정(0x2A) → ② 행 주소 설정(0x2B) → ③ 메모리 쓰기(0x2C)</text>
+
+  <!-- 단계 1: Column Address -->
+  <rect x="40" y="85" width="215" height="80" fill="#1A73E8" rx="6"/>
+  <text x="147" y="108" text-anchor="middle" class="box">① Column Address Set</text>
+  <text x="147" y="126" text-anchor="middle" class="small" fill="white">CMD: 0x2A</text>
+  <text x="147" y="142" text-anchor="middle" class="small" fill="white">DATA: SC_H, SC_L, EC_H, EC_L</text>
+  <text x="147" y="156" text-anchor="middle" class="small" fill="#BBD" >(시작열 ~ 끝열)</text>
+
+  <!-- 화살표 -->
+  <line x1="255" y1="125" x2="295" y2="125" stroke="#555" stroke-width="2" marker-end="url(#a3)"/>
+
+  <!-- 단계 2: Row Address -->
+  <rect x="295" y="85" width="215" height="80" fill="#34A853" rx="6"/>
+  <text x="402" y="108" text-anchor="middle" class="box">② Page Address Set</text>
+  <text x="402" y="126" text-anchor="middle" class="small" fill="white">CMD: 0x2B</text>
+  <text x="402" y="142" text-anchor="middle" class="small" fill="white">DATA: SP_H, SP_L, EP_H, EP_L</text>
+  <text x="402" y="156" text-anchor="middle" class="small" fill="#CCE">(시작행 ~ 끝행)</text>
+
+  <!-- 화살표 -->
+  <line x1="510" y1="125" x2="550" y2="125" stroke="#555" stroke-width="2" marker-end="url(#a3)"/>
+
+  <!-- 단계 3: Memory Write -->
+  <rect x="550" y="85" width="210" height="80" fill="#EA4335" rx="6"/>
+  <text x="655" y="108" text-anchor="middle" class="box">③ Memory Write</text>
+  <text x="655" y="126" text-anchor="middle" class="small" fill="white">CMD: 0x2C</text>
+  <text x="655" y="142" text-anchor="middle" class="small" fill="white">DATA: RGB565 픽셀 × N개</text>
+  <text x="655" y="156" text-anchor="middle" class="small" fill="#FCC">(2바이트 × 픽셀 수)</text>
+
+  <!-- RGB565 설명 -->
+  <rect x="40" y="185" width="720" height="55" fill="#F8F9FA" rx="5" stroke="#DEE2E6" stroke-width="1"/>
+  <text x="400" y="205" text-anchor="middle" class="label">RGB565 픽셀 데이터 구조 (2바이트 = 16비트)</text>
+  <!-- 비트 구조 시각화 -->
+  <rect x="60" y="212" width="160" height="20" fill="#FF6B6B" rx="2"/>
+  <text x="140" y="225" text-anchor="middle" class="small" fill="white">R[15:11] — 5비트</text>
+  <rect x="220" y="212" width="200" height="20" fill="#51CF66" rx="2"/>
+  <text x="320" y="225" text-anchor="middle" class="small" fill="white">G[10:5] — 6비트</text>
+  <rect x="420" y="212" width="160" height="20" fill="#339AF0" rx="2"/>
+  <text x="500" y="225" text-anchor="middle" class="small" fill="white">B[4:0] — 5비트</text>
+  <text x="620" y="225" text-anchor="middle" class="small">예: 빨강 = 0xF800</text>
+
+  <!-- 코드 예시 -->
+  <rect x="40" y="255" width="720" height="100" fill="#1A1A2E" rx="6"/>
+  <text x="60" y="275" class="green">// ① Column 주소 설정 (x0 ~ x1)</text>
+  <text x="60" y="291" class="blue">ILI9341_WriteCmd(0x2A);</text>
+  <text x="60" y="307" class="blue">uint8_t col[] = &#123;x0&gt;&gt;8, x0&amp;0xFF, x1&gt;&gt;8, x1&amp;0xFF&#125;; ILI9341_WriteData(col, 4);</text>
+  <text x="60" y="323" class="green">// ② Row 주소 설정 (y0 ~ y1)</text>
+  <text x="60" y="339" class="blue">ILI9341_WriteCmd(0x2B);</text>
+  <text x="60" y="355" class="blue">uint8_t row[] = &#123;y0&gt;&gt;8, y0&amp;0xFF, y1&gt;&gt;8, y1&amp;0xFF&#125;; ILI9341_WriteData(row, 4);</text>
+
+  <!-- 하단 설명 -->
+  <rect x="40" y="368" width="720" height="25" fill="#E3F2FD" rx="4" stroke="#1A73E8" stroke-width="1"/>
+  <text x="400" y="383" text-anchor="middle" class="small" fill="#1A73E8">0x2C 이후 전송하는 RGB565 바이트 수 = (x1-x0+1) × (y1-y0+1) × 2  | DMA로 한 번에 전송하면 CPU 부하 최소화</text>
+</svg>

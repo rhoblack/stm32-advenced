@@ -1045,8 +1045,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
   <div class="exercise">
     <span class="level">기억</span>
-    <div>
-      <strong>1.</strong> Open-Drain 출력 모드로 설정된 핀에서 <code>HAL_GPIO_WritePin(..., GPIO_PIN_SET)</code>을 호출했을 때 핀의 전기적 상태로 올바른 것은?
+    <strong>1.</strong> Open-Drain 출력 모드로 설정된 핀에서 <code>HAL_GPIO_WritePin(..., GPIO_PIN_SET)</code>을 호출했을 때 핀의 전기적 상태로 올바른 것은?
       <ol type="a">
         <li>MCU 내부 PMOS가 켜져 핀이 3.3V로 강하게 구동된다.</li>
         <li>내부 NMOS가 꺼져 핀이 외부 풀업 저항에 의해 VCC 수준이 된다.</li>
@@ -1054,13 +1053,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         <li>핀이 floating(부동) 상태가 되어 무작위 전압이 나타난다.</li>
       </ol>
       <small>정답: (b) — Open-Drain에서 HIGH 설정은 NMOS를 끄는 것이며, 핀 전압은 외부 풀업 저항에 의해 결정됩니다.</small>
-    </div>
   </div>
 
   <div class="exercise">
     <span class="level">이해</span>
-    <div>
-      <strong>2.</strong> 아래 두 코드를 CPU 점유율 관점에서 비교하고, 각각이 적합한 사용 사례를 하나씩 제시하세요.
+    <strong>2.</strong> 아래 두 코드를 CPU 점유율 관점에서 비교하고, 각각이 적합한 사용 사례를 하나씩 제시하세요.
       <pre><code class="language-c">/* 코드 A: 폴링 */
 while (1) {
     if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET)
@@ -1075,13 +1072,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 }
 /* 메인 루프에서 g_button_event 확인 */
 </code></pre>
-    </div>
   </div>
 
   <div class="exercise">
     <span class="level">적용</span>
-    <div>
-      <strong>3.</strong> 아래 EXTI 콜백 함수의 빈칸을 채워 100ms 타임스탬프 디바운싱을 구현하세요.
+    <strong>3.</strong> 아래 EXTI 콜백 함수의 빈칸을 채워 100ms 타임스탬프 디바운싱을 구현하세요.
       <pre><code class="language-c">/* 전역 변수 선언 */
 volatile uint8_t  g_btn_evt   = 0;
 volatile uint32_t g_last_tick = 0;
@@ -1102,20 +1097,17 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
 }
 </code></pre>
-    </div>
   </div>
 
   <div class="exercise">
     <span class="level">분석</span>
-    <div>
-      <strong>4.</strong> 실습 중 버튼을 1회 누를 때마다 LED가 5회 토글되는 현상이 관찰되었습니다.
+    <strong>4.</strong> 실습 중 버튼을 1회 누를 때마다 LED가 5회 토글되는 현상이 관찰되었습니다.
       <ol>
         <li>이 현상의 원인을 스위치 바운싱 관점에서 설명하세요.</li>
         <li>소프트웨어 디바운싱(타임스탬프 방식)으로 해결하는 방법을 코드 레벨에서 설명하세요.</li>
         <li>하드웨어 디바운싱(RC 필터 또는 SR 래치)으로 해결하는 방법을 간략히 설명하세요.</li>
         <li>실무에서 소프트웨어 vs 하드웨어 디바운싱을 선택하는 기준은 무엇인지 서술하세요.</li>
       </ol>
-    </div>
   </div>
 
 </section>

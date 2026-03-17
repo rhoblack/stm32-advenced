@@ -1108,8 +1108,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
   <div class="exercise">
     <span class="level">기억/이해</span>
-    <div>
-      <strong>1.</strong> 다음 각 항목이 SWO/ITM 방식의 특징인지, SEGGER RTT 방식의 특징인지 연결하세요.
+    <strong>1.</strong> 다음 각 항목이 SWO/ITM 방식의 특징인지, SEGGER RTT 방식의 특징인지 연결하세요.
       <br><br>
       (a) ARM Cortex-M0/M0+ 코어에서도 사용할 수 있다.<br>
       (b) MCU에서 전용 출력 핀이 필요하다.<br>
@@ -1117,24 +1116,20 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
       (d) <code>ITM_SendChar()</code> API를 사용한다.<br>
       (e) CubeIDE SWV Console에서 바로 확인할 수 있다.<br>
       (f) 별도 외부 라이브러리(SEGGER) 파일 추가가 필요하다.
-    </div>
   </div>
 
   <div class="exercise">
     <span class="level">이해</span>
-    <div>
-      <strong>2.</strong> 다음 코드가 있을 때, <code>LOG_LEVEL</code>을 <code>LOG_LEVEL_WARN(2)</code>으로 설정하고 빌드한 경우 실제로 출력되는 라인을 모두 고르세요. 그리고 컴파일 타임 필터링에서 출력되지 않는 로그가 런타임 <code>if</code>문 필터링과 다르게 처리되는 이유를 서술하세요.
+    <strong>2.</strong> 다음 코드가 있을 때, <code>LOG_LEVEL</code>을 <code>LOG_LEVEL_WARN(2)</code>으로 설정하고 빌드한 경우 실제로 출력되는 라인을 모두 고르세요. 그리고 컴파일 타임 필터링에서 출력되지 않는 로그가 런타임 <code>if</code>문 필터링과 다르게 처리되는 이유를 서술하세요.
       <pre><code class="language-c">LOG_E("하드웨어 초기화 실패");    /* (A) */
 LOG_W("버퍼 사용률 90%% 초과");   /* (B) */
 LOG_I("시스템 시작 완료");         /* (C) */
 LOG_D("루프 카운터: %d", cnt);    /* (D) */</code></pre>
-    </div>
   </div>
 
   <div class="exercise">
     <span class="level">적용</span>
-    <div>
-      <strong>3.</strong> 다음 요구사항을 만족하는 <code>LOG_I</code> 매크로를 직접 작성하세요.
+    <strong>3.</strong> 다음 요구사항을 만족하는 <code>LOG_I</code> 매크로를 직접 작성하세요.
       <br><br>
       요구사항:
       <ul>
@@ -1144,26 +1139,22 @@ LOG_D("루프 카운터: %d", cnt);    /* (D) */</code></pre>
         <li>타임스탬프는 <code>HAL_GetTick()</code> 사용</li>
         <li><code>log_print()</code> 내부 함수를 호출하는 방식으로 구현</li>
       </ul>
-    </div>
   </div>
 
   <div class="exercise">
     <span class="level">분석</span>
-    <div>
-      <strong>4.</strong> 아래 팀원이 작성한 <code>LOG_D</code> 매크로 구현 코드에서 문제점을 2개 이상 찾고, 각각에 대해 개선 방안을 제시하세요.
+    <strong>4.</strong> 아래 팀원이 작성한 <code>LOG_D</code> 매크로 구현 코드에서 문제점을 2개 이상 찾고, 각각에 대해 개선 방안을 제시하세요.
       <pre><code class="language-c">/* 팀원의 구현 — 문제가 있습니다 */
 #define LOG_D(msg, ...) \
     if (log_level == 4) { \
         printf("[DEBUG][" __FILE__ ":" __LINE__ "] " msg, __VA_ARGS__); \
     }</code></pre>
       (힌트: 런타임 조건, 문자열 리터럴 결합, <code>__LINE__</code> 타입, 가변 인자 처리, <code>do-while</code> 패턴)
-    </div>
   </div>
 
   <div class="exercise">
     <span class="level">평가/창조</span>
-    <div>
-      <strong>5.</strong> 여러분은 배터리로 구동되는 IoT 온도 센서 노드(STM32L0 기반, 플래시 64KB) 펌웨어를 개발합니다. 이 디바이스는 현장에 수백 개 배포됩니다.
+    <strong>5.</strong> 여러분은 배터리로 구동되는 IoT 온도 센서 노드(STM32L0 기반, 플래시 64KB) 펌웨어를 개발합니다. 이 디바이스는 현장에 수백 개 배포됩니다.
       <br><br>
       다음 두 상황에 대해 각각 적절한 로그 전략을 설계하고 근거를 제시하세요.
       <ul>
@@ -1171,7 +1162,6 @@ LOG_D("루프 카운터: %d", cnt);    /* (D) */</code></pre>
         <li><strong>상황 B (현장 배포 후)</strong>: 고객 시설에 설치된 상태, OTA 업데이트 불가</li>
       </ul>
       포함할 내용: 출력 채널 선택(SWO/RTT/UART/없음), <code>LOG_LEVEL</code> 값, 플래시 절약 전략, 현장에서 문제 발생 시 대응 방법.
-    </div>
   </div>
 </section>
 

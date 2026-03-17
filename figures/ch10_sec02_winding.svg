@@ -1,110 +1,158 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+<svg width="1000" height="620" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620">
   <defs>
     <style>
-      .coil-a { fill: #FF6B6B; stroke: #C92A2A; stroke-width: 2; }
-      .coil-b { fill: #4ECDC4; stroke: #1A9B8E; stroke-width: 2; }
-      .coil-c { fill: #95E1D3; stroke: #38A169; stroke-width: 2; }
-      .coil-d { fill: #FFD93D; stroke: #F0A500; stroke-width: 2; }
-      .text-title { font-size: 16px; font-weight: bold; }
-      .text-normal { font-size: 12px; }
-      .text-small { font-size: 10px; }
-      .table-cell { text-anchor: middle; font-size: 11px; }
+      .coil-a { fill: #E53935; stroke: #B71C1C; stroke-width: 2.5; }
+      .coil-b { fill: #00897B; stroke: #004D40; stroke-width: 2.5; }
+      .coil-c { fill: #1E88E5; stroke: #0D47A1; stroke-width: 2.5; }
+      .coil-d { fill: #F9A825; stroke: #E65100; stroke-width: 2.5; }
+      .text-title  { font-size: 18px; font-weight: bold; font-family: 'Noto Sans KR', sans-serif; }
+      .text-label  { font-size: 14px; font-weight: bold; font-family: 'Noto Sans KR', sans-serif; }
+      .text-normal { font-size: 13px; font-family: 'Noto Sans KR', sans-serif; }
+      .text-small  { font-size: 12px; font-family: 'Noto Sans KR', sans-serif; }
+      .table-hdr   { font-size: 13px; font-weight: bold; font-family: 'Noto Sans KR', sans-serif; text-anchor: middle; }
+      .table-cell  { font-size: 13px; font-family: 'Noto Sans KR', sans-serif; text-anchor: middle; }
     </style>
   </defs>
 
+  <!-- 전체 배경 -->
+  <rect x="0" y="0" width="1000" height="620" fill="#F8F9FA" rx="0"/>
+
   <!-- 제목 -->
-  <text x="500" y="30" class="text-title" text-anchor="middle" fill="#1A1A2E">
-    28BYJ-48 4개 코일과 여자 시퀀스
+  <text x="500" y="36" class="text-title" text-anchor="middle" fill="#1A1A2E">28BYJ-48 4개 코일과 여자 시퀀스</text>
+  <rect x="100" y="45" width="800" height="24" fill="#E8F5E9" stroke="#34A853" stroke-width="1" rx="3"/>
+  <text x="500" y="62" class="text-small" text-anchor="middle" fill="#2E7D32" font-weight="bold">
+    풀 스텝: 1코일씩 순서대로 여자 (A→B→C→D)  /  하프 스텝: 1코일↔2코일 교대 여자 (정밀도 2배)
   </text>
-  <text x="500" y="50" class="text-small" text-anchor="middle" fill="#666">
-    풀 스텝 (Full Step): 4개 스텝으로 완전 회전 / 하프 스텝 (Half Step): 8개 스텝으로 더 미세한 제어
-  </text>
 
-  <!-- 코일 배치 (원형) -->
-  <circle cx="200" cy="200" r="100" fill="none" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+  <!-- ===== 좌측: 코일 배치 원형 다이어그램 ===== -->
+  <!-- 배경 패널 -->
+  <rect x="30" y="80" width="400" height="390" fill="white" stroke="#CCC" stroke-width="1.5" rx="10"/>
+  <text x="230" y="104" class="text-label" text-anchor="middle" fill="#333">코일 배치도</text>
 
-  <!-- 코일 A (상단) -->
-  <rect x="170" y="60" width="60" height="40" class="coil-a" rx="5"/>
-  <text x="200" y="85" class="text-normal" text-anchor="middle" font-weight="bold" fill="white">A</text>
+  <!-- 원형 가이드 -->
+  <circle cx="230" cy="255" r="110" fill="#F0F4FF" stroke="#BDBDBD" stroke-width="1.5" stroke-dasharray="5,4"/>
 
-  <!-- 코일 B (우측) -->
-  <rect x="310" y="170" width="60" height="40" class="coil-b" rx="5"/>
-  <text x="340" y="195" class="text-normal" text-anchor="middle" font-weight="bold" fill="white">B</text>
+  <!-- 연결선 (코일 → 중심) -->
+  <line x1="230" y1="145" x2="230" y2="235" stroke="#999" stroke-width="1.5"/>
+  <line x1="340" y1="255" x2="260" y2="255" stroke="#999" stroke-width="1.5"/>
+  <line x1="230" y1="365" x2="230" y2="275" stroke="#999" stroke-width="1.5"/>
+  <line x1="120" y1="255" x2="200" y2="255" stroke="#999" stroke-width="1.5"/>
 
-  <!-- 코일 C (하단) -->
-  <rect x="170" y="320" width="60" height="40" class="coil-c" rx="5"/>
-  <text x="200" y="345" class="text-normal" text-anchor="middle" font-weight="bold" fill="white">C</text>
+  <!-- 코일 A (상단 — 빨강) -->
+  <rect x="195" y="110" width="70" height="46" class="coil-a" rx="7"/>
+  <text x="230" y="129" class="text-label" text-anchor="middle" fill="white">A</text>
+  <text x="230" y="148" class="text-small" text-anchor="middle" fill="white">코일</text>
 
-  <!-- 코일 D (좌측) -->
-  <rect x="30" y="170" width="60" height="40" class="coil-d" rx="5"/>
-  <text x="60" y="195" class="text-normal" text-anchor="middle" font-weight="bold" fill="#333">D</text>
+  <!-- 코일 B (우측 — 청록) -->
+  <rect x="346" y="232" width="70" height="46" class="coil-b" rx="7"/>
+  <text x="381" y="251" class="text-label" text-anchor="middle" fill="white">B</text>
+  <text x="381" y="270" class="text-small" text-anchor="middle" fill="white">코일</text>
+
+  <!-- 코일 C (하단 — 파랑) -->
+  <rect x="195" y="365" width="70" height="46" class="coil-c" rx="7"/>
+  <text x="230" y="384" class="text-label" text-anchor="middle" fill="white">C</text>
+  <text x="230" y="403" class="text-small" text-anchor="middle" fill="white">코일</text>
+
+  <!-- 코일 D (좌측 — 노랑) -->
+  <rect x="46" y="232" width="70" height="46" class="coil-d" rx="7"/>
+  <text x="81" y="251" class="text-label" text-anchor="middle" fill="#333">D</text>
+  <text x="81" y="270" class="text-small" text-anchor="middle" fill="#333">코일</text>
 
   <!-- 중심 -->
-  <circle cx="200" cy="200" r="8" fill="#333"/>
-  <text x="200" y="205" class="text-small" text-anchor="middle" fill="white" font-weight="bold">회전축</text>
+  <circle cx="230" cy="255" r="28" fill="#37474F" stroke="#263238" stroke-width="2"/>
+  <text x="230" y="251" class="text-small" text-anchor="middle" fill="white" font-weight="bold">회전</text>
+  <text x="230" y="267" class="text-small" text-anchor="middle" fill="white" font-weight="bold">축</text>
 
-  <!-- 여자 시퀀스 테이블 -->
-  <text x="550" y="100" class="text-normal" text-anchor="start" font-weight="bold">풀 스텝 시퀀스 (4 스텝):</text>
+  <!-- 회전 방향 표시 -->
+  <path d="M 270 215 A 50 50 0 0 1 310 255" fill="none" stroke="#E53935" stroke-width="2.5" marker-end="url(#rot-arr)"/>
+  <defs>
+    <marker id="rot-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <polygon points="0 0, 8 4, 0 8" fill="#E53935"/>
+    </marker>
+  </defs>
+  <text x="302" y="210" class="text-small" text-anchor="middle" fill="#E53935" font-weight="bold">CW</text>
+
+  <!-- ===== 우측: 테이블 영역 ===== -->
+  <!-- 배경 패널 -->
+  <rect x="455" y="80" width="520" height="390" fill="white" stroke="#CCC" stroke-width="1.5" rx="10"/>
+
+  <!-- 풀 스텝 테이블 -->
+  <text x="715" y="107" class="text-label" text-anchor="middle" fill="#1B5E20">풀 스텝 시퀀스 (4 스텝 / 전기 1주기)</text>
 
   <!-- 테이블 헤더 -->
-  <rect x="500" y="120" width="450" height="25" fill="#E8F5E9" stroke="#34A853" stroke-width="1"/>
-  <text x="520" y="137" class="table-cell">Step</text>
-  <text x="620" y="137" class="table-cell">A</text>
-  <text x="720" y="137" class="table-cell">B</text>
-  <text x="820" y="137" class="table-cell">C</text>
-  <text x="920" y="137" class="table-cell">D</text>
+  <rect x="470" y="116" width="490" height="30" fill="#2E7D32" rx="4"/>
+  <text x="510" y="136" class="table-hdr" fill="white">Step</text>
+  <text x="620" y="136" class="table-hdr" fill="white">A</text>
+  <text x="730" y="136" class="table-hdr" fill="white">B</text>
+  <text x="840" y="136" class="table-hdr" fill="white">C</text>
+  <text x="950" y="136" class="table-hdr" fill="white">D</text>
 
-  <!-- Step 0: A 활성 -->
-  <rect x="500" y="145" width="450" height="25" fill="#FFF8E1" stroke="#999" stroke-width="1"/>
-  <text x="520" y="162" class="table-cell">0</text>
-  <rect x="605" y="147" width="30" height="21" fill="#FF6B6B" stroke="#C92A2A"/>
-  <text x="620" y="162" class="table-cell" fill="white" font-weight="bold">ON</text>
-  <text x="720" y="162" class="table-cell">-</text>
-  <text x="820" y="162" class="table-cell">-</text>
-  <text x="920" y="162" class="table-cell">-</text>
+  <!-- Step 0: A ON -->
+  <rect x="470" y="146" width="490" height="34" fill="#FFF8F8" stroke="#DDD" stroke-width="1"/>
+  <text x="510" y="168" class="table-cell" fill="#333" font-weight="bold">0</text>
+  <rect x="591" y="149" width="58" height="28" fill="#E53935" rx="4"/>
+  <text x="620" y="168" class="table-cell" fill="white" font-weight="bold">ON</text>
+  <text x="730" y="168" class="table-cell" fill="#AAA">—</text>
+  <text x="840" y="168" class="table-cell" fill="#AAA">—</text>
+  <text x="950" y="168" class="table-cell" fill="#AAA">—</text>
 
-  <!-- Step 1: A+B 활성 -->
-  <rect x="500" y="170" width="450" height="25" fill="#FFF8E1" stroke="#999" stroke-width="1"/>
-  <text x="520" y="187" class="table-cell">1</text>
-  <rect x="605" y="172" width="30" height="21" fill="#FF6B6B" stroke="#C92A2A"/>
-  <text x="620" y="187" class="table-cell" fill="white" font-weight="bold">ON</text>
-  <rect x="705" y="172" width="30" height="21" fill="#4ECDC4" stroke="#1A9B8E"/>
-  <text x="720" y="187" class="table-cell" fill="white" font-weight="bold">ON</text>
-  <text x="820" y="187" class="table-cell">-</text>
-  <text x="920" y="187" class="table-cell">-</text>
+  <!-- Step 1: B ON -->
+  <rect x="470" y="180" width="490" height="34" fill="#F8FFFF" stroke="#DDD" stroke-width="1"/>
+  <text x="510" y="202" class="table-cell" fill="#333" font-weight="bold">1</text>
+  <text x="620" y="202" class="table-cell" fill="#AAA">—</text>
+  <rect x="701" y="183" width="58" height="28" fill="#00897B" rx="4"/>
+  <text x="730" y="202" class="table-cell" fill="white" font-weight="bold">ON</text>
+  <text x="840" y="202" class="table-cell" fill="#AAA">—</text>
+  <text x="950" y="202" class="table-cell" fill="#AAA">—</text>
 
-  <!-- Step 2: B 활성 -->
-  <rect x="500" y="195" width="450" height="25" fill="#FFF8E1" stroke="#999" stroke-width="1"/>
-  <text x="520" y="212" class="table-cell">2</text>
-  <text x="620" y="212" class="table-cell">-</text>
-  <rect x="705" y="197" width="30" height="21" fill="#4ECDC4" stroke="#1A9B8E"/>
-  <text x="720" y="212" class="table-cell" fill="white" font-weight="bold">ON</text>
-  <text x="820" y="212" class="table-cell">-</text>
-  <text x="920" y="212" class="table-cell">-</text>
+  <!-- Step 2: C ON -->
+  <rect x="470" y="214" width="490" height="34" fill="#F8F8FF" stroke="#DDD" stroke-width="1"/>
+  <text x="510" y="236" class="table-cell" fill="#333" font-weight="bold">2</text>
+  <text x="620" y="236" class="table-cell" fill="#AAA">—</text>
+  <text x="730" y="236" class="table-cell" fill="#AAA">—</text>
+  <rect x="811" y="217" width="58" height="28" fill="#1E88E5" rx="4"/>
+  <text x="840" y="236" class="table-cell" fill="white" font-weight="bold">ON</text>
+  <text x="950" y="236" class="table-cell" fill="#AAA">—</text>
 
-  <!-- Step 3: B+C 활성 -->
-  <rect x="500" y="220" width="450" height="25" fill="#FFF8E1" stroke="#999" stroke-width="1"/>
-  <text x="520" y="237" class="table-cell">3</text>
-  <text x="620" y="237" class="table-cell">-</text>
-  <rect x="705" y="222" width="30" height="21" fill="#4ECDC4" stroke="#1A9B8E"/>
-  <text x="720" y="237" class="table-cell" fill="white" font-weight="bold">ON</text>
-  <rect x="805" y="222" width="30" height="21" fill="#95E1D3" stroke="#38A169"/>
-  <text x="820" y="237" class="table-cell" fill="white" font-weight="bold">ON</text>
-  <text x="920" y="237" class="table-cell">-</text>
+  <!-- Step 3: D ON -->
+  <rect x="470" y="248" width="490" height="34" fill="#FFFDF0" stroke="#DDD" stroke-width="1"/>
+  <text x="510" y="270" class="table-cell" fill="#333" font-weight="bold">3</text>
+  <text x="620" y="270" class="table-cell" fill="#AAA">—</text>
+  <text x="730" y="270" class="table-cell" fill="#AAA">—</text>
+  <text x="840" y="270" class="table-cell" fill="#AAA">—</text>
+  <rect x="921" y="251" width="58" height="28" fill="#F9A825" rx="4"/>
+  <text x="950" y="270" class="table-cell" fill="#333" font-weight="bold">ON</text>
+
+  <!-- 순서 라벨 -->
+  <text x="715" y="300" class="text-small" text-anchor="middle" fill="#555">→ A → B → C → D → A → B → C → D → … (반복)</text>
+
+  <!-- 구분선 -->
+  <line x1="470" y1="315" x2="960" y2="315" stroke="#BDBDBD" stroke-width="1.5" stroke-dasharray="5,4"/>
 
   <!-- 하프 스텝 섹션 -->
-  <text x="550" y="310" class="text-normal" text-anchor="start" font-weight="bold">하프 스텝 시퀀스 (8 스텝, 절반의 정밀도):</text>
+  <text x="715" y="338" class="text-label" text-anchor="middle" fill="#1565C0">하프 스텝 시퀀스 (8 스텝 / 전기 1주기)</text>
 
-  <!-- 간단한 설명 -->
-  <rect x="500" y="340" width="450" height="100" fill="#F0F4FF" stroke="#1A73E8" stroke-width="2" rx="5"/>
+  <rect x="470" y="348" width="490" height="110" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.5" rx="6"/>
+  <text x="487" y="372" class="text-normal" fill="#1565C0" font-weight="bold">하프 스텝 동작:</text>
+  <text x="487" y="394" class="text-small" fill="#1A237E">• 1코일 단독 여자 ↔ 2코일 동시 여자 교대</text>
+  <text x="487" y="414" class="text-small" fill="#1A237E">• 8 스텝 = 전기적 1주기 (출력축 1회전 = 128 스텝)</text>
+  <text x="487" y="434" class="text-small" fill="#1A237E">• 풀 스텝 대비 위치 정밀도 2배, 진동 감소, 토크 약간 저하</text>
+  <text x="487" y="452" class="text-small" fill="#0D47A1" font-weight="bold">• 시퀀스: A → AB → B → BC → C → CD → D → DA → A …</text>
 
-  <text x="520" y="365" class="text-normal" font-weight="bold" fill="#1A73E8">하프 스텝 동작:</text>
-  <text x="520" y="385" class="text-small">• 1개 코일만 활성 OR 2개 코일 동시 활성 (교대)</text>
-  <text x="520" y="402" class="text-small">• 총 8개 스텝 = 한 바퀴 완전 회전</text>
-  <text x="520" y="419" class="text-small">• 풀 스텝 대비 정밀도 2배, 토크 약간 감소</text>
+  <!-- ===== 하단: 요약 비교 박스 ===== -->
+  <rect x="30" y="485" width="940" height="120" fill="white" stroke="#CCC" stroke-width="1.5" rx="10"/>
+  <text x="500" y="507" class="text-label" text-anchor="middle" fill="#1A1A2E">모드 비교</text>
 
-  <text x="520" y="440" class="text-small" fill="#666" font-style="italic">
-    현재 프로젝트에서는 풀 스텝(4 스텝) 사용 → 시침이 정확히 64개 위치에 멈춤
-  </text>
+  <!-- 풀 스텝 요약 -->
+  <rect x="50" y="518" width="420" height="70" fill="#E8F5E9" stroke="#34A853" stroke-width="1.5" rx="6"/>
+  <text x="260" y="540" class="text-normal" text-anchor="middle" font-weight="bold" fill="#1B5E20">✅ 풀 스텝 (이 프로젝트 사용)</text>
+  <text x="260" y="560" class="text-small" text-anchor="middle" fill="#2E7D32">4 스텝/전기 주기 · 출력축 64 스텝/회전 · 5.625°/스텝</text>
+  <text x="260" y="578" class="text-small" text-anchor="middle" fill="#2E7D32">시침이 정확히 64개 위치에 멈춤 → 아날로그 시계에 적합</text>
+
+  <!-- 하프 스텝 요약 -->
+  <rect x="510" y="518" width="430" height="70" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.5" rx="6"/>
+  <text x="725" y="540" class="text-normal" text-anchor="middle" font-weight="bold" fill="#1565C0">하프 스텝</text>
+  <text x="725" y="560" class="text-small" text-anchor="middle" fill="#1565C0">8 스텝/전기 주기 · 출력축 128 스텝/회전 · 2.8125°/스텝</text>
+  <text x="725" y="578" class="text-small" text-anchor="middle" fill="#1565C0">더 부드러운 회전 필요 시 사용 (3D 프린터, 정밀 장비)</text>
 </svg>
