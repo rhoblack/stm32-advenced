@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 420" font-family="'Noto Sans KR', sans-serif">
+  <rect width="860" height="420" fill="#F8F9FA" rx="12"/>
+  <text x="430" y="32" text-anchor="middle" font-size="16" font-weight="bold" fill="#1A1A2E">시나리오 3: 대시보드 갱신(Dashboard Update) 시퀀스 다이어그램</text>
+  <text x="430" y="52" text-anchor="middle" font-size="11" fill="#666">TIM2 1초 UEV → 전체 데이터 수집 → LCD + PC 대시보드 동기 갱신</text>
+
+  <!-- 참가자 -->
+  <rect x="20" y="70" width="80" height="36" fill="#607D8B" rx="5"/>
+  <text x="60" y="85" text-anchor="middle" font-size="10" fill="white" font-weight="bold">TIM2 HW</text>
+  <text x="60" y="98" text-anchor="middle" font-size="9" fill="white">(1s UEV)</text>
+
+  <rect x="140" y="70" width="80" height="36" fill="#EA4335" rx="5"/>
+  <text x="180" y="85" text-anchor="middle" font-size="10" fill="white" font-weight="bold">main_app</text>
+  <text x="180" y="98" text-anchor="middle" font-size="9" fill="white">(App)</text>
+
+  <rect x="260" y="70" width="80" height="36" fill="#34A853" rx="5"/>
+  <text x="300" y="85" text-anchor="middle" font-size="10" fill="white" font-weight="bold">rtc_driver</text>
+  <text x="300" y="98" text-anchor="middle" font-size="9" fill="white">(Driver)</text>
+
+  <rect x="380" y="70" width="80" height="36" fill="#34A853" rx="5"/>
+  <text x="420" y="85" text-anchor="middle" font-size="10" fill="white" font-weight="bold">sensor_svc</text>
+  <text x="420" y="98" text-anchor="middle" font-size="9" fill="white">(Service)</text>
+
+  <rect x="500" y="70" width="80" height="36" fill="#FBBC04" rx="5"/>
+  <text x="540" y="85" text-anchor="middle" font-size="10" fill="#333" font-weight="bold">ui_service</text>
+  <text x="540" y="98" text-anchor="middle" font-size="9" fill="#333">(Service)</text>
+
+  <rect x="620" y="70" width="80" height="36" fill="#EA4335" rx="5"/>
+  <text x="660" y="85" text-anchor="middle" font-size="10" fill="white" font-weight="bold">protocol_app</text>
+  <text x="660" y="98" text-anchor="middle" font-size="9" fill="white">(App)</text>
+
+  <rect x="740" y="70" width="80" height="36" fill="#9C27B0" rx="5"/>
+  <text x="780" y="85" text-anchor="middle" font-size="10" fill="white" font-weight="bold">PC Dashboard</text>
+  <text x="780" y="98" text-anchor="middle" font-size="9" fill="white">(pyserial)</text>
+
+  <!-- 생명선 -->
+  <line x1="60" y1="106" x2="60" y2="390" stroke="#607D8B" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="180" y1="106" x2="180" y2="390" stroke="#EA4335" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="300" y1="106" x2="300" y2="390" stroke="#34A853" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="420" y1="106" x2="420" y2="390" stroke="#34A853" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="540" y1="106" x2="540" y2="390" stroke="#FBBC04" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="660" y1="106" x2="660" y2="390" stroke="#EA4335" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="780" y1="106" x2="780" y2="390" stroke="#9C27B0" stroke-width="1" stroke-dasharray="5,3"/>
+
+  <!-- Step 1: TIM2 UEV -->
+  <line x1="60" y1="130" x2="175" y2="130" stroke="#607D8B" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <rect x="60" y="116" width="115" height="14" fill="#ECEFF1" rx="2"/>
+  <text x="117" y="126" text-anchor="middle" font-size="9" fill="#455A64">TIM2 UEV IRQ (1s)</text>
+
+  <!-- Step 2: RTC 시각 읽기 -->
+  <line x1="180" y1="150" x2="295" y2="150" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <rect x="180" y="137" width="115" height="13" fill="#FFEBEE" rx="2"/>
+  <text x="237" y="147" text-anchor="middle" font-size="9" fill="#C62828">RTC_GetTime(&amp;time)</text>
+
+  <line x1="300" y1="163" x2="180" y2="163" stroke="#34A853" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr3)"/>
+  <rect x="180" y="150" width="115" height="13" fill="#E8F5E9" rx="2"/>
+  <text x="237" y="160" text-anchor="middle" font-size="9" fill="#2E7D32">return: {hh,mm,ss}</text>
+
+  <!-- Step 3: 센서 읽기 (비동기 DMA 완료 확인) -->
+  <line x1="180" y1="185" x2="415" y2="185" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <rect x="180" y="172" width="235" height="13" fill="#FFEBEE" rx="2"/>
+  <text x="297" y="182" text-anchor="middle" font-size="9" fill="#C62828">sensor_svc_get_latest(&amp;temp, &amp;humi)</text>
+
+  <line x1="420" y1="198" x2="180" y2="198" stroke="#34A853" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr3)"/>
+  <rect x="180" y="185" width="235" height="13" fill="#E8F5E9" rx="2"/>
+  <text x="297" y="195" text-anchor="middle" font-size="9" fill="#2E7D32">return: {25.3°C, 60.1%} (DMA 캐시값)</text>
+
+  <!-- Step 4: LCD 갱신 -->
+  <line x1="180" y1="220" x2="535" y2="220" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <rect x="180" y="207" width="355" height="13" fill="#FFEBEE" rx="2"/>
+  <text x="357" y="217" text-anchor="middle" font-size="9" fill="#C62828">ui_update_main_screen(time, temp, humi)</text>
+
+  <line x1="540" y1="233" x2="540" y2="247" stroke="#FBBC04" stroke-width="1.5"/>
+  <rect x="500" y="233" width="80" height="22" fill="#FFF9C4" stroke="#F9A825" rx="3"/>
+  <text x="540" y="245" text-anchor="middle" font-size="9" fill="#F57F17">LCD SPI DMA</text>
+  <text x="540" y="256" text-anchor="middle" font-size="9" fill="#F57F17">프레임 전송</text>
+
+  <!-- Step 5: Protocol 프레임 생성 + UART DMA 전송 -->
+  <line x1="180" y1="275" x2="655" y2="275" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <rect x="180" y="262" width="475" height="13" fill="#FFEBEE" rx="2"/>
+  <text x="417" y="272" text-anchor="middle" font-size="9" fill="#C62828">protocol_send_frame(SENSOR_DATA, {time, temp, humi})</text>
+
+  <line x1="660" y1="293" x2="660" y2="305" stroke="#EA4335" stroke-width="1.5"/>
+  <rect x="615" y="280" width="90" height="25" fill="#FFEBEE" stroke="#EA4335" rx="3"/>
+  <text x="660" y="292" text-anchor="middle" font-size="9" fill="#C62828">UART DMA</text>
+  <text x="660" y="303" text-anchor="middle" font-size="9" fill="#C62828">프레임 전송</text>
+
+  <!-- Step 6: PC 수신 -->
+  <line x1="660" y1="320" x2="775" y2="320" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <rect x="660" y="307" width="115" height="13" fill="#F3E5F5" rx="2"/>
+  <text x="717" y="317" text-anchor="middle" font-size="9" fill="#6A1B9A">serial.read() → parse</text>
+
+  <line x1="780" y1="337" x2="780" y2="351" stroke="#9C27B0" stroke-width="1.5"/>
+  <rect x="735" y="327" width="90" height="24" fill="#F3E5F5" stroke="#9C27B0" rx="3"/>
+  <text x="780" y="339" text-anchor="middle" font-size="9" fill="#6A1B9A">PyQt5 UI</text>
+  <text x="780" y="350" text-anchor="middle" font-size="9" fill="#6A1B9A">실시간 갱신</text>
+
+  <!-- 로그 -->
+  <rect x="20" y="372" width="820" height="28" fill="#263238" rx="4"/>
+  <text x="40" y="383" font-size="9" fill="#80CBC4" font-family="monospace">[DEBUG] main_app: 1s tick — time=14:32:05  temp=25.3  humi=60.1  →  LCD+UART 갱신 완료</text>
+  <text x="40" y="395" font-size="9" fill="#80CBC4" font-family="monospace">[DEBUG] protocol_app: frame TX DMA 시작 len=18</text>
+
+  <defs>
+    <marker id="arr3" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L7,3 z" fill="#333"/>
+    </marker>
+  </defs>
+</svg>

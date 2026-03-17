@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 540" font-family="'Noto Sans KR', sans-serif">
+  <rect width="860" height="540" fill="#F8F9FA" rx="12"/>
+  <text x="430" y="36" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A1A2E">계층적 FSM (HFSM — Hierarchical State Machine)</text>
+  <text x="430" y="56" text-anchor="middle" font-size="12" fill="#666">DISPLAY FSM — ACTIVE 부모 상태 + 3개 자식 상태</text>
+
+  <!-- IDLE 상태 (외부) -->
+  <rect x="30" y="80" width="120" height="60" fill="#ECEFF1" stroke="#90A4AE" stroke-width="2" rx="8"/>
+  <text x="90" y="107" text-anchor="middle" font-size="13" font-weight="bold" fill="#455A64">IDLE</text>
+  <text x="90" y="124" text-anchor="middle" font-size="10" fill="#666">화면 꺼짐</text>
+
+  <!-- ACTIVE 부모 상태 -->
+  <rect x="200" y="70" width="550" height="330" fill="#E3F2FD" stroke="#1A73E8" stroke-width="2.5" rx="12" stroke-dasharray="8,4"/>
+  <text x="475" y="95" text-anchor="middle" font-size="14" font-weight="bold" fill="#1A73E8">ACTIVE (부모 상태)</text>
+  <text x="475" y="112" text-anchor="middle" font-size="10" fill="#1A73E8">진입 액션: lcd_backlight_on() | 진출 액션: lcd_backlight_off()</text>
+  <text x="475" y="127" text-anchor="middle" font-size="10" fill="#1A73E8">TIMEOUT 이벤트 처리 → IDLE 전이 (자식 상태 무관)</text>
+
+  <!-- 자식 상태: TIME_VIEW -->
+  <rect x="220" y="145" width="150" height="220" fill="white" stroke="#34A853" stroke-width="2" rx="8"/>
+  <rect x="220" y="145" width="150" height="28" fill="#34A853" rx="8"/>
+  <text x="295" y="163" text-anchor="middle" font-size="12" font-weight="bold" fill="white">TIME_VIEW</text>
+  <text x="295" y="190" text-anchor="middle" font-size="10" fill="#555">진입: show_time()</text>
+  <text x="295" y="207" text-anchor="middle" font-size="10" fill="#555">매초: rtc_update()</text>
+  <text x="295" y="224" text-anchor="middle" font-size="10" fill="#555">진출: -</text>
+  <text x="295" y="248" text-anchor="middle" font-size="9" fill="#888">BTN_SHORT →</text>
+  <text x="295" y="262" text-anchor="middle" font-size="9" fill="#888">SENSOR_VIEW</text>
+  <text x="295" y="280" text-anchor="middle" font-size="9" fill="#888">BTN_LONG →</text>
+  <text x="295" y="294" text-anchor="middle" font-size="9" fill="#888">STOPWATCH_VIEW</text>
+  <text x="295" y="315" text-anchor="middle" font-size="9" fill="#888">ALARM_TRIGGER →</text>
+  <text x="295" y="329" text-anchor="middle" font-size="9" fill="#888">ALARM_VIEW</text>
+  <text x="295" y="348" text-anchor="middle" font-size="9" fill="#1A73E8">★ 초기(기본) 자식 상태</text>
+
+  <!-- 자식 상태: SENSOR_VIEW -->
+  <rect x="400" y="145" width="150" height="200" fill="white" stroke="#FBBC04" stroke-width="2" rx="8"/>
+  <rect x="400" y="145" width="150" height="28" fill="#FBBC04" rx="8"/>
+  <text x="475" y="163" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">SENSOR_VIEW</text>
+  <text x="475" y="190" text-anchor="middle" font-size="10" fill="#555">진입: show_sensor()</text>
+  <text x="475" y="207" text-anchor="middle" font-size="10" fill="#555">30초: sht31_trigger()</text>
+  <text x="475" y="224" text-anchor="middle" font-size="10" fill="#555">진출: sensor_stop()</text>
+  <text x="475" y="248" text-anchor="middle" font-size="9" fill="#888">BTN_SHORT →</text>
+  <text x="475" y="262" text-anchor="middle" font-size="9" fill="#888">STOPWATCH_VIEW</text>
+  <text x="475" y="280" text-anchor="middle" font-size="9" fill="#888">BTN_LONG →</text>
+  <text x="475" y="294" text-anchor="middle" font-size="9" fill="#888">TIME_VIEW</text>
+  <text x="475" y="315" text-anchor="middle" font-size="9" fill="#888">TIMEOUT →</text>
+  <text x="475" y="329" text-anchor="middle" font-size="9" fill="#888">부모(ACTIVE)가 처리</text>
+
+  <!-- 자식 상태: STOPWATCH_VIEW -->
+  <rect x="580" y="145" width="150" height="200" fill="white" stroke="#EA4335" stroke-width="2" rx="8"/>
+  <rect x="580" y="145" width="150" height="28" fill="#EA4335" rx="8"/>
+  <text x="655" y="163" text-anchor="middle" font-size="12" font-weight="bold" fill="white">STOPWATCH_VIEW</text>
+  <text x="655" y="190" text-anchor="middle" font-size="10" fill="#555">진입: show_stopwatch()</text>
+  <text x="655" y="207" text-anchor="middle" font-size="10" fill="#555">TIM_TICK: tick()</text>
+  <text x="655" y="224" text-anchor="middle" font-size="10" fill="#555">진출: tim_stop()</text>
+  <text x="655" y="248" text-anchor="middle" font-size="9" fill="#888">BTN_SHORT →</text>
+  <text x="655" y="262" text-anchor="middle" font-size="9" fill="#888">TIME_VIEW</text>
+  <text x="655" y="280" text-anchor="middle" font-size="9" fill="#888">BTN_LONG →</text>
+  <text x="655" y="294" text-anchor="middle" font-size="9" fill="#888">SENSOR_VIEW</text>
+  <text x="655" y="315" text-anchor="middle" font-size="9" fill="#888">TIMEOUT →</text>
+  <text x="655" y="329" text-anchor="middle" font-size="9" fill="#888">부모(ACTIVE)가 처리</text>
+
+  <!-- IDLE ↔ ACTIVE 전이 화살표 -->
+  <line x1="150" y1="108" x2="200" y2="200" stroke="#1A73E8" stroke-width="2" marker-end="url(#blue-arrow)"/>
+  <text x="170" y="165" font-size="9" fill="#1A73E8">BTN_ANY</text>
+
+  <line x1="200" y1="230" x2="148" y2="120" stroke="#EA4335" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#red-arrow)"/>
+  <text x="148" y="190" font-size="9" fill="#EA4335">TIMEOUT</text>
+  <text x="148" y="203" font-size="9" fill="#EA4335">(부모 처리)</text>
+
+  <!-- HFSM 핵심 원리 설명 -->
+  <rect x="30" y="425" width="800" height="90" fill="white" stroke="#1A73E8" stroke-width="1.5" rx="8"/>
+  <text x="430" y="448" text-anchor="middle" font-size="13" font-weight="bold" fill="#1A73E8">HFSM 핵심 원리</text>
+  <text x="50" y="467" font-size="11" fill="#444">① 이벤트 위임: 자식 상태가 처리 못하면 부모 상태가 처리 (TIMEOUT → ACTIVE가 처리)</text>
+  <text x="50" y="484" font-size="11" fill="#444">② 진입/진출 액션: 부모 상태 전이 시 자동 실행 (ACTIVE 진입 → lcd_backlight_on() 항상 호출)</text>
+  <text x="50" y="501" font-size="11" fill="#444">③ 초기 자식 상태: ACTIVE 진입 시 항상 TIME_VIEW부터 시작 (기본값 지정)</text>
+
+  <defs>
+    <marker id="blue-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#1A73E8"/>
+    </marker>
+    <marker id="red-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#EA4335"/>
+    </marker>
+  </defs>
+</svg>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560" width="800" height="560" font-family="'Noto Sans KR', sans-serif">
+  <rect width="800" height="560" fill="#F8F9FA" rx="8"/>
+  <text x="400" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#202124">Ch16 시퀀스 다이어그램: MCU → UART DMA → PC 대시보드</text>
+
+  <!-- 참여자 박스 -->
+  <!-- sensor_service -->
+  <rect x="20" y="48" width="110" height="36" fill="#FBBC04" fill-opacity="0.4" rx="4" stroke="#B8860B" stroke-width="1.5"/>
+  <text x="75" y="71" text-anchor="middle" font-size="10" font-weight="bold" fill="#7A5C00">sensor_service.c</text>
+
+  <!-- protocol_app -->
+  <rect x="165" y="48" width="120" height="36" fill="#EA4335" fill-opacity="0.4" rx="4" stroke="#B71C1C" stroke-width="2"/>
+  <text x="225" y="66" text-anchor="middle" font-size="10" font-weight="bold" fill="#B71C1C">protocol_app.c</text>
+  <text x="225" y="79" text-anchor="middle" font-size="9" fill="#B71C1C">(App Layer ★)</text>
+
+  <!-- uart_driver -->
+  <rect x="320" y="48" width="110" height="36" fill="#34A853" fill-opacity="0.4" rx="4" stroke="#1B5E20" stroke-width="1.5"/>
+  <text x="375" y="71" text-anchor="middle" font-size="10" font-weight="bold" fill="#1B5E20">uart_driver.c</text>
+
+  <!-- HAL DMA -->
+  <rect x="460" y="48" width="100" height="36" fill="#1A73E8" fill-opacity="0.4" rx="4" stroke="#0D47A1" stroke-width="1.5"/>
+  <text x="510" y="66" text-anchor="middle" font-size="10" font-weight="bold" fill="#0D47A1">HAL/DMA</text>
+  <text x="510" y="79" text-anchor="middle" font-size="9" fill="#0D47A1">UART2</text>
+
+  <!-- pyserial -->
+  <rect x="590" y="48" width="90" height="36" fill="#9C27B0" fill-opacity="0.3" rx="4" stroke="#6A1B9A" stroke-width="1.5"/>
+  <text x="635" y="66" text-anchor="middle" font-size="10" font-weight="bold" fill="#6A1B9A">pyserial</text>
+  <text x="635" y="79" text-anchor="middle" font-size="9" fill="#6A1B9A">수신 스레드</text>
+
+  <!-- PyQt5 -->
+  <rect x="705" y="48" width="80" height="36" fill="#9C27B0" fill-opacity="0.5" rx="4" stroke="#4A148C" stroke-width="1.5"/>
+  <text x="745" y="66" text-anchor="middle" font-size="10" font-weight="bold" fill="#4A148C">PyQt5 UI</text>
+  <text x="745" y="79" text-anchor="middle" font-size="9" fill="#4A148C">대시보드</text>
+
+  <!-- 생명선 -->
+  <line x1="75" y1="84" x2="75" y2="545" stroke="#B8860B" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="225" y1="84" x2="225" y2="545" stroke="#B71C1C" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <line x1="375" y1="84" x2="375" y2="545" stroke="#1B5E20" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="510" y1="84" x2="510" y2="545" stroke="#0D47A1" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="635" y1="84" x2="635" y2="545" stroke="#6A1B9A" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="745" y1="84" x2="745" y2="545" stroke="#4A148C" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- 시퀀스 1: 1초 타이머 만료 → sensor_service 측정 -->
+  <rect x="25" y="100" width="50" height="24" fill="#FBBC04" fill-opacity="0.6" rx="3"/>
+  <text x="50" y="116" text-anchor="middle" font-size="9" fill="#7A5C00">1초 TIM</text>
+  <line x1="75" y1="112" x2="220" y2="112" stroke="#B8860B" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="148" y="108" text-anchor="middle" font-size="9" fill="#7A5C00">Sensor_GetData(temp, humi)</text>
+
+  <!-- 시퀀스 2: Protocol_SendSensorData 호출 -->
+  <rect x="180" y="128" width="90" height="24" fill="#EA4335" fill-opacity="0.5" rx="3"/>
+  <text x="225" y="144" text-anchor="middle" font-size="9" fill="#B71C1C">프레임 생성</text>
+  <text x="148" y="165" text-anchor="middle" font-size="9" fill="#EA4335">Protocol_SendSensorData()</text>
+  <line x1="75" y1="168" x2="220" y2="168" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- 시퀀스 3: CRC 계산 -->
+  <rect x="180" y="182" width="90" height="24" fill="#EA4335" fill-opacity="0.4" rx="3"/>
+  <text x="225" y="198" text-anchor="middle" font-size="9" fill="#B71C1C">CRC-16 계산</text>
+
+  <!-- 시퀀스 4: 프레임 직렬화 완료 → uart_driver -->
+  <text x="300" y="224" text-anchor="middle" font-size="9" fill="#EA4335">UART_Send(frame, len)</text>
+  <line x1="225" y1="227" x2="370" y2="227" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- 시퀀스 5: uart_driver → HAL DMA -->
+  <text x="443" y="255" text-anchor="middle" font-size="9" fill="#1B5E20">HAL_UART_Transmit_DMA()</text>
+  <line x1="375" y1="258" x2="505" y2="258" stroke="#1B5E20" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- 시퀀스 6: DMA 전송 진행 중 -->
+  <rect x="465" y="270" width="90" height="24" fill="#1A73E8" fill-opacity="0.4" rx="3"/>
+  <text x="510" y="286" text-anchor="middle" font-size="9" fill="#0D47A1">DMA TX 진행</text>
+  <!-- UART 물리 전송 -->
+  <text x="572" y="310" text-anchor="middle" font-size="9" fill="#0D47A1">UART2 TX (USB-Serial)</text>
+  <line x1="510" y1="313" x2="630" y2="313" stroke="#0D47A1" stroke-width="2" stroke-dasharray="6,2" marker-end="url(#arr)"/>
+
+  <!-- 시퀀스 7: DMA 완료 콜백 -->
+  <text x="300" y="338" text-anchor="middle" font-size="9" fill="#1B5E20">TX_Complete 콜백</text>
+  <line x1="505" y1="340" x2="380" y2="340" stroke="#1B5E20" stroke-width="1" stroke-dasharray="5,3" marker-end="url(#arr2)"/>
+
+  <!-- pyserial 수신 -->
+  <rect x="592" y="326" width="86" height="28" fill="#9C27B0" fill-opacity="0.4" rx="3"/>
+  <text x="635" y="341" text-anchor="middle" font-size="9" fill="#6A1B9A">STX 감지</text>
+  <text x="635" y="353" text-anchor="middle" font-size="9" fill="#6A1B9A">프레임 수집</text>
+
+  <!-- pyserial CRC 검증 -->
+  <rect x="592" y="365" width="86" height="24" fill="#9C27B0" fill-opacity="0.4" rx="3"/>
+  <text x="635" y="381" text-anchor="middle" font-size="9" fill="#6A1B9A">CRC 검증</text>
+
+  <!-- pyserial → PyQt5 -->
+  <text x="690" y="405" text-anchor="middle" font-size="9" fill="#6A1B9A">data_signal.emit()</text>
+  <line x1="635" y1="408" x2="740" y2="408" stroke="#6A1B9A" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- PyQt5 업데이트 -->
+  <rect x="705" y="418" width="75" height="28" fill="#9C27B0" fill-opacity="0.5" rx="3"/>
+  <text x="742" y="432" text-anchor="middle" font-size="9" fill="#4A148C">그래프 업데이트</text>
+  <text x="742" y="444" text-anchor="middle" font-size="9" fill="#4A148C">LCD 수치 갱신</text>
+
+  <!-- 범례 -->
+  <rect x="20" y="470" width="760" height="70" fill="white" rx="4" stroke="#DDD" stroke-width="1"/>
+  <text x="40" y="488" font-size="11" font-weight="bold" fill="#202124">범례</text>
+  <line x1="40" y1="505" x2="80" y2="505" stroke="#EA4335" stroke-width="2"/>
+  <text x="88" y="509" font-size="10" fill="#333">MCU App Layer 호출</text>
+  <line x1="200" y1="505" x2="240" y2="505" stroke="#1B5E20" stroke-width="1.5"/>
+  <text x="248" y="509" font-size="10" fill="#333">Driver/HAL 호출</text>
+  <line x1="360" y1="505" x2="400" y2="505" stroke="#0D47A1" stroke-width="2" stroke-dasharray="6,2"/>
+  <text x="408" y="509" font-size="10" fill="#333">물리 UART 전송</text>
+  <line x1="520" y1="505" x2="560" y2="505" stroke="#6A1B9A" stroke-width="1.5"/>
+  <text x="568" y="509" font-size="10" fill="#333">PC Python 처리</text>
+  <text x="40" y="530" font-size="10" fill="#555">★ protocol_app.c: 프레임 조립(STX+TYPE+LEN+PAYLOAD+CRC16+ETX) 및 uart_driver에 전달</text>
+
+  <!-- 화살표 마커 -->
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#555"/>
+    </marker>
+    <marker id="arr2" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto">
+      <polygon points="8 0, 0 3, 8 6" fill="#1B5E20"/>
+    </marker>
+  </defs>
+</svg>

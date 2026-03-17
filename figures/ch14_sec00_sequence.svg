@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 680" width="900" height="680" font-family="'Noto Sans KR', sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+    <marker id="arr-ret" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#888"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="680" fill="#FAFAFA" rx="8"/>
+  <text x="450" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">Ch14. 3종 DMA 동시 운용 시퀀스 — 우선순위 충돌 분석</text>
+
+  <!-- 참여자 헤더 -->
+  <!-- App(센서 서비스) -->
+  <rect x="20" y="44" width="100" height="40" rx="6" fill="#EA4335" />
+  <text x="70" y="61" text-anchor="middle" font-size="11" font-weight="bold" fill="white">Sensor</text>
+  <text x="70" y="77" text-anchor="middle" font-size="11" font-weight="bold" fill="white">Service</text>
+
+  <!-- SHT31 Driver -->
+  <rect x="155" y="44" width="100" height="40" rx="6" fill="#FBBC04"/>
+  <text x="205" y="61" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">SHT31</text>
+  <text x="205" y="77" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">Driver</text>
+
+  <!-- I2C Driver (DMA) -->
+  <rect x="295" y="44" width="110" height="40" rx="6" fill="#34A853"/>
+  <text x="350" y="61" text-anchor="middle" font-size="11" font-weight="bold" fill="white">I2C Driver</text>
+  <text x="350" y="77" text-anchor="middle" font-size="11" font-weight="bold" fill="white">(DMA 모드)</text>
+
+  <!-- GFX/UI Service -->
+  <rect x="435" y="44" width="100" height="40" rx="6" fill="#FBBC04"/>
+  <text x="485" y="61" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">UI/GFX</text>
+  <text x="485" y="77" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">Service</text>
+
+  <!-- SPI Driver (DMA) -->
+  <rect x="565" y="44" width="110" height="40" rx="6" fill="#34A853"/>
+  <text x="620" y="61" text-anchor="middle" font-size="11" font-weight="bold" fill="white">SPI Driver</text>
+  <text x="620" y="77" text-anchor="middle" font-size="11" font-weight="bold" fill="white">(DMA 모드)</text>
+
+  <!-- UART Driver (DMA) -->
+  <rect x="705" y="44" width="110" height="40" rx="6" fill="#34A853"/>
+  <text x="760" y="61" text-anchor="middle" font-size="11" font-weight="bold" fill="white">UART Driver</text>
+  <text x="760" y="77" text-anchor="middle" font-size="11" font-weight="bold" fill="white">(DMA 모드)</text>
+
+  <!-- DMA / HW -->
+  <rect x="842" y="44" width="50" height="40" rx="6" fill="#1A73E8"/>
+  <text x="867" y="61" text-anchor="middle" font-size="11" font-weight="bold" fill="white">DMA/</text>
+  <text x="867" y="77" text-anchor="middle" font-size="11" font-weight="bold" fill="white">HW</text>
+
+  <!-- 라이프라인 -->
+  <line x1="70" y1="84" x2="70" y2="668" stroke="#EA4335" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="205" y1="84" x2="205" y2="668" stroke="#FBBC04" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="350" y1="84" x2="350" y2="668" stroke="#34A853" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="485" y1="84" x2="485" y2="668" stroke="#FBBC04" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="620" y1="84" x2="620" y2="668" stroke="#34A853" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="760" y1="84" x2="760" y2="668" stroke="#34A853" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="867" y1="84" x2="867" y2="668" stroke="#1A73E8" stroke-width="1.5" stroke-dasharray="5,4"/>
+
+  <!-- ===== 시퀀스 이벤트 ===== -->
+
+  <!-- t=0: TIM 타이머 → Sensor Service 측정 시작 -->
+  <text x="10" y="112" font-size="10" fill="#888">t=0ms</text>
+  <rect x="20" y="100" width="100" height="20" rx="3" fill="#EA433544"/>
+  <text x="70" y="114" text-anchor="middle" font-size="10" fill="#B71C1C">TIM 인터럽트</text>
+
+  <line x1="70" y1="120" x2="200" y2="120" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="135" y="116" text-anchor="middle" font-size="10" fill="#333">SHT31_StartMeasurement()</text>
+
+  <!-- SHT31 → I2C: Transmit_DMA (CMD) -->
+  <line x1="205" y1="130" x2="345" y2="130" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="275" y="126" text-anchor="middle" font-size="10" fill="#333">I2C_Transmit_DMA(cmd, 2)</text>
+
+  <!-- I2C → DMA/HW -->
+  <line x1="350" y1="140" x2="862" y2="140" stroke="#1A73E8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="606" y="136" text-anchor="middle" font-size="10" fill="#1A73E8">DMA1 Stream7 Ch1 — I2C1 TX 시작</text>
+
+  <!-- [동시] SPI DMA 활성 -->
+  <text x="10" y="162" font-size="10" fill="#888">t=1ms</text>
+  <rect x="435" y="150" width="100" height="20" rx="3" fill="#FBBC0444"/>
+  <text x="485" y="164" text-anchor="middle" font-size="10" fill="#795500">LCD 갱신 요청</text>
+  <line x1="485" y1="170" x2="615" y2="170" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="550" y="166" text-anchor="middle" font-size="10" fill="#333">SPI_DMA_Send(frame)</text>
+  <line x1="620" y1="178" x2="862" y2="178" stroke="#1A73E8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="741" y="174" text-anchor="middle" font-size="10" fill="#1A73E8">DMA2 Stream3 Ch3 — SPI1 TX</text>
+
+  <!-- 충돌 박스 설명 -->
+  <rect x="400" y="188" width="460" height="26" rx="4" fill="#FFE082" stroke="#F9A825" stroke-width="1.5"/>
+  <text x="630" y="205" text-anchor="middle" font-size="11" font-weight="bold" fill="#F57F17">★ I2C(DMA1) vs SPI(DMA2) — 별도 컨트롤러 → 충돌 없음</text>
+
+  <!-- [동시] UART DMA TX 활성 -->
+  <text x="10" y="230" font-size="10" fill="#888">t=2ms</text>
+  <rect x="705" y="220" width="110" height="20" rx="3" fill="#34A85344"/>
+  <text x="760" y="234" text-anchor="middle" font-size="10" fill="#1B5E20">LOG_I 출력 요청</text>
+  <line x1="760" y1="240" x2="862" y2="240" stroke="#1A73E8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="811" y="236" text-anchor="middle" font-size="10" fill="#1A73E8">DMA1 Stream6 Ch4 — UART2 TX</text>
+
+  <!-- 충돌 경고 박스 -->
+  <rect x="20" y="250" width="856" height="28" rx="4" fill="#FFCDD2" stroke="#E53935" stroke-width="2"/>
+  <text x="448" y="263" text-anchor="middle" font-size="11" font-weight="bold" fill="#B71C1C">⚠ 충돌 위험: I2C1 TX가 Stream6 Ch1 사용 시 UART2 TX(Stream6 Ch4)와 동일 스트림 → 동시 불가!</text>
+  <text x="448" y="275" text-anchor="middle" font-size="10" fill="#B71C1C">해결: I2C1 TX → DMA1 Stream7 Ch1 재배치 → 충돌 해소</text>
+
+  <!-- I2C TX 완료 콜백 -->
+  <text x="10" y="308" font-size="10" fill="#888">t=3ms</text>
+  <line x1="862" y1="296" x2="355" y2="296" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-ret)"/>
+  <text x="606" y="292" text-anchor="middle" font-size="10" fill="#888">DMA TC 인터럽트 → HAL_I2C_MasterTxCpltCallback</text>
+
+  <rect x="295" y="300" width="110" height="20" rx="3" fill="#34A85344"/>
+  <text x="350" y="314" text-anchor="middle" font-size="10" fill="#1B5E20">TX 완료 콜백 처리</text>
+
+  <!-- I2C → HAL: Receive_DMA 시작 (콜백 체인) -->
+  <line x1="350" y1="324" x2="862" y2="324" stroke="#1A73E8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="606" y="320" text-anchor="middle" font-size="10" fill="#1A73E8">DMA1 Stream0 Ch1 — I2C1 RX 시작 (콜백 체인)</text>
+
+  <!-- 안심 메시지: Stop+Start -->
+  <rect x="20" y="334" width="400" height="20" rx="4" fill="#E8F5E9" stroke="#34A853" stroke-width="1"/>
+  <text x="220" y="348" text-anchor="middle" font-size="10" fill="#1B5E20">Stop → Start 발행 (Repeated Start 대체) — SHT31 허용</text>
+
+  <!-- SPI DMA 완료 -->
+  <text x="10" y="374" font-size="10" fill="#888">t=5ms</text>
+  <line x1="862" y1="362" x2="625" y2="362" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-ret)"/>
+  <text x="743" y="358" text-anchor="middle" font-size="10" fill="#888">DMA TC → HAL_SPI_TxCpltCallback</text>
+
+  <line x1="620" y1="372" x2="480" y2="372" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-ret)"/>
+  <text x="550" y="368" text-anchor="middle" font-size="10" fill="#888">LCD_CS 비활성화 / 완료 통보</text>
+
+  <!-- I2C RX 완료 콜백 -->
+  <text x="10" y="404" font-size="10" fill="#888">t=6ms</text>
+  <line x1="862" y1="392" x2="355" y2="392" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-ret)"/>
+  <text x="606" y="388" text-anchor="middle" font-size="10" fill="#888">DMA TC → HAL_I2C_MasterRxCpltCallback</text>
+
+  <rect x="295" y="396" width="110" height="20" rx="3" fill="#34A85344"/>
+  <text x="350" y="410" text-anchor="middle" font-size="10" fill="#1B5E20">RX 완료: 6바이트 수신</text>
+
+  <!-- SHT31 파싱 -->
+  <line x1="350" y1="420" x2="210" y2="420" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="280" y="416" text-anchor="middle" font-size="10" fill="#333">raw_data[6] 전달</text>
+
+  <rect x="155" y="424" width="100" height="20" rx="3" fill="#FBBC0444"/>
+  <text x="205" y="438" text-anchor="middle" font-size="10" fill="#795500">CRC 검증 + 파싱</text>
+
+  <!-- Sensor Service 갱신 -->
+  <line x1="205" y1="448" x2="75" y2="448" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="140" y="444" text-anchor="middle" font-size="10" fill="#333">온도/습도 갱신</text>
+
+  <!-- UART DMA TX 완료 -->
+  <text x="10" y="470" font-size="10" fill="#888">t=7ms</text>
+  <line x1="862" y1="460" x2="765" y2="460" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-ret)"/>
+  <text x="813" y="456" text-anchor="middle" font-size="10" fill="#888">DMA TC → TxCpltCallback</text>
+
+  <!-- 연속 측정 루프 재시작 -->
+  <text x="10" y="490" font-size="10" fill="#888">t=500ms</text>
+  <rect x="20" y="478" width="700" height="22" rx="4" fill="#E8F5E9" stroke="#34A853" stroke-width="1.5"/>
+  <text x="370" y="493" text-anchor="middle" font-size="11" font-weight="bold" fill="#1B5E20">TIM 인터럽트(500ms 주기) → 다음 측정 사이클 자동 시작 (연속 루프)</text>
+
+  <!-- DMA 우선순위 범례 -->
+  <rect x="20" y="510" width="856" height="58" rx="6" fill="#E3F2FD" stroke="#1A73E8" stroke-width="1.5"/>
+  <text x="448" y="528" text-anchor="middle" font-size="12" font-weight="bold" fill="#0D47A1">DMA 스트림 우선순위 설정 요약</text>
+  <text x="50" y="546" font-size="11" fill="#333">■ DMA2 Stream3 (SPI1 TX): Very High — LCD 화면 끊김 방지</text>
+  <text x="50" y="562" font-size="11" fill="#333">■ DMA1 Stream6 (UART2 TX): Medium — 로그 전송, 실시간성 낮음</text>
+  <text x="480" y="546" font-size="11" fill="#333">■ DMA1 Stream7 (I2C1 TX): Low — 센서 CMD, 주기적 전송</text>
+  <text x="480" y="562" font-size="11" fill="#333">■ DMA1 Stream0 (I2C1 RX): Low — 센서 데이터, 주기적 수신</text>
+</svg>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="700" height="430" viewBox="0 0 700 430" xmlns="http://www.w3.org/2000/svg" font-family="'Noto Sans KR', Arial, sans-serif">
+  <rect width="700" height="430" fill="#F8F9FA" rx="8"/>
+  <text x="350" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">v1.5 아키텍처 현황 — CLI App 레이어 완성</text>
+
+  <!-- App 레이어 (완성) -->
+  <rect x="30" y="45" width="640" height="85" fill="#EA4335" rx="6" opacity="0.15"/>
+  <rect x="30" y="45" width="640" height="85" fill="none" stroke="#EA4335" stroke-width="2.5" rx="6"/>
+  <text x="50" y="65" font-size="12" font-weight="bold" fill="#EA4335">App 레이어 (v1.5 완성)</text>
+
+  <rect x="70" y="72" width="120" height="48" fill="#EA4335" rx="5"/>
+  <text x="130" y="94" text-anchor="middle" font-size="12" font-weight="bold" fill="white">cli_app.c</text>
+  <text x="130" y="110" text-anchor="middle" font-size="10" fill="white">라인에디터/파서</text>
+
+  <rect x="210" y="72" width="120" height="48" fill="#EA4335" rx="5"/>
+  <text x="270" y="94" text-anchor="middle" font-size="12" font-weight="bold" fill="white">cmd_table.c</text>
+  <text x="270" y="110" text-anchor="middle" font-size="10" fill="white">커맨드 디스패처</text>
+
+  <rect x="350" y="72" width="120" height="48" fill="#EA4335" rx="5" opacity="0.4"/>
+  <text x="410" y="94" text-anchor="middle" font-size="11" fill="white">protocol_app.c</text>
+  <text x="410" y="110" text-anchor="middle" font-size="10" fill="white">(Ch16 예정)</text>
+
+  <!-- Service 레이어 -->
+  <rect x="30" y="150" width="640" height="70" fill="#FBBC04" rx="6" opacity="0.15"/>
+  <rect x="30" y="150" width="640" height="70" fill="none" stroke="#FBBC04" stroke-width="2" rx="6"/>
+  <text x="50" y="170" font-size="12" font-weight="bold" fill="#A07800">Service 레이어</text>
+
+  <rect x="70" y="178" width="100" height="34" fill="#FBBC04" rx="4" opacity="0.85"/>
+  <text x="120" y="200" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">clock_service</text>
+
+  <rect x="185" y="178" width="100" height="34" fill="#FBBC04" rx="4" opacity="0.85"/>
+  <text x="235" y="200" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">sensor_service</text>
+
+  <rect x="300" y="178" width="100" height="34" fill="#FBBC04" rx="4" opacity="0.85"/>
+  <text x="350" y="200" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">ui_service</text>
+
+  <rect x="415" y="178" width="100" height="34" fill="#FBBC04" rx="4" opacity="0.85"/>
+  <text x="465" y="200" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">rtc_service</text>
+
+  <!-- Driver 레이어 -->
+  <rect x="30" y="240" width="640" height="80" fill="#34A853" rx="6" opacity="0.12"/>
+  <rect x="30" y="240" width="640" height="80" fill="none" stroke="#34A853" stroke-width="2" rx="6"/>
+  <text x="50" y="260" font-size="12" font-weight="bold" fill="#1A6B35">Driver 레이어</text>
+
+  <rect x="60" y="268" width="90" height="42" fill="#34A853" rx="4" opacity="0.75"/>
+  <text x="105" y="287" text-anchor="middle" font-size="11" font-weight="bold" fill="white">uart_driver</text>
+  <text x="105" y="302" text-anchor="middle" font-size="9" fill="white">+ring_buf</text>
+
+  <rect x="163" y="268" width="90" height="42" fill="#34A853" rx="4" opacity="0.75"/>
+  <text x="208" y="287" text-anchor="middle" font-size="11" font-weight="bold" fill="white">sht31_driver</text>
+  <text x="208" y="302" text-anchor="middle" font-size="9" fill="white">I2C DMA</text>
+
+  <rect x="266" y="268" width="90" height="42" fill="#34A853" rx="4" opacity="0.75"/>
+  <text x="311" y="287" text-anchor="middle" font-size="11" font-weight="bold" fill="white">ili9341</text>
+  <text x="311" y="302" text-anchor="middle" font-size="9" fill="white">SPI DMA</text>
+
+  <rect x="369" y="268" width="90" height="42" fill="#34A853" rx="4" opacity="0.75"/>
+  <text x="414" y="287" text-anchor="middle" font-size="11" font-weight="bold" fill="white">stepper</text>
+  <text x="414" y="302" text-anchor="middle" font-size="9" fill="white">TIM+HAL</text>
+
+  <rect x="472" y="268" width="90" height="42" fill="#34A853" rx="4" opacity="0.75"/>
+  <text x="517" y="287" text-anchor="middle" font-size="11" font-weight="bold" fill="white">rtc_driver</text>
+  <text x="517" y="302" text-anchor="middle" font-size="9" fill="white">BCD/Alarm</text>
+
+  <!-- HAL 레이어 -->
+  <rect x="30" y="340" width="640" height="55" fill="#1A73E8" rx="6" opacity="0.12"/>
+  <rect x="30" y="340" width="640" height="55" fill="none" stroke="#1A73E8" stroke-width="2" rx="6"/>
+  <text x="50" y="360" font-size="12" font-weight="bold" fill="#1A73E8">HAL 레이어</text>
+  <text x="350" y="375" text-anchor="middle" font-size="12" fill="#1A73E8">STM32 HAL — UART/I2C/SPI/TIM/RTC/DMA (CubeMX 생성)</text>
+
+  <!-- 연결 화살표 -->
+  <line x1="350" y1="130" x2="350" y2="150" stroke="#888" stroke-width="1.5" marker-end="url(#arrowGray)"/>
+  <line x1="350" y1="220" x2="350" y2="240" stroke="#888" stroke-width="1.5" marker-end="url(#arrowGray)"/>
+  <line x1="350" y1="320" x2="350" y2="340" stroke="#888" stroke-width="1.5" marker-end="url(#arrowGray)"/>
+
+  <defs>
+    <marker id="arrowGray" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#888"/>
+    </marker>
+  </defs>
+
+  <!-- 범례 -->
+  <rect x="30" y="408" width="14" height="10" fill="#EA4335" rx="2"/>
+  <text x="50" y="418" font-size="11" fill="#333">App</text>
+  <rect x="100" y="408" width="14" height="10" fill="#FBBC04" rx="2"/>
+  <text x="120" y="418" font-size="11" fill="#333">Service</text>
+  <rect x="185" y="408" width="14" height="10" fill="#34A853" rx="2"/>
+  <text x="205" y="418" font-size="11" fill="#333">Driver</text>
+  <rect x="265" y="408" width="14" height="10" fill="#1A73E8" rx="2"/>
+  <text x="285" y="418" font-size="11" fill="#333">HAL</text>
+  <text x="350" y="418" font-size="11" fill="#EA4335" font-weight="bold">← Ch15 에서 App 레이어 완성</text>
+</svg>

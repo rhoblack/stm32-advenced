@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch18. 디버깅 스킬 심화 — STM32 고급 실무교육</title>
+  <link rel="stylesheet" href="../../templates/book_style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+
+<!-- ===== 챕터 헤더 ===== -->
+<header class="chapter-header">
+  <div class="chapter-meta">Part 6 · Chapter 18 · 프로젝트 <span class="version">v2.1</span></div>
+  <h1>Ch18. 디버깅 스킬 심화</h1>
+  <p class="chapter-summary">HardFault 핸들러 구현부터 DMA 에러 패턴, 로직 애널라이저 파형 분석, 아키텍처 관점 버그 격리 전략까지 — 실무 디버깅의 전체 흐름을 체계화합니다.</p>
+  <div class="chapter-badge">누적 기능: 전체 프로젝트(v2.0)에 디버깅 인프라 강화 적용, 3종 버그 시나리오 실습 해결</div>
+</header>
+
+<!-- ===== 아키텍처 위치 ===== -->
+<section class="architecture-position">
+  <h2>이 챕터의 아키텍처 위치</h2>
+  <p>디버깅 인프라는 특정 레이어에 국한되지 않습니다. HAL부터 App까지 <strong>전 레이어에 걸쳐 적용</strong>되는 횡단 관심사(Cross-Cutting Concern)입니다. 각 레이어 경계마다 관찰 포인트를 설치하는 것이 핵심입니다.</p>
+  <figure>
+    <img src="../../figures/ch18_sec00_architecture.svg" alt="Ch18 디버깅 인프라 아키텍처 위치">
+    <figcaption>그림 18-1. 디버깅 인프라는 전 레이어에 적용되는 횡단 관심사</figcaption>
+  </figure>
+
+  <h3>인터페이스 설계</h3>
+  <p>이 챕터에서 추가되는 디버깅 API입니다. 기존 코드를 수정하지 않고 추가(Add-on) 방식으로 통합합니다.</p>
+  <pre><code class="language-c">/* ch18_hardfault_handler.c — HardFault 진단 */
+void HardFault_Handler(void);                      /* ASM 스텁 (startup override) */
+void hard_fault_handler_c(uint32_t *stack_frame);  /* C 진입점 */
+
+/* ch18_dma_debug.c — DMA 진단 패턴 */
+HAL_StatusTypeDef dma_transfer_with_timeout(DMA_HandleTypeDef *hdma, uint32_t timeout_ms);
+void dma_error_callback(DMA_HandleTypeDef *hdma);
+HAL_StatusTypeDef uart_tx_dma_safe(const uint8_t *data, uint16_t len);
+
+/* ch18_rtt_advanced.c — RTT 다채널 + 타임스탬프 */
+void rtt_advanced_init(void);
+void rtt_dma_log(const char *fmt, ...);
+void rtt_hardfault_log(const char *msg);
+void debug_ring_buffer_status(const char *name, uint32_t used, uint32_t cap, uint32_t overflow_cnt);
+  </code></pre>
+</section>
+
+<!-- ===== 학습 목표 ===== -->
+<section class="learning-objectives">
+  <h2>학습 목표</h2>
+  <p>이 챕터를 완료하면 다음을 할 수 있습니다.</p>
+  <ul>
+    <li>[이해] HardFault 발생 메커니즘과 스택 덤프에서 R0~R3, PC, LR, xPSR의 의미를 설명할 수 있다.</li>
+    <li>[적용] STM32CubeIDE Watch / Live Expression / Memory View를 활용하여 런타임 변수와 메모리 상태를 실시간으로 추적할 수 있다.</li>
+    <li>[분석] DMA 전송 오류(Half-transfer 동기화 문제, 에러 인터럽트)를 로그와 레지스터 덤프로 격리하고 원인을 특정할 수 있다.</li>
+    <li>[평가] 레이어드 아키텍처(HAL → Driver → Service → App) 관점에서 버그 발생 레이어를 체계적으로 좁혀가는 격리 전략을 적용할 수 있다.</li>
+  </ul>
+  <div class="project-milestone">
+    <strong>프로젝트 v2.1</strong>: 이 챕터 완료 후 HardFault 자동 덤프, DMA 에러 진단, RTT 다채널 로그가 전체 프로젝트에 통합됩니다.
+  </div>
+</section>
+
+<!-- ===== 1절: STM32CubeIDE 디버거 심화 ===== -->
+<section id="sec-01">
+  <h2>1절. STM32CubeIDE 디버거 심화 활용법</h2>
+
+  <p>개발자라면 누구나 <code>printf()</code> 또는 LED 깜박임으로 디버깅을 시작합니다. 하지만 실무 환경에서는 코드 실행을 중단하지 않고도 내부 상태를 실시간으로 관찰해야 하는 상황이 자주 발생합니다. STM32CubeIDE의 디버거는 이를 위한 강력한 도구를 내장하고 있습니다.</p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    Watch / Live Expression은 자동차 계기판과 같습니다. 차를 멈추지 않아도(코드 정지 없이) 속도, 연료, 엔진 rpm을 실시간으로 볼 수 있습니다. 반면 기존 printf 방식은 차를 세우고 보닛을 열어서 눈으로 확인하는 것과 같습니다.
+    <br><small>※ 이 비유의 한계: Live Expression은 ST-LINK 폴링 방식이라 매우 빠른 변화(인터럽트 수준)는 놓칠 수 있습니다.</small>
+  </div>
+
+  <h3>1-1. Watch Window — 중단점에서 변수 관찰</h3>
+  <p>Watch Window는 실행이 중단된 상태에서 변수·레지스터·메모리 주소의 값을 상세히 확인합니다. 구조체 멤버, 포인터 역참조, 비트 필드까지 트리 구조로 펼쳐볼 수 있습니다.</p>
+
+  <p><strong>사용 방법:</strong></p>
+  <ol>
+    <li>STM32CubeIDE 상단 메뉴: <kbd>Window</kbd> → <kbd>Show View</kbd> → <kbd>Expressions</kbd></li>
+    <li>Expressions 뷰에서 <kbd>Add new expression</kbd> 클릭</li>
+    <li>변수명 또는 표현식 입력: <code>g_sensor_data</code>, <code>*hdma_usart2_tx.State</code>, <code>(uint32_t*)0xE000ED28</code> (CFSR 레지스터 직접 접근)</li>
+    <li>중단점(Breakpoint)에서 멈추면 값 자동 갱신</li>
+  </ol>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    레지스터 주소를 Watch에 직접 입력할 수 있습니다. 예: <code>(uint32_t*)0xE000ED28</code>은 CFSR(Configurable Fault Status Register)를 직접 관찰합니다. 공식 문서를 찾지 않아도 Watch에서 바로 확인 가능합니다.
+  </aside>
+
+  <h3>1-2. Live Expression — 실행 중 실시간 관찰</h3>
+  <p>Live Expression(라이브 표현식)은 코드가 실행 중인 상태에서도 지속적으로 값을 갱신합니다. ST-LINK가 약 100ms 주기로 폴링하여 값을 읽어옵니다. DMA 전송 카운터, 링 버퍼 포인터, FSM 상태 변수를 실시간으로 모니터링하기에 적합합니다.</p>
+
+  <pre><code class="language-c">/* uart_driver.c — Live Expression으로 관찰할 전역 변수들 */
+
+/* DMA 전송 상태 (Live Expression 등록 권장) */
+volatile uint32_t g_uart_tx_count = 0;    /* 전송 완료 횟수 */
+volatile uint32_t g_uart_rx_count = 0;    /* 수신 완료 횟수 */
+volatile uint32_t g_uart_error_count = 0; /* 에러 발생 횟수 */
+
+/* 링 버퍼 포인터 (Live Expression으로 write/read 격차 관찰) */
+volatile uint16_t g_ring_buf_write_idx = 0;
+volatile uint16_t g_ring_buf_read_idx = 0;
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART2) {
+        g_uart_tx_count++;
+        LOG_D("UART TX 완료 — 누적 %lu회", g_uart_tx_count);
+    }
+}
+  </code></pre>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> Live Expression과 Watch의 차이가 뭔가요? 언제 어느 것을 써야 하나요?<br>
+    <strong>A.</strong> <strong>Watch</strong>는 중단점에서 멈췄을 때 정확한 값을 확인하는 용도입니다. <strong>Live Expression</strong>은 코드를 멈추지 않고 대략적인 변화 추세를 관찰할 때 씁니다. 정밀 타이밍이 중요한 변수(인터럽트 내부에서 빠르게 바뀌는 값)는 Live Expression보다 RTT 로그가 더 적합합니다.
+  </aside>
+
+  <h3>1-3. Memory View — 메모리 직접 관찰</h3>
+  <p>Memory View(메모리 뷰)는 특정 주소의 바이트 내용을 16진수와 ASCII로 표시합니다. 링 버퍼 데이터 내용 확인, DMA 대상 버퍼 값 검증, 스택 영역 오염 여부 점검에 활용합니다.</p>
+
+  <p><strong>사용 방법:</strong></p>
+  <ol>
+    <li>디버그 모드 실행 중 또는 중단 상태에서</li>
+    <li>메뉴: <kbd>Window</kbd> → <kbd>Show View</kbd> → <kbd>Memory Browser</kbd></li>
+    <li>주소 입력: <code>&amp;g_ring_buf.buf</code> (변수 주소) 또는 <code>0x20000000</code> (RAM 시작)</li>
+    <li>컬럼 수 변경: 16 또는 32 바이트 단위로 보기 편하게 조정</li>
+  </ol>
+
+  <pre><code class="language-c">/* 메모리 오염 여부 확인을 위한 스택 경계 마커 */
+/* startup_stm32f411retx.s에서 스택 크기 확인 후 아래 사용 */
+
+/* 스택 시작(낮은 주소) 부근에 마커 패턴 삽입 */
+#define STACK_CANARY_VALUE  0xDEADBEEF
+#define STACK_CANARY_ADDR   ((volatile uint32_t *)0x20000000)  /* RAM 시작 */
+
+void debug_check_stack_canary(void)
+{
+    if (*STACK_CANARY_ADDR != STACK_CANARY_VALUE) {
+        LOG_E("스택 오버플로우 감지! 카나리 값 손상: 0x%08lX (기대: 0x%08lX)",
+              *STACK_CANARY_ADDR, (uint32_t)STACK_CANARY_VALUE);
+    } else {
+        LOG_D("스택 카나리 정상: 0x%08lX", *STACK_CANARY_ADDR);
+    }
+}
+  </code></pre>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    Memory View에서 스택 영역(RAM 끝)을 보여주며 함수 호출 시 스택 프레임이 쌓이는 과정을 시연하면 수강생들이 스택 오버플로우 현상을 직관적으로 이해합니다. 재귀 함수를 의도적으로 무한 재귀시켜 스택이 RAM 아래로 자라는 것을 실시간 확인하는 시연이 특히 효과적입니다.
+  </aside>
+
+  <h3>1-4. ST-LINK 펌웨어 업그레이드 (STM32CubeProgrammer)</h3>
+  <p>STM32CubeIDE가 ST-LINK를 인식하지 못하거나, 연결이 불안정하거나, RTT 기능이 동작하지 않을 때는 ST-LINK 내장 펌웨어가 구버전일 가능성이 있습니다. STM32CubeProgrammer로 간단히 업그레이드할 수 있습니다.</p>
+
+  <p><strong>업그레이드 절차:</strong></p>
+  <ol>
+    <li>STM32CubeProgrammer 실행 (ST 공식 사이트에서 무료 다운로드)</li>
+    <li>NUCLEO-F411RE를 USB로 연결</li>
+    <li>상단 메뉴: <kbd>Firmware upgrade</kbd> 탭 클릭</li>
+    <li><kbd>Open in update mode</kbd> → <kbd>Upgrade</kbd> 클릭</li>
+    <li>완료 후 USB 재연결 → STM32CubeIDE에서 정상 인식 확인</li>
+  </ol>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    ST-LINK 펌웨어 업그레이드 후에도 문제가 지속되면, STM32CubeIDE의 디버그 설정에서 <strong>Debugger 탭 → ST-LINK S/N</strong>을 확인하세요. 여러 개의 ST-LINK가 연결된 경우 혼선이 생길 수 있습니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong>
+    <ul>
+      <li>Watch와 Live Expression의 사용 시나리오를 각각 하나씩 말할 수 있는가?</li>
+      <li>Memory View에서 RAM 시작 주소(0x20000000)를 입력하여 스택 영역을 확인해 보았는가?</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 2절: HardFault 핸들러 ===== -->
+<section id="sec-02">
+  <h2>2절. HardFault 핸들러 구현 및 스택 덤프 분석</h2>
+
+  <p>STM32 개발 중 화면이 갑자기 멈추거나 시스템이 리셋될 때, 원인을 전혀 알 수 없어 막막한 경험이 있으신가요? 대부분의 경우 그 원인은 <strong>HardFault(하드 폴트)</strong> 예외입니다. HardFault는 처음 마주치면 공포스럽지만, 알고 보면 <em>"어디서 죽었는지"</em>를 정확히 알려주는 가장 친절한 예외입니다.</p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    HardFault는 자동차의 에어백 시스템과 같습니다. 심각한 충격이 발생하면(잘못된 메모리 접근, 0으로 나누기 등) 에어백이 터지면서 더 큰 피해를 막습니다. 에어백이 터진 후 블랙박스(스택 덤프)를 분석하면 어떤 상황에서 충격이 왔는지 알 수 있습니다.
+    <br><small>※ 이 비유의 한계: 실제 에어백과 달리 HardFault 핸들러는 사용자가 직접 구현해야 "블랙박스" 기능이 활성화됩니다.</small>
+  </div>
+
+  <h3>2-1. HardFault가 발생하는 순간 — CPU의 자동 동작</h3>
+  <p>예외(Exception)가 발생하는 순간, ARM Cortex-M4 CPU는 현재 실행 중이던 컨텍스트를 스택에 자동으로 저장합니다. 이 저장된 데이터를 <strong>스택 프레임(Stack Frame)</strong>이라고 하며, R0, R1, R2, R3, R12, LR, PC, xPSR 총 8개 레지스터가 포함됩니다.</p>
+
+  <figure>
+    <img src="../../figures/ch18_sec02_stack_frame.svg" alt="HardFault 스택 프레임 레이아웃">
+    <figcaption>그림 18-2. ARM Cortex-M4 HardFault 스택 프레임 — SP+0x00(R0)~SP+0x1C(xPSR)</figcaption>
+  </figure>
+
+  <p>이 8개 레지스터 중 디버깅에서 가장 중요한 것은 <strong>PC(Program Counter)</strong>입니다. PC 값이 HardFault 직전 실행된 명령어의 주소이므로, 이 주소를 Disassembly 뷰에서 찾으면 원인 코드 라인을 특정할 수 있습니다.</p>
+
+  <figure>
+    <img src="../../figures/ch18_sec02_hardfault_flow.svg" alt="HardFault 처리 흐름도">
+    <figcaption>그림 18-3. HardFault 처리 흐름 — 예외 발생에서 덤프 출력까지</figcaption>
+  </figure>
+
+  <h3>2-2. HardFault 핸들러 구현</h3>
+  <p>기본 HAL 라이브러리에서 제공하는 <code>HardFault_Handler()</code>는 단순히 무한 루프만 실행합니다. 이를 스택 덤프를 출력하는 핸들러로 override합니다.</p>
+
+  <p><strong>구현 원리:</strong> ASM 스텁이 PSP/MSP를 판별하여 스택 포인터를 C 함수에 전달합니다.</p>
+
+  <aside class="tip">
+    💡 <strong>ASM 코드를 몰라도 됩니다</strong><br>
+    아래 어셈블리 4줄은 <strong>복사해서 쓰는 코드</strong>입니다. 어셈블리 미경험자는 이해하지 않아도 완전히 괜찮습니다. 핵심은 이 코드가 "어떤 스택이 쓰였는지 판별하여 C 함수에 알려주는 중간 다리" 역할을 한다는 것입니다. 중요한 것은 C 함수에서 PC 값을 꺼내 분석하는 부분입니다.
+  </aside>
+
+  <pre><code class="language-c">/* ch18_hardfault_handler.c */
+
+/* PSP/MSP 분기 ASM 스텁 — 스택 포인터를 R0에 담아 C 함수로 전달
+ * 이 어셈블리 4줄은 이해 없이 복사해서 써도 됩니다.
+ * 동작: LR 비트4로 MSP(0)/PSP(1) 판별 → R0에 담아 C 함수 호출 */
+__attribute__((naked))
+void HardFault_Handler(void)
+{
+    __asm volatile (
+        "TST    LR, #4          \n" /* LR 비트4: 0=MSP, 1=PSP 사용 */
+        "ITE    EQ              \n"
+        "MRSEQ  R0, MSP         \n" /* 메인 스택 포인터 선택 */
+        "MRSNE  R0, PSP         \n" /* 프로세스 스택 포인터 선택 */
+        "B      hard_fault_handler_c \n"
+    );
+}
+
+/* C 언어 진입점 — 스택 프레임 분석 및 덤프 출력 */
+void hard_fault_handler_c(uint32_t *stack_frame)
+{
+    LOG_E("=== HARD FAULT DETECTED ===");
+
+    /* 스택 프레임 덤프 */
+    LOG_E("R0  = 0x%08lX", stack_frame[0]);
+    LOG_E("R1  = 0x%08lX", stack_frame[1]);
+    LOG_E("R2  = 0x%08lX", stack_frame[2]);
+    LOG_E("R3  = 0x%08lX", stack_frame[3]);
+    LOG_E("R12 = 0x%08lX", stack_frame[4]);
+    LOG_E("LR  = 0x%08lX  (EXC_RETURN 패턴)", stack_frame[5]);
+    LOG_E("PC  = 0x%08lX  &lt;- 이 주소에서 예외 발생!", stack_frame[6]);
+    LOG_E("xPSR= 0x%08lX", stack_frame[7]);
+
+    /* CFSR 레지스터 읽기 */
+    uint32_t cfsr = *((volatile uint32_t *)0xE000ED28);
+    LOG_E("CFSR = 0x%08lX", cfsr);
+
+    /* BFSR: PRECISERR(비트9) — 정확한 데이터 버스 오류 */
+    if (cfsr &amp; (1U &lt;&lt; 9)) LOG_E("  &gt;&gt; PRECISERR: 데이터 버스 오류, PC 신뢰 가능");
+
+    /* UFSR: DIVBYZERO(비트25) — 0 나누기 */
+    if (cfsr &amp; (1U &lt;&lt; 25)) LOG_E("  &gt;&gt; DIVBYZERO: 0으로 나누기 오류");
+
+    /* UFSR: UNDEFINSTR(비트16) — 미정의 명령어 */
+    if (cfsr &amp; (1U &lt;&lt; 16)) LOG_E("  &gt;&gt; UNDEFINSTR: 미정의 명령어 (함수 포인터 오염 의심)");
+
+    LOG_E("=== 디버거 연결 또는 리셋 필요 ===");
+    while (1) { __NOP(); }
+}
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실무 팁 — PC 값으로 원인 라인 찾기</strong><br>
+    1. LOG에서 PC 값을 메모합니다. 예: <code>PC = 0x08003A2C</code><br>
+    2. STM32CubeIDE 메뉴: <kbd>Window</kbd> → <kbd>Show View</kbd> → <kbd>Disassembly</kbd><br>
+    3. Disassembly 주소 입력 창에 <code>0x08003A2C</code> 입력<br>
+    4. 해당 어셈블리 명령 클릭 → 자동으로 해당 C 소스 라인으로 이동합니다.
+  </aside>
+
+  <h3>2-3. LR(EXC_RETURN) 값 해석</h3>
+  <p>HardFault 핸들러에서 LR 레지스터는 <strong>EXC_RETURN</strong> 패턴을 담고 있습니다. 이 값으로 예외 발생 당시 어떤 스택이 사용되고 있었는지, FPU가 활성화되어 있었는지 알 수 있습니다.</p>
+
+  <pre><code class="language-c">/* EXC_RETURN 패턴 해석 */
+void decode_exc_return(uint32_t lr)
+{
+    LOG_I("LR(EXC_RETURN) = 0x%08lX", lr);
+
+    if (lr == 0xFFFFFFF9UL) {
+        LOG_I("  >> MSP 사용, FPU 컨텍스트 없음 (일반적인 메인 컨텍스트)");
+    } else if (lr == 0xFFFFFFFDUL) {
+        LOG_I("  >> PSP 사용, FPU 컨텍스트 없음 (RTOS 태스크 컨텍스트)");
+    } else if (lr == 0xFFFFFFE9UL) {
+        LOG_I("  >> MSP 사용, FPU 컨텍스트 있음");
+    } else if (lr == 0xFFFFFFEDUL) {
+        LOG_I("  >> PSP 사용, FPU 컨텍스트 있음");
+    } else {
+        LOG_W("  >> 알 수 없는 EXC_RETURN 패턴 — 스택 오염 의심");
+    }
+}
+  </code></pre>
+
+  <h3>2-4. 버그 시나리오 A — 널 포인터 역참조로 인한 HardFault</h3>
+  <p>가장 흔한 HardFault 원인 중 하나는 <strong>널 포인터 역참조(Null Pointer Dereference)</strong>입니다. 미초기화 포인터에 값을 쓰거나 읽을 때 발생합니다.</p>
+
+  <pre><code class="language-c">/* sensor_service.c — 버그 시나리오 A */
+
+typedef struct {
+    float temperature;
+    float humidity;
+} sensor_data_t;
+
+/* 버그: 포인터 초기화 누락 */
+sensor_data_t *g_sensor_ptr;   /* NULL 상태 — 초기화되지 않음 */
+
+void sensor_service_update(void)
+{
+    /* 이 라인에서 HardFault 발생!
+     * g_sensor_ptr == NULL(0x00000000)에 쓰기 시도
+     * CFSR: BFSR PRECISERR 비트 설정됨 */
+    g_sensor_ptr->temperature = 25.0f;  /* &lt;-- PC가 이 라인을 가리킴 */
+
+    LOG_I("온도: %.1f°C", g_sensor_ptr->temperature);
+}
+
+/* 수정된 코드 */
+static sensor_data_t g_sensor_data;     /* 정적 할당으로 변경 */
+sensor_data_t *g_sensor_ptr = &amp;g_sensor_data;  /* 초기화 추가 */
+  </code></pre>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    "HardFault 발생 시 디버깅 절차를 설명하세요."<br>
+    핵심 답변: <strong>①</strong> PC 레지스터로 원인 라인 특정 → <strong>②</strong> CFSR 비트 해석으로 오류 종류 확인 (PRECISERR=데이터 버스 오류, DIVBYZERO=0나누기, UNDEFINSTR=함수 포인터 오염) → <strong>③</strong> BFAR/MMFAR 주소로 접근한 주소 확인
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong>
+    <ul>
+      <li>HardFault 발생 시 스택 프레임에서 PC 값이 왜 핵심인지 설명할 수 있는가?</li>
+      <li>CFSR 레지스터의 PRECISERR과 IMPRECISERR의 차이(PC 신뢰성)를 설명할 수 있는가?</li>
+      <li>EXC_RETURN 0xFFFFFFF9와 0xFFFFFFFD의 차이(MSP vs PSP)를 말할 수 있는가?</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 3절: DMA 디버깅 패턴 ===== -->
+<section id="sec-03">
+  <h2>3절. DMA 관련 디버깅 패턴 (3종 시나리오)</h2>
+
+  <p>Ch05에서 DMA의 동작 원리를 배웠습니다. DMA는 CPU 개입 없이 고속으로 데이터를 이동시키지만, 그만큼 문제가 발생했을 때 원인을 파악하기 어렵습니다. 이 절에서는 실제 프로젝트에서 자주 발생하는 DMA 관련 버그 3종과 그 진단 방법을 다룹니다.</p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    DMA는 고속도로 물류 트럭과 같습니다. 운전기사(CPU) 없이 자동으로 목적지(메모리)에 화물(데이터)을 배달합니다. 문제는 트럭이 이미 출발한 후에는 "현재 어디쯤 가고 있는지" 확인하기 어렵다는 것입니다. DMA 레지스터(LISR, SxNDTR)가 바로 그 GPS 역할을 합니다.
+    <br><small>※ 이 비유의 한계: 실제 DMA는 동시에 여러 스트림이 병렬 동작하므로 단순 트럭 1대보다 복잡합니다.</small>
+  </div>
+
+  <figure>
+    <img src="../../figures/ch18_sec03_dma_debug_flow.svg" alt="DMA 에러 진단 플로우차트">
+    <figcaption>그림 18-4. DMA 에러 진단 플로우차트 — LISR 확인부터 원인 특정까지</figcaption>
+  </figure>
+
+  <h3>3-1. DMA 레지스터 직독 방법</h3>
+  <p>HAL 함수를 거치지 않고 레지스터를 직접 읽으면 HAL 상태와 무관하게 하드웨어 실제 상태를 확인할 수 있습니다.</p>
+
+  <pre><code class="language-c">/* DMA 상태 레지스터 직독 유틸리티 */
+void debug_dma1_status(void)
+{
+    /* DMA1 기준 — F411 Reference Manual RM0383 참조 */
+    uint32_t lisr = *((volatile uint32_t *)0x40026000);  /* DMA1_LISR */
+    uint32_t hisr = *((volatile uint32_t *)0x40026004);  /* DMA1_HISR */
+
+    LOG_D("DMA1 LISR = 0x%08lX", lisr);
+    LOG_D("DMA1 HISR = 0x%08lX", hisr);
+
+    /* LISR 비트 레이아웃 (RM0383 Table 43 참조)
+     * Stream:  3     2     1     0
+     * 비트:  [31..22] [21..16] [15..10] [9..6] [5..0]
+     * 각 스트림당 6비트: [TCIFx, HTIFx, TEIFx, DMEIFx, -, FEIFx]
+     *
+     * Stream0: TCIF0=5, HTIF0=4, TEIF0=3, DMEIF0=2, FEIF0=0
+     * Stream1: TCIF1=11, HTIF1=10, TEIF1=9, DMEIF1=8, FEIF1=6
+     * (이하 동일 패턴, 6비트씩 오프셋)
+     *
+     * TEIF: Transfer Error (전송 에러) — 주로 잘못된 주소 접근
+     * DMEIF: Direct Mode Error — FIFO 미사용(직접 모드)에서 오버런
+     * FEIF: FIFO Error — FIFO 사용 시 오버런/언더런              */
+
+    if (lisr &amp; (1U &lt;&lt; 5)) LOG_D("  Stream0: 전송 완료(TCIF)");
+    if (lisr &amp; (1U &lt;&lt; 4)) LOG_D("  Stream0: 반전송 완료(HTIF)");
+    if (lisr &amp; (1U &lt;&lt; 3)) LOG_E("  Stream0: 전송 에러(TEIF) 발생!");
+    if (lisr &amp; (1U &lt;&lt; 2)) LOG_E("  Stream0: 직접모드 에러(DMEIF) 발생!");
+    if (lisr &amp; (1U &lt;&lt; 0)) LOG_W("  Stream0: FIFO 에러(FEIF) 발생");
+
+    /* SxNDTR: 남은 전송 바이트 수 (Stream0 기준) */
+    /* DMA1_Stream0_BASE = 0x40026010 */
+    uint32_t ndtr = *((volatile uint32_t *)(0x40026010 + 0x14));  /* SxNDTR */
+    LOG_D("DMA1 Stream0 남은 전송 = %lu 바이트", ndtr);
+}
+  </code></pre>
+
+  <h3>3-2. 시나리오 B — UART TX DMA 재진입 문제</h3>
+  <p>CLI 명령을 빠르게 연속 입력할 때 UART TX DMA가 이전 전송을 끝내기 전에 다시 시작되면 데이터가 섞이거나 HardFault가 발생합니다. DMA 상태를 확인하는 가드 코드로 해결합니다.</p>
+
+  <pre><code class="language-c">/* uart_driver.c — DMA 재진입 방지 패턴 */
+
+extern UART_HandleTypeDef huart2;
+
+HAL_StatusTypeDef uart_tx_dma_safe(const uint8_t *data, uint16_t len)
+{
+    /* DMA 전송 중이면 스킵 (논블로킹) */
+    if (huart2.hdmatx != NULL &amp;&amp;
+        huart2.hdmatx-&gt;State == HAL_DMA_STATE_BUSY) {
+        LOG_W("UART TX DMA 사용 중 — len=%u 스킵", len);
+        return HAL_BUSY;
+    }
+
+    HAL_StatusTypeDef status = HAL_UART_Transmit_DMA(&amp;huart2,
+                                                      (uint8_t *)data, len);
+    if (status != HAL_OK) {
+        LOG_E("TX DMA 시작 실패: status=%d, gState=%d",
+              (int)status, (int)huart2.gState);
+    }
+    return status;
+}
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    <code>HAL_DMA_STATE_BUSY</code> 확인은 필수 패턴입니다. UART뿐 아니라 SPI DMA, I2C DMA에서도 동일하게 적용하세요. 특히 LCD 화면 갱신(SPI DMA)과 센서 읽기(I2C DMA)가 동시에 발생하는 멀티 DMA 환경에서 더욱 중요합니다.
+  </aside>
+
+  <h3>3-3. 시나리오 C — 링 버퍼 오버플로우 진단</h3>
+  <p>디버그 로그 출력 과다(LOG_LEVEL=DEBUG)로 링 버퍼 쓰기 속도가 읽기 속도를 초과하면 로그 메시지가 손실됩니다. 오버플로우 카운터를 추가하여 조기 경고를 구현합니다.</p>
+
+  <pre><code class="language-c">/* ring_buffer.c — Ch06 구현에 오버플로우 카운터 추가 */
+
+typedef struct {
+    uint8_t  buf[RING_BUF_SIZE];
+    uint16_t write_idx;
+    uint16_t read_idx;
+    uint32_t overflow_cnt;  /* Ch18 추가: 오버플로우 발생 횟수 */
+} ring_buffer_t;
+
+/* 오버플로우 감지 버전의 push 함수 */
+bool ring_buf_push(ring_buffer_t *rb, uint8_t data)
+{
+    uint16_t next_write = (rb-&gt;write_idx + 1U) % RING_BUF_SIZE;
+
+    if (next_write == rb-&gt;read_idx) {
+        /* 버퍼 가득 참 — 오버플로우 */
+        rb-&gt;overflow_cnt++;
+        /* 주의: LOG 호출 금지 — 재귀 호출 위험 */
+        return false;
+    }
+
+    rb-&gt;buf[rb-&gt;write_idx] = data;
+    rb-&gt;write_idx = next_write;
+    return true;
+}
+
+/* 상태 진단 (main 루프 또는 타이머에서 주기적 호출) */
+void ring_buf_diagnose(ring_buffer_t *rb, const char *name)
+{
+    uint16_t used;
+    if (rb-&gt;write_idx &gt;= rb-&gt;read_idx) {
+        used = rb-&gt;write_idx - rb-&gt;read_idx;
+    } else {
+        used = RING_BUF_SIZE - rb-&gt;read_idx + rb-&gt;write_idx;
+    }
+
+    uint32_t pct = (used * 100U) / RING_BUF_SIZE;
+
+    if (rb-&gt;overflow_cnt &gt; 0U) {
+        LOG_E("링버퍼[%s] 오버플로우 %lu회! 사용률=%lu%%", name, rb-&gt;overflow_cnt, pct);
+        LOG_W("  &gt;&gt; 해결: LOG_LEVEL 상향 또는 RING_BUF_SIZE 증가");
+    } else if (pct &gt; 80U) {
+        LOG_W("링버퍼[%s] 사용률 높음: %lu%%", name, pct);
+    }
+}
+  </code></pre>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> DMA 에러가 발생했을 때 HAL을 재초기화해야 하나요, 아니면 에러 플래그만 클리어해도 되나요?<br>
+    <strong>A.</strong> 원칙적으로는 <code>HAL_DMA_Abort()</code> 후 재초기화를 권장합니다. 단순 플래그 클리어는 DMA 상태 머신이 일관되지 않은 상태로 남을 수 있어 이후 전송에서 예기치 않은 동작이 발생할 수 있습니다. 실무에서는 에러 발생 시 해당 주변장치 드라이버 전체를 de-init → re-init하는 패턴을 사용합니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong>
+    <ul>
+      <li>DMA LISR 레지스터의 TEIF와 FEIF의 차이를 설명할 수 있는가?</li>
+      <li>UART TX DMA 재진입을 방지하기 위해 확인해야 할 상태 변수는 무엇인가?</li>
+      <li>링 버퍼 오버플로우가 발생하면 어떤 현상이 관찰되는가?</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 4절: 로직 애널라이저 ===== -->
+<section id="sec-04">
+  <h2>4절. 로직 애널라이저로 SPI / I2C / UART 파형 분석</h2>
+
+  <p>코드 레벨 디버깅만으로는 해결되지 않는 문제들이 있습니다. "HAL은 정상 반환하는데 LCD에는 아무것도 안 보인다", "SHT31이 ACK를 보내지 않는다" — 이런 상황에서는 실제 신호 파형을 눈으로 확인해야 합니다.</p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    로직 애널라이저는 통신 채널의 CCTV입니다. SPI/I2C/UART 핀에 연결하면 실제로 어떤 신호가 오가는지 녹화해서 보여줍니다. 코드가 "전송했다"고 말해도 실제 선 위에서 신호가 올바른지 눈으로 확인할 수 있습니다.
+    <br><small>※ 이 비유의 한계: 로직 애널라이저는 디지털 신호만 분석합니다. 아날로그 신호 품질(라이징 엣지 슬루레이트, 노이즈) 확인은 오실로스코프가 필요합니다.</small>
+  </div>
+
+  <h3>4-1. 저가 로직 애널라이저 설정 (Saleae 호환)</h3>
+  <p>약 5~10달러 수준의 USB 로직 애널라이저(Saleae Logic 호환 장치)와 무료 소프트웨어 <strong>PulseView</strong>(sigrok)로 충분합니다.</p>
+
+  <p><strong>NUCLEO-F411RE 연결 핀 (Ch12/Ch13 SPI 기준):</strong></p>
+  <pre><code>로직 애널라이저 → NUCLEO 핀
+  CH0 → PA5 (SPI1_SCK)
+  CH1 → PA6 (SPI1_MISO)
+  CH2 → PA7 (SPI1_MOSI)
+  CH3 → PA4 (CS — GPIO 수동 제어)
+  GND → NUCLEO GND (반드시 연결)
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    GND 연결을 빠뜨리면 파형이 완전히 엉뚱하게 나옵니다. 반드시 로직 애널라이저 GND를 MCU 보드 GND에 연결하세요. 또한 로직 애널라이저 입력 임피던스는 보통 1MΩ이므로 신호 왜곡이 크지 않습니다.
+  </aside>
+
+  <h3>4-2. SPI 파형 분석 포인트 (ILI9341 기준)</h3>
+  <p>ILI9341 초기화 실패의 가장 흔한 원인은 <strong>CS 핀 타이밍</strong>과 <strong>CPOL/CPHA 설정 불일치</strong>입니다.</p>
+
+  <pre><code class="language-c">/* SPI 파형 분석을 위한 진단 로그 추가 */
+/* spi_driver.c */
+
+HAL_StatusTypeDef spi_transmit_with_log(SPI_HandleTypeDef *hspi,
+                                         uint8_t *data, uint16_t size,
+                                         uint32_t timeout)
+{
+    LOG_D("SPI TX 시작: size=%u, CR1=0x%08lX", size, hspi-&gt;Instance-&gt;CR1);
+
+    /* CS 핀 LOW (전송 시작) */
+    HAL_GPIO_WritePin(LCD_CS_GPIO_Port, LCD_CS_Pin, GPIO_PIN_RESET);
+    LOG_D("CS LOW");
+
+    HAL_StatusTypeDef status = HAL_SPI_Transmit(hspi, data, size, timeout);
+
+    /* CS 핀 HIGH (전송 완료) */
+    HAL_GPIO_WritePin(LCD_CS_GPIO_Port, LCD_CS_Pin, GPIO_PIN_SET);
+    LOG_D("CS HIGH, status=%d", (int)status);
+
+    if (status != HAL_OK) {
+        LOG_E("SPI 전송 실패: status=%d, SR=0x%08lX",
+              (int)status, hspi-&gt;Instance-&gt;SR);
+        /* SR: TXE(비트1), BSY(비트7), OVR(비트6) 확인 */
+    }
+
+    return status;
+}
+  </code></pre>
+
+  <h3>4-3. I2C 파형 분석 포인트 (SHT31 기준)</h3>
+  <p>I2C 통신 실패의 주요 원인은 <strong>풀업 저항 값</strong>과 <strong>ACK/NACK 타이밍</strong>입니다.</p>
+
+  <p><strong>로직 애널라이저에서 확인해야 할 사항:</strong></p>
+  <ul>
+    <li><strong>START 조건</strong>: SCL HIGH 상태에서 SDA HIGH→LOW 전환 확인</li>
+    <li><strong>7비트 주소 + R/W 비트</strong>: SHT31 기본 주소 0x44 (ADDR 핀 LOW 시)</li>
+    <li><strong>ACK 비트</strong>: 9번째 클럭에서 SDA가 LOW로 당겨지는지 확인 (NACK이면 주소 오류 또는 센서 응답 없음)</li>
+    <li><strong>클럭 스트레칭</strong>: SHT31 측정 중 SCL을 LOW로 유지하는 구간 확인</li>
+  </ul>
+
+  <pre><code class="language-c">/* i2c_driver.c — I2C 통신 진단 로그 */
+
+HAL_StatusTypeDef i2c_mem_read_with_diag(I2C_HandleTypeDef *hi2c,
+                                          uint16_t dev_addr,
+                                          uint8_t *data, uint16_t size)
+{
+    LOG_D("I2C Read 시작: 주소=0x%02X, 크기=%u", dev_addr &gt;&gt; 1, size);
+
+    HAL_StatusTypeDef status = HAL_I2C_Master_Receive(
+        hi2c, dev_addr, data, size, 100);
+
+    if (status == HAL_ERROR) {
+        uint32_t err = HAL_I2C_GetError(hi2c);
+        LOG_E("I2C 수신 실패: error=0x%08lX", err);
+
+        if (err &amp; HAL_I2C_ERROR_AF) {
+            LOG_E("  &gt;&gt; AF(Acknowledge Failure): 슬레이브 주소 미응답");
+            LOG_E("     확인: 1) 주소 0x%02X 맞는지, 2) 풀업 저항 연결, 3) 전원 OK",
+                  dev_addr &gt;&gt; 1);
+        }
+        if (err &amp; HAL_I2C_ERROR_TIMEOUT) {
+            LOG_E("  &gt;&gt; TIMEOUT: SCL 클럭 스트레칭 초과 또는 버스 잠금");
+            LOG_E("     해결: HAL_I2C_DeInit() 후 HAL_I2C_Init() 재초기화");
+        }
+    } else {
+        LOG_D("I2C 수신 완료: 첫 바이트=0x%02X", data[0]);
+    }
+
+    return status;
+}
+  </code></pre>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> 로직 애널라이저가 없으면 어떻게 하나요?<br>
+    <strong>A.</strong> STM32CubeIDE 내장 <strong>ST-LINK SWD 타임라인</strong>으로 GPIO 토글 타이밍을 어느 정도 확인할 수 있습니다. 또는 빈 GPIO 핀에 시작/종료 토글 코드를 추가하고 LED로 신호 확인하는 원시적인 방법도 유효합니다. 하지만 I2C ACK 여부, SPI CPOL/CPHA 불일치 등의 프로토콜 레벨 문제는 로직 애널라이저 없이는 파악하기 어렵습니다. Saleae 호환 저가 장치(5~10달러)를 강력히 추천합니다.
+  </aside>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    수업 중 실제 SPI 파형을 PulseView로 캡처하여 보여줄 때, CS 핀 타이밍을 의도적으로 틀리게(CS HIGH 상태에서 전송 시작) 설정한 후 파형이 어떻게 달라지는지 before/after로 비교하면 학습 효과가 큽니다. "코드는 맞는데 왜 안 되지?"에서 "아, 이래서 안 됐구나!" 순간을 만들어주세요.
+  </aside>
+</section>
+
+<!-- ===== 5절: ITM/SWO + SEGGER RTT 고급 ===== -->
+<section id="sec-05">
+  <h2>5절. ITM/SWO + SEGGER RTT 고급 활용 (Ch02 로그 심화)</h2>
+
+  <p>Ch02에서 SWO/ITM printf 리다이렉트와 SEGGER RTT 기본 사용법을 배웠습니다. 이 절에서는 두 방식을 심화하여 복잡한 실무 환경에서 활용하는 방법을 다룹니다. 특히 <strong>RTT 다채널</strong>을 이용하면 일반 로그, DMA 진단, HardFault 긴급 채널을 분리하여 각각 독립적으로 수신할 수 있습니다.</p>
+
+  <h3>5-1. ITM/SWO 한계와 RTT 장점 비교</h3>
+
+  <p>두 방식의 특성을 이해하면 상황에 맞는 선택을 할 수 있습니다.</p>
+
+  <pre><code>[ ITM/SWO 특성 ]
+  + STM32CubeIDE에 기본 내장, 별도 라이브러리 불필요
+  + SWV(Serial Wire Viewer) 타임라인 기능 활용 가능
+  - SWO 전용 핀(PB3) 추가 연결 필요
+  - 고속 출력 시 버퍼 오버플로우로 데이터 손실 가능
+  - 단방향 (MCU→PC)
+
+[ SEGGER RTT 특성 ]
+  + SWD 2핀(SWDIO, SWDCLK)만으로 동작 — SWO 핀 불필요
+  + 양방향 (MCU↔PC) — 런타임에 로그 레벨 변경 가능
+  + 다채널 지원 (채널 0~255)
+  + HardFault 등 인터럽트 컨텍스트에서도 안전
+  + J-Link RTT Viewer 또는 STM32CubeIDE 터미널로 수신
+  - SEGGER RTT 라이브러리 추가 필요 (무료)
+  </code></pre>
+
+  <h3>5-2. RTT 다채널 초기화</h3>
+  <p>채널 0은 일반 로그, 채널 1은 DMA 진단, 채널 2는 HardFault 긴급 출력으로 분리합니다.</p>
+
+  <pre><code class="language-c">/* ch18_rtt_advanced.c — RTT 다채널 초기화 */
+
+/* RTT 채널 전용 버퍼 (.noinit 섹션 — 리셋 후에도 보존) */
+static char rtt_buf_dma[2048]  __attribute__((section(".noinit")));
+static char rtt_buf_hf[512]    __attribute__((section(".noinit")));
+
+void rtt_advanced_init(void)
+{
+    SEGGER_RTT_Init();
+
+    /* 채널 1: DMA 진단 — BLOCK 모드 (손실 없음, 버퍼 차면 블로킹)
+     * BLOCK_IF_FIFO_FULL = 느리지만 데이터 손실 없음 — 분석용 채널에 적합 */
+    SEGGER_RTT_ConfigUpBuffer(1, "DMA_Diag",
+                               rtt_buf_dma, sizeof(rtt_buf_dma),
+                               SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL);
+
+    /* 채널 2: HardFault 긴급 — SKIP 모드 (빠르지만 손실 가능)
+     * NO_BLOCK_SKIP = 빠르고 블로킹 없음, 인터럽트 컨텍스트에서 안전
+     * HardFault 핸들러에서 블로킹하면 시스템이 더 이상 진행 불가 */
+    SEGGER_RTT_ConfigUpBuffer(2, "HardFault",
+                               rtt_buf_hf, sizeof(rtt_buf_hf),
+                               SEGGER_RTT_MODE_NO_BLOCK_SKIP);
+
+    LOG_I("RTT 다채널 초기화: CH0=일반, CH1=DMA, CH2=긴급");
+}
+  </code></pre>
+
+  <h3>5-3. DWT 사이클 카운터로 마이크로초 타임스탬프</h3>
+  <p>RTT 로그에 마이크로초(μs) 타임스탬프를 추가하면 DMA 전송 시간, 인터럽트 레이턴시 등 정밀 타이밍 분석이 가능합니다. DWT(Data Watchpoint and Trace) 사이클 카운터를 활용합니다.</p>
+
+  <pre><code class="language-c">/* DWT 사이클 카운터 초기화 */
+void dwt_init(void)
+{
+    /* CoreSight 잠금 해제 키 — ARM 아키텍처 공식 고정 값 (변경 불가) */
+    /* 0xC5ACCE55 = "C5 ACCESS" 의미, DWT/ITM 레지스터 쓰기 허용 */
+    *((volatile uint32_t *)0xE0001FB0) = 0xC5ACCE55;
+
+    /* DWT 사이클 카운터 활성화 */
+    CoreDebug-&gt;DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    *((volatile uint32_t *)0xE0001004) = 0;  /* CYCCNT 리셋 */
+    *((volatile uint32_t *)0xE0001000) |= 1U; /* CYCCNTENA */
+
+    LOG_D("DWT 초기화 완료 — 마이크로초 타임스탬프 사용 가능");
+}
+
+/* 마이크로초 단위 타임스탬프 */
+static uint32_t get_us(void)
+{
+    /* 100MHz 기준: 사이클 ÷ 100 = 마이크로초 */
+    return *((volatile uint32_t *)0xE0001004) / 100U;
+}
+
+/* DMA 채널 타임스탬프 로그 */
+void rtt_dma_log(const char *fmt, ...)
+{
+    char buf[128];
+    int n = snprintf(buf, sizeof(buf), "[%lu us] ", get_us());
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf + n, sizeof(buf) - n, fmt, args);
+    va_end(args);
+    SEGGER_RTT_WriteString(1, buf);  /* DMA 진단 채널 */
+}
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    DWT CYCCNT는 약 42초(100MHz 기준, 2³²÷10⁸)마다 오버플로우합니다. 짧은 구간 측정에는 문제없지만, 장시간 실행 후 타임스탬프가 갑자기 작아지면 오버플로우가 발생한 것입니다. 필요시 HAL_GetTick()(밀리초)과 병행 사용하세요.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    "ITM과 SEGGER RTT의 차이점을 설명하세요."<br>
+    핵심 답변: ITM은 SWO 전용 핀이 필요하고 단방향, RTT는 SWD 2핀만으로 동작하며 양방향입니다. 고속 출력 시 ITM은 오버플로우 손실이 발생할 수 있지만, RTT는 버퍼링으로 신뢰성이 높습니다. HardFault 등 인터럽트 컨텍스트에서는 printf/ITM 대신 RTT 사용을 권장합니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong>
+    <ul>
+      <li>RTT 채널 2를 NO_BLOCK_SKIP 모드로 설정한 이유가 무엇인가? (HardFault 핸들러는 블로킹이 위험)</li>
+      <li>DWT CYCCNT 사이클을 마이크로초로 변환하는 공식을 말할 수 있는가?</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 6절: 아키텍처 관점 디버깅 ===== -->
+<section id="sec-06">
+  <h2>6절. 아키텍처 관점 디버깅 — 레이어 경계 버그 격리 전략</h2>
+
+  <p>"버그는 코드 어딘가에 있는 거 아닌가요?" — 맞는 말입니다. 하지만 코드 전체를 처음부터 살펴보는 것은 비효율적입니다. Ch03부터 적용해 온 <strong>레이어드 아키텍처(HAL → Driver → Service → App)</strong>는 디버깅 시에도 강력한 도구가 됩니다. 버그가 어느 레이어에서 발생했는지 먼저 확인하면 탐색 범위를 대폭 줄일 수 있습니다.</p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    아키텍처 관점 디버깅은 소방서의 화재 대응과 같습니다. 소방관은 건물 전체를 무작정 뒤지지 않습니다. 우선 어느 층(레이어)에서 연기가 나는지 확인하고, 해당 층만 집중 조사합니다. 레이어 경계의 로그는 각 층 복도에 설치된 화재 감지기와 같습니다.
+    <br><small>※ 이 비유의 한계: 실제 버그는 여러 레이어에 걸쳐 원인-결과 사슬로 이어지는 경우가 있어, 하나의 층에서 연기가 나도 발화 원인은 다른 층일 수 있습니다.</small>
+  </div>
+
+  <figure>
+    <img src="../../figures/ch18_sec06_debug_strategy.svg" alt="아키텍처 레이어 경계 버그 격리 전략">
+    <figcaption>그림 18-5. 레이어 경계 버그 격리 전략 — Top-Down 방식으로 발생 레이어 특정</figcaption>
+  </figure>
+
+  <h3>6-1. 레이어 경계 로그 패턴</h3>
+  <p>각 레이어 경계(인터페이스)에서 입출력 값을 로그로 남기면 어느 경계에서 값이 잘못되기 시작하는지 추적할 수 있습니다.</p>
+
+  <pre><code class="language-c">/* sensor_service.c — 레이어 경계 로그 패턴 */
+
+/**
+ * @brief  온습도 서비스 업데이트
+ *         Driver 레이어 호출 전후 로그로 경계 값 추적
+ */
+HAL_StatusTypeDef sensor_service_update(float *temp, float *humi)
+{
+    /* === Service Layer 진입 로그 === */
+    LOG_D("[Service→Driver] SHT31_Read 호출");
+
+    /* Driver 레이어 호출 */
+    HAL_StatusTypeDef status = SHT31_Read(temp, humi);
+
+    /* === Driver→Service 경계 반환값 로그 === */
+    if (status != HAL_OK) {
+        LOG_E("[Driver→Service] SHT31_Read 실패: status=%d", (int)status);
+        LOG_E("  >> Driver 레이어 또는 HAL(I2C) 문제로 격리 필요");
+        return status;
+    }
+
+    LOG_D("[Driver→Service] 온도=%.1f, 습도=%.1f — Driver 정상", *temp, *humi);
+
+    /* 서비스 로직: 온도 임계값 초과 시 알람 */
+    if (*temp &gt; 35.0f) {
+        LOG_W("[Service→App] 온도 임계값 초과: %.1f°C", *temp);
+        /* App 레이어에 알람 이벤트 전달 */
+    }
+
+    return HAL_OK;
+}
+  </code></pre>
+
+  <h3>6-2. 레이어 경계 계약 위반(Contract Violation) 감지</h3>
+  <p>레이어 경계 계약은 "이 함수에 이 범위의 값이 들어오면 이 범위의 값을 돌려준다"는 암묵적 약속입니다. 입력값 유효성 검사(Assert)로 계약 위반을 조기에 감지합니다.</p>
+
+  <pre><code class="language-c">/* 레이어 경계 계약 검사 매크로 */
+#ifdef DEBUG
+  #define LAYER_ASSERT(cond, msg) \
+      do { \
+          if (!(cond)) { \
+              LOG_E("[계약위반] %s:%d — %s", __FILE__, __LINE__, msg); \
+              while(1) { __NOP(); } \
+          } \
+      } while(0)
+#else
+  #define LAYER_ASSERT(cond, msg)  /* Release 빌드에서 제거 */
+#endif
+
+/* 사용 예시: Driver 레이어 API 입구에서 계약 검사 */
+HAL_StatusTypeDef SHT31_Read(float *temp_out, float *humi_out)
+{
+    /* 계약: 포인터는 NULL이 아니어야 한다 */
+    LAYER_ASSERT(temp_out != NULL, "temp_out 포인터가 NULL입니다");
+    LAYER_ASSERT(humi_out != NULL, "humi_out 포인터가 NULL입니다");
+
+    /* ... 실제 I2C 읽기 구현 ... */
+
+    /* 계약: 반환값은 -40~125°C 범위여야 한다 */
+    LAYER_ASSERT(*temp_out &gt;= -40.0f &amp;&amp; *temp_out &lt;= 125.0f,
+                 "온도 값이 SHT31 측정 범위를 벗어났습니다");
+
+    return HAL_OK;
+}
+  </code></pre>
+
+  <h3>6-3. 통합 디버깅 실습 — 전체 시나리오 적용</h3>
+  <p>다음 순서로 v2.0 프로젝트에 디버깅 인프라를 통합합니다:</p>
+
+  <ol>
+    <li><code>ch18_hardfault_handler.c</code>를 프로젝트에 추가, 기존 startup 파일의 weak HardFault_Handler를 override</li>
+    <li><code>rtt_advanced_init()</code>을 <code>main()</code> 최상단에서 호출</li>
+    <li>각 레이어 경계 함수에 <code>LOG_D</code> 진입/퇴장 로그 추가</li>
+    <li>의도적으로 버그 시나리오 A(NULL 포인터) 코드를 삽입하여 HardFault 덤프 확인</li>
+    <li>PC 값으로 Disassembly에서 원인 라인 특정 실습</li>
+  </ol>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    <code>LAYER_ASSERT</code>는 Debug 빌드에서만 활성화하세요. Release 빌드에서 assert가 무한 루프를 유발하면 제품 현장에서 심각한 문제가 됩니다. <code>#ifdef DEBUG ... #endif</code>로 조건부 컴파일하거나 별도의 에러 처리 콜백으로 대체하세요.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    "레이어드 아키텍처가 디버깅에 어떤 도움이 되나요?"<br>
+    핵심 답변: 각 레이어의 인터페이스(API)가 명확히 정의되어 있어 레이어 경계에서 입출력 값을 검사하면 버그 발생 레이어를 체계적으로 좁힐 수 있습니다. App에서 증상 확인 → Service API 반환값 검증 → Driver HAL 반환코드 확인 → 레지스터 직접 확인 순서로 Top-Down 격리가 가능합니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong>
+    <ul>
+      <li>레이어 경계 로그를 보았을 때 어느 경계에서 값이 잘못되면 어느 레이어를 조사해야 하는지 판단할 수 있는가?</li>
+      <li>LAYER_ASSERT를 Release 빌드에서 제거해야 하는 이유를 설명할 수 있는가?</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 실습 ===== -->
+<section id="lab">
+  <h2>실습: HardFault 덤프 분석 + DMA 재진입 방지 통합</h2>
+  <p><strong>목표</strong>: HardFault 핸들러를 구현하고 의도적 버그로 덤프를 생성한 뒤, PC 값으로 원인 라인을 특정합니다. 또한 UART TX DMA 재진입 방지 코드를 적용하여 CLI 안정성을 향상합니다.</p>
+  <p><strong>환경</strong>: STM32CubeIDE, NUCLEO-F411RE, SEGGER J-Link (또는 ST-LINK + RTT Viewer)</p>
+
+  <h3>Step 1. HardFault 핸들러 적용</h3>
+  <ol>
+    <li>프로젝트에 <code>code_examples/ch18_hardfault_handler.c</code> 추가</li>
+    <li>빌드 → <code>Core/Src/stm32f4xx_it.c</code>의 <code>HardFault_Handler</code>가 이미 있다면 제거 (중복 심볼 오류 방지)</li>
+    <li><code>main.c</code>의 <code>/* USER CODE BEGIN 2 */</code> 영역에 테스트 코드 추가:</li>
+  </ol>
+
+  <pre><code class="language-c">/* main.c — 의도적 HardFault 유발 테스트 */
+/* 주의: 테스트 후 반드시 이 코드를 제거하세요 */
+
+volatile uint32_t *null_ptr = NULL;
+*null_ptr = 0xDEADBEEF;  /* 이 라인에서 HardFault 발생 예정 */
+  </code></pre>
+
+  <h3>Step 2. RTT Viewer로 덤프 수신</h3>
+  <ol>
+    <li>SEGGER J-Link RTT Viewer 실행 (또는 STM32CubeIDE Debugger 터미널)</li>
+    <li>F411RE 연결, 프로그램 실행</li>
+    <li>RTT 채널 0에서 다음과 같은 출력 확인:</li>
+  </ol>
+
+  <pre><code>[ERROR] === HARD FAULT DETECTED ===
+[ERROR] R0  = 0x00000000
+[ERROR] R1  = 0x00000000
+[ERROR] R2  = 0x00000000
+[ERROR] R3  = 0x00000000
+[ERROR] R12 = 0x00000000
+[ERROR] LR  = 0xFFFFFFF9  (EXC_RETURN 패턴)
+[ERROR] PC  = 0x08001A34  &lt;- 이 주소에서 예외 발생!
+[ERROR] xPSR= 0x61000000
+[ERROR] CFSR = 0x00000200
+[ERROR]   >> PRECISERR: 데이터 버스 오류, PC 신뢰 가능
+  </code></pre>
+
+  <h3>Step 3. Disassembly에서 원인 라인 특정</h3>
+  <ol>
+    <li>STM32CubeIDE 메뉴: <kbd>Window</kbd> → <kbd>Show View</kbd> → <kbd>Disassembly</kbd></li>
+    <li>PC 값 <code>0x08001A34</code> 입력 후 엔터</li>
+    <li>해당 어셈블리 라인 클릭 → 소스 코드 라인으로 자동 이동</li>
+    <li><code>*null_ptr = 0xDEADBEEF;</code> 라인이 강조 표시됨 확인</li>
+  </ol>
+
+  <h3>Step 4. DMA 재진입 방지 적용</h3>
+  <p>테스트 코드 제거 후, <code>uart_driver.c</code>의 전송 함수를 <code>uart_tx_dma_safe()</code>로 교체합니다.</p>
+
+  <pre><code class="language-c">/* cli_app.c — DMA 안전 전송으로 교체 */
+void cli_send_response(const char *response)
+{
+    uint16_t len = (uint16_t)strlen(response);
+
+    /* 기존: HAL_UART_Transmit_DMA(&amp;huart2, (uint8_t*)response, len); */
+    /* 변경: DMA 재진입 방지 */
+    HAL_StatusTypeDef status = uart_tx_dma_safe((const uint8_t*)response, len);
+    if (status == HAL_BUSY) {
+        LOG_W("CLI 응답 전송 지연 — DMA 사용 중");
+    }
+}
+  </code></pre>
+
+  <p><strong>예상 결과</strong>: CLI에서 빠르게 명령을 연속 입력해도 출력 데이터가 깨지지 않으며, 로그에 <code>[WARN] CLI 응답 전송 지연</code>이 출력되면서 정상 처리됩니다.</p>
+
+  <aside class="tip">
+    💡 <strong>실습이 안 될 때</strong><br>
+    <strong>① HardFault 핸들러가 동작 안 함</strong>: <code>stm32f4xx_it.c</code>에 <code>HardFault_Handler</code>가 중복 선언되어 있는지 확인. 있으면 해당 함수 본문을 삭제(함수 선언 자체는 남겨도 무방).<br>
+    <strong>② RTT 출력이 안 보임</strong>: J-Link RTT Viewer에서 MCU 모델(STM32F411RE), 연결 속도(4000kHz) 설정 확인. "Search Range"를 0x20000000 크기 0x8000으로 설정하면 RTT 제어 블록을 더 빠르게 찾습니다.<br>
+    이것은 매우 흔한 설정 문제입니다 — 처음 RTT를 설정할 때 누구나 겪는 과정입니다.
+  </aside>
+</section>
+
+<!-- ===== 핵심 정리 ===== -->
+<section class="chapter-summary-section">
+  <h2>핵심 정리</h2>
+  <ul>
+    <li>STM32CubeIDE의 <strong>Watch / Live Expression / Memory View</strong>는 실행을 중단하지 않고도 내부 상태를 관찰할 수 있는 핵심 도구입니다.</li>
+    <li><strong>HardFault 핸들러</strong>는 ASM 스텁(PSP/MSP 분기)과 C 함수로 분리 구현하며, 스택 프레임의 <strong>PC 값</strong>이 예외 발생 주소입니다. <strong>CFSR 레지스터</strong>가 오류 종류를 알려줍니다.</li>
+    <li>DMA 디버깅의 핵심은 <strong>LISR/HISR 레지스터</strong> 직독과 <strong>HAL_DMA_STATE_BUSY 상태 확인</strong>을 통한 재진입 방지입니다.</li>
+    <li><strong>SEGGER RTT 다채널</strong>은 일반 로그 / DMA 진단 / HardFault 긴급 채널을 독립적으로 관리하며, DWT 사이클 카운터로 마이크로초 단위 타임스탬프를 제공합니다.</li>
+    <li><strong>아키텍처 관점 디버깅</strong>은 App에서 시작하여 레이어 경계 로그를 따라 Top-Down으로 버그 발생 레이어를 좁혀가는 체계적 전략입니다.</li>
+    <li>로직 애널라이저는 코드 레벨에서 확인 불가한 <strong>프로토콜 레벨 문제</strong>(ACK 미응답, CS 핀 타이밍, CPOL/CPHA 불일치)를 직접 관찰합니다.</li>
+  </ul>
+
+  <h3>아키텍처 업데이트</h3>
+  <p>이 챕터 완료 후 전체 아키텍처에 <code>debug_infra</code>(HardFault Handler, RTT Multi-channel, Layer Assert)가 횡단 관심사로 추가되어, v2.0 프로젝트 전 레이어의 관찰 가능성(Observability)이 강화되었습니다.</p>
+</section>
+
+<!-- ===== 연습문제 ===== -->
+<section class="exercises">
+  <h2>연습문제</h2>
+
+  <div class="exercise">
+    <span class="level">기억</span>
+    <strong>1.</strong> HardFault 발생 시 ARM Cortex-M4 CPU가 스택에 자동 저장하는 8개 레지스터를 나열하고, 디버깅에서 가장 중요한 레지스터 이름과 그 이유를 설명하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">이해</span>
+    <strong>2.</strong> CFSR 레지스터의 BFSR PRECISERR 비트가 설정되어 있을 때와 IMPRECISERR 비트가 설정되어 있을 때, PC 레지스터 값의 신뢰성에 차이가 발생하는 이유를 설명하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">적용</span>
+    <strong>3.</strong> UART TX DMA를 사용하는 CLI 응답 함수에서, 이전 DMA 전송이 완료되기 전에 새로운 전송을 시작하지 않도록 방어 코드를 HAL API를 사용하여 구현하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">분석</span>
+    <strong>4.</strong> 다음 로그를 보고 버그 발생 레이어와 원인을 특정하고, 수정 방안을 제시하시오.
+    <pre><code>[DEBUG] [Service→Driver] SHT31_Read 호출
+[ERROR] [Driver→Service] SHT31_Read 실패: status=1
+[ERROR] I2C 수신 실패: error=0x00000004
+[ERROR]   >> AF(Acknowledge Failure): 슬레이브 주소 미응답
+    </code></pre>
+  </div>
+</section>
+
+<!-- ===== 다음 챕터 예고 ===== -->
+<section class="next-chapter">
+  <h2>다음 챕터 예고</h2>
+  <p>
+    현재 프로젝트는 <strong>v2.1</strong> 상태로,
+    HardFault 자동 덤프, DMA 에러 진단, RTT 다채널 로그, 레이어 경계 계약 검사까지
+    디버깅 인프라가 전 레이어에 통합되었습니다.
+  </p>
+  <p>
+    다음 <strong>Ch19. 코드 리팩토링 &amp; 실무 품질</strong>에서는
+    MISRA-C 핵심 규칙을 적용한 코드 품질 향상, 레이어 분리 리팩토링 실습, 메모리 최적화(스택/힙 분석),
+    그리고 단위 테스트 전략(HAL Mock)을 구현하여 프로젝트를 <strong>v2.2 마일스톤 ③</strong>으로 완성합니다.
+  </p>
+</section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+</body>
+</html>

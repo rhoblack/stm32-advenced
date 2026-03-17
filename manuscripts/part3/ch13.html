@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch13. ILI9341 GFX 레이어 + 화면 완성 — STM32 고급 실무교육</title>
+  <link rel="stylesheet" href="../../templates/book_style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+
+<!-- ===== 챕터 헤더 ===== -->
+<header class="chapter-header">
+  <div class="chapter-meta">Part 3 · Chapter 13 · 프로젝트 <span class="version">v1.3</span></div>
+  <h1>Ch13. ILI9341 GFX 레이어 + 화면 완성</h1>
+  <p class="chapter-summary">
+    Ch12에서 초기화한 LCD 위에 GFX 추상화 레이어를 쌓고, 디지털 시각·온습도·스톱워치 세 화면을
+    버튼으로 전환하는 스마트 시계 UI를 완성합니다. 이 챕터가 끝나면 LCD가 비로소 "살아있는 UI"를 보여줍니다.
+  </p>
+  <div class="chapter-badge">누적 기능: 디지털 시각 + 온습도 + 스톱워치 화면 구성 완성 (v1.3)</div>
+</header>
+
+<!-- ===== 아키텍처 위치 ===== -->
+<section class="architecture-position">
+  <h2>이 챕터의 아키텍처 위치</h2>
+  <p>
+    Ch12까지 완성한 LCD Driver(ILI9341) 위에 이번 챕터에서 두 개의 Service 레이어를 추가합니다.
+    <strong>GFX Service</strong>는 "무엇을 어디에 그릴지"를 추상화하는 레이어이고,
+    <strong>UI Service</strong>는 "어떤 화면을 언제 보여줄지"를 관리하는 레이어입니다.
+    이 두 레이어 덕분에 App 레이어는 <code>UI_HandleEvent()</code>와 <code>UI_ProcessRefresh()</code>만 호출하면 됩니다.
+  </p>
+  <figure>
+    <img src="../../figures/ch13_sec00_architecture.svg" alt="v1.3 레이어 아키텍처: GFX Service + UI Service 추가">
+    <figcaption>그림 13-1. v1.3 레이어 아키텍처 — Service 레이어에 GFX Service · UI Service 추가</figcaption>
+  </figure>
+
+  <h3>인터페이스 설계</h3>
+  <p>이 챕터에서 구현하는 Service 레이어의 공개 API입니다. App 레이어는 이 함수들만 호출합니다.</p>
+  <pre><code class="language-c">/* gfx_service.h — GFX Service 공개 인터페이스 */
+
+void     GFX_Init(void);
+void     GFX_DrawPixel(uint16_t x, uint16_t y, uint16_t color);
+void     GFX_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
+void     GFX_FillScreen(uint16_t color);
+void     GFX_DrawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color);
+void     GFX_DrawCircle(uint16_t cx, uint16_t cy, uint16_t r, uint16_t color);
+void     GFX_DrawChar(uint16_t x, uint16_t y, char c, uint16_t fg, uint16_t bg, uint8_t scale);
+void     GFX_DrawString(uint16_t x, uint16_t y, const char *str, uint16_t fg, uint16_t bg, uint8_t scale);
+void     GFX_DrawNumber(uint16_t x, uint16_t y, int32_t val, uint8_t digits, uint16_t fg, uint16_t bg, uint8_t scale);
+
+/* ui_service.h — UI Service 공개 인터페이스 */
+
+void           UI_Init(void);
+void           UI_HandleEvent(UI_EventType_t event);  /* FSM 이벤트 입력 */
+UI_ViewType_t  UI_GetCurrentView(void);
+void           UI_UpdateTimeData(const UI_TimeData_t *data);
+void           UI_UpdateSensorData(const UI_SensorData_t *data);
+void           UI_UpdateStopwatchData(const UI_StopwatchData_t *data);
+void           UI_RequestRefresh(void);   /* ISR에서 플래그 설정 */
+void           UI_ProcessRefresh(void);  /* 메인 루프에서 실제 렌더링 */
+  </code></pre>
+
+  <h3>FSM 설계</h3>
+  <p>
+    DISPLAY FSM(유한 상태 머신, Finite State Machine)은 세 화면 상태와 두 종류의 버튼 이벤트로 구성됩니다.
+    짧은 누름(BTN_SHORT)은 다음 화면으로 전환하고, 긴 누름(BTN_LONG)은 현재 화면을 강제 재갱신합니다.
+  </p>
+  <figure>
+    <img src="../../figures/ch13_sec00_fsm.svg" alt="DISPLAY FSM 상태 전이 다이어그램">
+    <figcaption>그림 13-2. DISPLAY FSM — TIME_VIEW / SENSOR_VIEW / STOPWATCH_VIEW 상태 전이</figcaption>
+  </figure>
+
+  <h3>시퀀스 다이어그램</h3>
+  <p>
+    RTC 1초 인터럽트가 발생했을 때, UI 갱신이 어떤 경로로 LCD 화면에 도달하는지 계층별로 추적합니다.
+    각 레이어의 책임이 명확히 분리되어 있음을 확인하세요.
+  </p>
+  <figure>
+    <img src="../../figures/ch13_sec00_sequence.svg" alt="UI 갱신 시퀀스 다이어그램">
+    <figcaption>그림 13-3. UI 갱신 시퀀스 — RTC ISR → main_app → UI Service → GFX Service → LCD Driver → SPI DMA</figcaption>
+  </figure>
+</section>
+
+<!-- ===== 학습 목표 ===== -->
+<section class="learning-objectives">
+  <h2>학습 목표</h2>
+  <p>이 챕터를 완료하면 다음을 할 수 있습니다.</p>
+  <ul>
+    <li><strong>[이해]</strong> GFX 추상화 레이어가 필요한 이유와 LCD Driver / GFX Service / UI App 3계층 분리 원칙을 설명할 수 있다.</li>
+    <li><strong>[적용]</strong> 8×16 비트맵 폰트 렌더링 함수를 구현하고 디지털 시각·온습도·스톱워치를 ILI9341 LCD에 표시할 수 있다.</li>
+    <li><strong>[적용]</strong> 테이블 기반 DISPLAY FSM을 구현하여 버튼 이벤트에 따른 세 화면 전환을 처리할 수 있다.</li>
+    <li><strong>[분석]</strong> 프레임버퍼 전체 갱신과 부분 갱신(Partial Update)의 DMA 전송량 차이를 계산하고 최적화할 수 있다.</li>
+  </ul>
+  <div class="project-milestone">
+    <strong>프로젝트 v1.3</strong>: 이 챕터 완료 후 ILI9341 LCD에 디지털 시각 · 온습도 · 스톱워치 세 화면이
+    버튼으로 전환되며 동작합니다. 스마트 시계의 UI가 완성됩니다.
+  </div>
+</section>
+
+<!-- ===== 1절: GFX 레이어 아키텍처 설계 원칙 ===== -->
+<section id="sec-01">
+  <h2>1절. GFX 레이어 아키텍처 설계 원칙</h2>
+
+  <p>
+    Ch12에서 여러분은 <code>ILI9341_Draw_String()</code>, <code>ILI9341_Fill_Color()</code> 같은 함수를
+    직접 <code>main.c</code>에서 호출했습니다. 화면에 무언가가 표시되는 것은 훌륭하지만, 만약 지금 LCD 모델을
+    ST7789로 교체해야 한다면 어떻게 될까요? <code>main.c</code> 전체를 뒤져서 <code>ILI9341_xxx</code>를
+    모두 <code>ST7789_xxx</code>로 바꿔야 합니다. 이것은 유지보수의 악몽입니다.
+  </p>
+  <p>
+    GFX 레이어(그래픽 서비스, Graphics Service)는 이 문제를 해결합니다. 상위 레이어가 하드웨어에 종속된
+    함수를 직접 호출하지 않도록, "그래픽 추상화 계층"을 중간에 끼워 넣는 것입니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기 — 레스토랑의 주방</strong><br>
+    웨이터(App 레이어)는 손님에게 "오늘의 메뉴: 디지털 시계"를 전달합니다.
+    요리사(GFX Service)는 "치킨을 굽는 방법"은 알지만, 어느 오븐(LCD 모델)을 사용하는지는 신경 쓰지 않습니다.
+    주방 설비(LCD Driver)만 오븐을 알고, 실제 불을 조작합니다.
+    <br><small>※ 이 비유의 한계: 실제 소프트웨어에서는 GFX Service도 LCD Driver의 API 규약(인터페이스)에 의존합니다.
+    완전히 독립적이지는 않지만, 의존 방향이 단방향(위→아래)이라는 점이 핵심입니다.</small>
+  </div>
+
+  <figure>
+    <img src="../../figures/ch13_sec01_gfx_layers.svg" alt="Ch12 방식 vs Ch13 레이어 분리 방식 비교">
+    <figcaption>그림 13-4. Ch12(직접 호출) vs Ch13(GFX 추상화) 아키텍처 비교</figcaption>
+  </figure>
+
+  <h3>GFX Service가 해결하는 두 가지 문제</h3>
+
+  <p><strong>문제 1 — 하드웨어 종속성</strong>: <code>ILI9341_Draw_String()</code>은 ILI9341 전용 함수입니다.
+  GFX Service를 사용하면 <code>GFX_DrawString()</code>만 사용하고, 내부에서 어느 LCD를 쓰는지는
+  <code>gfx_service.c</code> 한 파일에 집중됩니다.</p>
+
+  <p><strong>문제 2 — 기능 분산</strong>: Ch12의 <code>ILI9341_Draw_String()</code>은 기능이 제한적입니다.
+  GFX Service에서 스케일 배율(<code>scale</code>), 색상 팔레트 매크로, 폰트 렌더링 엔진을 공통으로 제공하므로,
+  UI 코드가 훨씬 간결해집니다.</p>
+
+  <h3>레이어 경계 규칙</h3>
+
+  <p>이 프로젝트에서는 다음 규칙을 철저히 지킵니다:</p>
+  <ul>
+    <li><code>gfx_service.c</code>만 <code>ili9341_driver.h</code>를 include할 수 있습니다.</li>
+    <li><code>ui_service.c</code>는 <code>gfx_service.h</code>만 include합니다.</li>
+    <li><code>main_app.c</code>는 <code>ui_service.h</code>만 include합니다.</li>
+  </ul>
+  <p>이 규칙을 "단방향 의존(One-way Dependency)" 원칙이라고 합니다. 위 레이어가 아래 레이어를 호출하지,
+  아래 레이어가 위를 올려다보지 않습니다.</p>
+
+  <pre><code class="language-c">/* gfx_service.c — 내부 의존성 선언부 */
+
+#include "gfx_service.h"
+#include "ili9341_driver.h"   /* ← 유일한 Driver 레이어 의존성 */
+#include "log.h"
+#include &lt;math.h&gt;             /* sqrtf: GFX_FillCircle에서 사용 */
+
+void GFX_Init(void)
+{
+    LOG_I("GFX_Init: GFX Service 초기화 시작");
+    ILI9341_Init();           /* Driver 레이어에 위임 */
+    GFX_FillScreen(GFX_COLOR_BLACK);
+    LOG_I("GFX_Init: 완료");
+}
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    대형 프로젝트에서는 <code>gfx_service.c</code>를 더 작게 분리합니다.
+    예: <code>gfx_draw.c</code>(도형), <code>gfx_font.c</code>(폰트), <code>gfx_color.c</code>(색상).
+    하지만 이 교재 수준에서는 하나의 파일로 충분합니다. 코드가 500줄을 넘어갈 때 분리를 고려하세요.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> Ch12에서 이미 <code>ILI9341_Draw_String()</code>을 만들었는데,
+    <code>GFX_DrawString()</code>은 그냥 래핑(wrapping)만 하는 건가요? 중복 아닌가요?<br>
+    <strong>A.</strong> 기능적으로는 비슷하지만 목적이 다릅니다.
+    <code>ILI9341_Draw_String()</code>은 특정 하드웨어(ILI9341)에 묶인 "구현(Implementation)"이고,
+    <code>GFX_DrawString()</code>은 하드웨어 독립적인 "인터페이스(Interface)"입니다.
+    나중에 ILI9341을 ST7789로 교체하면 <code>gfx_service.c</code>의 내부 구현만 바꾸면 됩니다.
+    UI Service, App 코드는 전혀 건드릴 필요가 없습니다. 이것이 추상화의 진짜 가치입니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>GFX Service를 추가하면 LCD Driver와 App 레이어 사이에 몇 개의 레이어가 있나요?</li>
+      <li>"단방향 의존"이란 무엇인가요? 왜 중요한가요?</li>
+      <li>LCD 모델을 교체할 때 수정이 필요한 파일은 어느 레이어에 있나요?</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 2절: 폰트 렌더링 구현 ===== -->
+<section id="sec-02">
+  <h2>2절. 폰트 렌더링 구현</h2>
+
+  <p>
+    LCD에 문자를 표시하는 것은 생각보다 저수준(low-level) 작업입니다. TFT LCD에는 "문자 전송" 명령이 없습니다.
+    오직 "이 좌표에 이 색상의 픽셀을 그려라"만 가능합니다. 따라서 글자 하나를 그리려면 수십 개의 픽셀을
+    직접 그려야 합니다. 이것이 비트맵 폰트(Bitmap Font) 렌더링입니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기 — 모눈종이 도장</strong><br>
+    비트맵 폰트는 8×16 칸짜리 모눈종이 도장과 같습니다. 각 칸에 "칠해라(1)" 또는 "비워라(0)"가
+    미리 인쇄되어 있고, 이 도장을 LCD 특정 위치에 찍으면 글자가 됩니다.
+    배율(scale) 파라미터는 도장 크기를 2배, 3배로 확대하는 것입니다.
+    <br><small>※ 이 비유의 한계: 실제로는 도장을 찍는 것이 아니라 비트 연산으로 픽셀 하나씩 처리합니다.
+    또한 안티앨리어싱(Anti-aliasing, 계단 현상 완화)은 이 교재 범위를 벗어납니다.</small>
+  </div>
+
+  <h3>비트맵 폰트 데이터 구조</h3>
+
+  <p>
+    8×16 폰트는 글자 하나가 16바이트로 표현됩니다. 각 바이트가 한 행(row)이고,
+    바이트의 각 비트가 한 픽셀입니다. MSB(최상위 비트)가 왼쪽 픽셀, LSB(최하위 비트)가 오른쪽 픽셀입니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch13_sec02_font_bitmap.svg" alt="8×16 비트맵 폰트 렌더링 원리 — 문자 A">
+    <figcaption>그림 13-5. 8×16 비트맵 폰트 — 문자 'A'의 픽셀 그리드와 바이트 배열 표현</figcaption>
+  </figure>
+
+  <p>
+    예를 들어 문자 'A'의 행4(가로 획)는 <code>0x7F</code>로 표현됩니다.
+    <code>0x7F = 0111_1111</code>이므로 비트 0(MSB)이 0(빈 픽셀), 비트 1~7이 1(채운 픽셀)입니다.
+    이렇게 하면 좌측 한 픽셀이 빈 상태로 가로 획이 그려집니다.
+  </p>
+
+  <pre><code class="language-c">/* gfx_service.c — 단일 문자 렌더링 핵심 알고리즘 */
+
+void GFX_DrawChar(uint16_t x, uint16_t y, char c,
+                  uint16_t fg, uint16_t bg, uint8_t scale)
+{
+    uint8_t row, col;
+    uint8_t font_byte;
+
+    /* ASCII 범위 검사: 0x20(' ') ~ 0x7E('~') */
+    if (c < 0x20 || c > 0x7E) {
+        c = '?';  /* 지원 외 문자 대체 */
+    }
+
+    /* 폰트 테이블에서 해당 글리프(Glyph, 문자 모양) 로드 */
+    const uint8_t *glyph = s_font8x16[c - 0x20];
+
+    /* 16행 × 8열 순회 */
+    for (row = 0; row < 16; row++) {
+        font_byte = glyph[row];    /* 현재 행의 8픽셀 정보 */
+
+        for (col = 0; col < 8; col++) {
+            /* 0x80을 col만큼 우측 시프트 → 현재 열의 비트 마스크
+             * col=0: 0x80 (10000000) → 가장 왼쪽 픽셀
+             * col=1: 0x40 (01000000)
+             * col=3: 0x10 (00010000)
+             * col=7: 0x01 (00000001) → 가장 오른쪽 픽셀
+             */
+            uint16_t pixel_color = (font_byte & (0x80 >> col)) ? fg : bg;
+
+            if (scale == 1) {
+                GFX_DrawPixel(x + col, y + row, pixel_color);
+            } else {
+                /* scale > 1: scale×scale 블록으로 픽셀 확대 */
+                GFX_FillRect(x + col * scale, y + row * scale,
+                             scale, scale, pixel_color);
+            }
+        }
+    }
+}
+  </code></pre>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    비트맵 폰트 코드를 처음 보면 외계어처럼 느껴집니다. 수업 중에 <strong>그리드 종이를 나눠주고</strong>
+    'A' 한 글자를 직접 0/1로 채워보는 5분 실습을 먼저 진행하세요. 그 다음 <code>0x7F = 01111111</code>을
+    함께 계산하면 "아, 이게 그 패턴이구나!"라고 즉시 이해합니다.
+    코드 이전에 손으로 먼저 경험하게 하는 것이 핵심입니다.
+  </aside>
+
+  <h3>색상 팔레트 — RGB565 포맷</h3>
+
+  <p>
+    ILI9341은 RGB565(16비트 색상) 포맷을 사용합니다. 16비트 중 빨강(R) 5비트, 초록(G) 6비트,
+    파랑(B) 5비트로 색상을 표현합니다. 초록이 1비트 더 많은 이유는 인간의 눈이 초록에 더 민감하기 때문입니다.
+  </p>
+
+  <pre><code class="language-c">/* gfx_service.h — RGB565 색상 팔레트 매크로 */
+
+/* 기본 색상 */
+#define GFX_COLOR_BLACK   0x0000U  /* R=0,  G=0,  B=0  */
+#define GFX_COLOR_WHITE   0xFFFFU  /* R=31, G=63, B=31 */
+#define GFX_COLOR_RED     0xF800U  /* R=31, G=0,  B=0  */
+#define GFX_COLOR_GREEN   0x07E0U  /* R=0,  G=63, B=0  */
+#define GFX_COLOR_BLUE    0x001FU  /* R=0,  G=0,  B=31 */
+#define GFX_COLOR_YELLOW  0xFFE0U  /* R=31, G=63, B=0  */
+#define GFX_COLOR_CYAN    0x07FFU  /* R=0,  G=63, B=31 */
+#define GFX_COLOR_ORANGE  0xFD20U
+
+/* 임의 RGB 값을 RGB565로 변환하는 매크로 */
+#define GFX_RGB(r, g, b)  ((uint16_t)(((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)))
+
+/* 사용 예시 */
+/* GFX_RGB(0, 229, 255) → 디지털 시계 청록색 */
+/* GFX_RGB(255, 110, 64) → 온도 주황색 */
+  </code></pre>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> 폰트 테이블을 직접 만들어야 하나요? 96글자 × 16바이트 = 1,536바이트를 손으로 쓸 수는 없는데요.<br>
+    <strong>A.</strong> 실무에서는 직접 만들지 않습니다. 인터넷에 공개된 8×16 ASCII 폰트 테이블을
+    그대로 가져다 씁니다(GNU GPLv2 이하 라이선스 확인 필수). 또는 <strong>FontConverter 도구</strong>
+    (LCD Font Creator, lvgl font generator)를 사용하면 TTF 폰트를 C 배열로 자동 변환해줍니다.
+    한글 표시가 필요하면 UTF-8 기반 유니코드 폰트 렌더링이 필요하며, 이는 lvgl 라이브러리가 표준입니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    "임베디드에서 LCD 폰트를 표현하는 방법을 설명해 보세요."<br>
+    <strong>핵심 답변</strong>: "비트맵 폰트 방식으로, 각 글자를 N×M 픽셀 그리드로 표현하고 C 배열(const uint8_t)에
+    Flash(프래시) 메모리에 저장합니다. 비트 단위로 읽어 전경색(fg)/배경색(bg) 픽셀로 변환하여 그립니다.
+    ROM에 저장하므로 RAM 소비 없이 사용 가능합니다. 스케일 배율이 필요하면 픽셀 하나를 N×N 블록으로 그립니다."
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>8×16 폰트에서 문자 하나가 차지하는 바이트 수는 얼마인가요?</li>
+      <li><code>0x80 >> col</code> 표현식의 의미를 설명할 수 있나요? (col=3일 때 값은?)</li>
+      <li>scale=2로 'A'를 그리면 화면에서 몇 픽셀 크기인가요?</li>
+      <li>RGB565에서 순수한 빨간색을 표현하는 값은 무엇인가요?</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 3절: 화면 레이아웃 설계 및 구현 ===== -->
+<section id="sec-03">
+  <h2>3절. 화면 레이아웃 설계 및 구현</h2>
+
+  <p>
+    세 개의 화면이 있습니다: 디지털 시각(TIME_VIEW), 온습도(SENSOR_VIEW), 스톱워치(STOPWATCH_VIEW).
+    각 화면은 ILI9341의 240×320 픽셀 공간에서 영역을 나눠 배치합니다.
+    레이아웃을 코드에 하드코딩하지 않고, <strong>좌표 상수(Coordinate Constants)</strong>로 집중 관리하면
+    나중에 한 줄만 바꿔도 전체 레이아웃이 조정됩니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기 — 신문 편집</strong><br>
+    신문 1면 편집자는 기사 내용이 정해지기 전에 먼저 "여기는 헤드라인, 여기는 사진, 여기는 본문"이라는
+    레이아웃 격자를 잡습니다. 좌표 상수가 바로 이 격자입니다. 내용(데이터)이 바뀌어도 격자(레이아웃)는 고정됩니다.
+    <br><small>※ 이 비유의 한계: 신문은 픽셀 단위가 아닙니다. LCD에서는 정확한 픽셀 좌표가 필요하며,
+    off-by-one 오류(좌표 1 차이)가 시각적으로 바로 드러납니다.</small>
+  </div>
+
+  <figure>
+    <img src="../../figures/ch13_sec03_layout.svg" alt="화면 3종 좌표 레이아웃 설계도">
+    <figcaption>그림 13-6. 화면 3종 레이아웃 설계도 — ILI9341 240×320px 기준 영역 분할</figcaption>
+  </figure>
+
+  <h3>좌표 상수 정의 전략</h3>
+
+  <p>
+    좌표를 매직 넘버(Magic Number)로 코드에 직접 쓰면 유지보수가 어렵습니다.
+    예를 들어 <code>GFX_DrawString(10, 89, ...)</code>에서 '89'가 무엇을 뜻하는지 3개월 후에는
+    알 수 없습니다. 대신 이름 있는 상수를 사용합니다:
+  </p>
+
+  <pre><code class="language-c">/* ui_service.c — 화면 레이아웃 좌표 상수 (한 곳에 집중 관리) */
+
+/* TIME_VIEW 좌표 */
+#define TV_HEADER_Y    0U    /* 헤더 바 시작 Y */
+#define TV_HEADER_H    24U   /* 헤더 높이 */
+#define TV_TIME_X      10U   /* 시각 표시 X 좌표 */
+#define TV_TIME_Y      89U   /* 시각 표시 Y 좌표 */
+#define TV_TIME_H      68U   /* 시각 표시 영역 높이 */
+#define TV_DATE_Y      177U  /* 날짜 Y */
+#define TV_DATE_H      44U   /* 날짜 영역 높이 */
+#define TV_MINI_TEMP_Y 221U  /* 소형 온도 표시 Y */
+#define TV_MINI_TEMP_H 44U
+
+/* SENSOR_VIEW 좌표 */
+#define SV_TEMP_VAL_Y  80U   /* 온도 값 (대형) Y */
+#define SV_TEMP_H      100U  /* 온도 표시 영역 높이 */
+#define SV_HUMI_VAL_Y  240U  /* 습도 값 Y */
+  </code></pre>
+
+  <h3>TIME_VIEW 전체 렌더링 구현</h3>
+
+  <pre><code class="language-c">/* ui_service.c — TIME_VIEW 전체 렌더링 */
+
+void UI_Render_TimeView_Full(void)
+{
+    char buf[24];
+
+    LOG_D("UI_Render_TimeView_Full");
+
+    /* 시:분:초 (scale=3 → 24×48px 대형) */
+    GFX_FillRect(0, TV_TIME_Y, LCD_WIDTH, TV_TIME_H, TV_BG_COLOR);
+    snprintf(buf, sizeof(buf), "%02d:%02d:%02d",
+             s_time_data.hour, s_time_data.min, s_time_data.sec);
+    GFX_DrawString(TV_TIME_X, TV_TIME_Y + 10U, buf, TV_TIME_COLOR, TV_BG_COLOR, 3);
+
+    /* 날짜 (scale=2 → 16×32px) */
+    GFX_FillRect(0, TV_DATE_Y, LCD_WIDTH, TV_DATE_H, TV_BG_COLOR);
+    snprintf(buf, sizeof(buf), "%04d.%02d.%02d",
+             s_time_data.year, s_time_data.month, s_time_data.day);
+    GFX_DrawString(TV_TIME_X, TV_DATE_Y + 8U, buf, TV_DATE_COLOR, TV_BG_COLOR, 2);
+
+    /* 소형 온도 힌트 (온습도 화면 클릭 유도) */
+    GFX_FillRect(0, TV_MINI_TEMP_Y, LCD_WIDTH, TV_MINI_TEMP_H, GFX_RGB(0, 30, 10));
+    GFX_DrawFloat1(TV_TIME_X, TV_MINI_TEMP_Y + 12U,
+                   s_sensor_data.temp_integer, s_sensor_data.temp_decimal,
+                   TV_MINI_COLOR, GFX_RGB(0, 30, 10), 2);
+}
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    화면을 먼저 <code>GFX_FillRect()</code>로 지운 후 텍스트를 쓰는 패턴은 필수입니다.
+    지우지 않으면 이전 글자 위에 새 글자가 겹쳐 뭉개집니다.
+    특히 자릿수가 바뀌는 경우(예: <code>9</code>에서 <code>10</code>으로 바뀔 때)
+    이전 글자가 일부 남아 화면이 이상하게 보입니다.
+    해결책: 데이터를 그리기 전에 항상 해당 영역을 배경색으로 먼저 채웁니다.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> 매번 영역을 지우면 깜박임(Flickering)이 발생하지 않나요?<br>
+    <strong>A.</strong> 전체 화면을 매 프레임 지우면 깜박임이 발생합니다. 하지만 <strong>부분 갱신</strong>을 사용하면
+    변경된 영역만 지우기 때문에 깜박임이 훨씬 적습니다. 5절에서 이 최적화를 다룹니다.
+    핵심은 "전체 화면 지우기"가 아닌 "변경된 데이터 영역만 지우기"입니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    "임베디드 UI에서 레이아웃 좌표를 관리하는 방법을 설명해 보세요."<br>
+    <strong>핵심 답변</strong>: "좌표 매직 넘버를 코드에 직접 쓰지 않고, 명명된 상수(#define 또는 enum)로
+    한 곳에 집중 관리합니다. 레이아웃 변경 시 상수 값 하나만 바꾸면 전체가 반영됩니다.
+    상수는 파일 상단 또는 별도 헤더에 정의하며, 다른 개발자가 봤을 때 좌표의 의미를 즉시 파악할 수 있게 합니다."
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>ILI9341 화면의 좌상단 좌표는 몇인가요? (X, Y)</li>
+      <li><code>GFX_FillRect(10, 89, 220, 68, COLOR)</code>에서 오른쪽 하단 좌표는 무엇인가요?</li>
+      <li>scale=3으로 '8'자를 그리면 몇 픽셀 크기인가요? (글자 너비×높이)</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 4절: DISPLAY FSM 구현 ===== -->
+<section id="sec-04">
+  <h2>4절. DISPLAY FSM 구현</h2>
+
+  <p>
+    Ch08에서 스톱워치 FSM(IDLE / RUNNING / PAUSED / RESET)을 구현했던 것을 기억하시나요?
+    DISPLAY FSM은 같은 원리입니다. 다만 이번에는 <strong>테이블 기반 FSM(Table-driven FSM)</strong>을
+    사용합니다. 이 방식은 상태 전이 로직을 if-else 체인 대신 구조체 배열(테이블)로 표현하여
+    코드를 더 깔끔하고 확장하기 쉽게 만듭니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기 — 지하철 노선도</strong><br>
+    지하철 노선도는 "현재 역 + 방향" → "다음 역"을 테이블로 정의한 FSM입니다.
+    2호선에서 "잠실 + 강남방향" → "잠실새내"처럼, DISPLAY FSM도
+    "TIME_VIEW + BTN_SHORT" → "SENSOR_VIEW"를 테이블에 명시합니다.
+    새 화면(역)을 추가할 때 테이블에 행 하나만 추가하면 됩니다.
+    <br><small>※ 이 비유의 한계: 지하철은 동시에 여러 열차가 존재하지만, 이 FSM은 단일 활성 상태만 가집니다.</small>
+  </div>
+
+  <h3>테이블 기반 FSM 구현</h3>
+
+  <p>
+    테이블 기반 FSM 코드에서 <code>FSM_ActionFunc_t action</code>은 <strong>함수 포인터(Function Pointer)</strong>입니다.
+    함수 포인터는 함수의 메모리 주소를 저장하는 변수로, 변수에 어떤 함수를 대입하느냐에 따라
+    실행되는 함수가 달라집니다. C언어에서는 <code>typedef void (*FSM_ActionFunc_t)(void);</code>처럼 선언합니다.
+    FSM 테이블에 함수 포인터를 넣으면, 상태 전이 시 if-else 분기 없이 테이블에서 꺼낸 함수를 바로 호출할 수 있습니다.
+    이것이 테이블 기반 FSM의 핵심 기법입니다.
+  </p>
+
+  <pre><code class="language-c">/* ui_service.c — 테이블 기반 FSM 전이 테이블 */
+
+/* 전이 행 구조체 */
+typedef struct {
+    UI_ViewType_t    current_state;
+    UI_EventType_t   event;
+    UI_ViewType_t    next_state;
+    FSM_ActionFunc_t action;        /* 진입 시 실행할 함수 포인터 */
+} FSM_Transition_t;
+
+/* FSM 전이 테이블 — 새 화면 추가 시 여기에 행만 추가 */
+static const FSM_Transition_t s_fsm_table[] = {
+    /* 현재 상태       | 이벤트              | 다음 상태           | 액션 */
+    { UI_VIEW_TIME,      UI_EVENT_BTN_SHORT,  UI_VIEW_SENSOR,      action_enter_sensor_view    },
+    { UI_VIEW_SENSOR,    UI_EVENT_BTN_SHORT,  UI_VIEW_STOPWATCH,   action_enter_stopwatch_view },
+    { UI_VIEW_STOPWATCH, UI_EVENT_BTN_SHORT,  UI_VIEW_TIME,        action_enter_time_view      },
+    { UI_VIEW_TIME,      UI_EVENT_BTN_LONG,   UI_VIEW_TIME,        action_force_refresh        },
+    { UI_VIEW_SENSOR,    UI_EVENT_BTN_LONG,   UI_VIEW_SENSOR,      action_force_refresh        },
+    { UI_VIEW_STOPWATCH, UI_EVENT_BTN_LONG,   UI_VIEW_STOPWATCH,   action_force_refresh        },
+    { UI_VIEW_TIME,      UI_EVENT_TICK,       UI_VIEW_TIME,        action_partial_refresh      },
+    { UI_VIEW_SENSOR,    UI_EVENT_TICK,       UI_VIEW_SENSOR,      action_partial_refresh      },
+    { UI_VIEW_STOPWATCH, UI_EVENT_TICK,       UI_VIEW_STOPWATCH,   action_partial_refresh      },
+};
+
+/* FSM 이벤트 처리 함수 */
+void UI_HandleEvent(UI_EventType_t event)
+{
+    uint8_t i;
+
+    LOG_D("UI_HandleEvent: 상태=%d, 이벤트=%d", s_current_view, event);
+
+    for (i = 0; i < (sizeof(s_fsm_table) / sizeof(s_fsm_table[0])); i++) {
+        if (s_fsm_table[i].current_state == s_current_view &&
+            s_fsm_table[i].event         == event) {
+            s_current_view = s_fsm_table[i].next_state;
+            if (s_fsm_table[i].action != NULL) {
+                s_fsm_table[i].action();
+            }
+            LOG_D("UI_HandleEvent: 전이 완료 → 상태=%d", s_current_view);
+            return;
+        }
+    }
+    LOG_W("UI_HandleEvent: 처리 안 된 이벤트 (상태=%d, 이벤트=%d)",
+          s_current_view, event);
+}
+  </code></pre>
+
+  <h3>FSM 진입 액션 vs 1초 갱신 액션 분리</h3>
+
+  <p>
+    FSM에서 중요한 설계 결정이 있습니다: <strong>배경 화면 지우기는 진입 액션에서 한 번만</strong> 하고,
+    <strong>데이터 갱신은 1초 TICK 이벤트에서 부분 갱신</strong>만 합니다.
+    진입 액션에서 전체 화면을 지우면 레이아웃을 다시 그리고, 이후에는 변경된 숫자 영역만 갱신합니다.
+  </p>
+
+  <pre><code class="language-c">/* ui_service.c — 진입 액션과 부분 갱신 액션 분리 */
+
+/* 진입 액션: 화면 전환 시 한 번만 실행 */
+static void action_enter_time_view(void)
+{
+    LOG_I("FSM: TIME_VIEW 진입");
+    GFX_FillScreen(TV_BG_COLOR);         /* 전체 화면 지우기 */
+    draw_header("  SMART CLOCK  ");       /* 헤더 그리기 */
+    UI_Render_TimeView_Full();            /* 전체 레이아웃 초기화 */
+}
+
+/* 1초 TICK 부분 갱신: 데이터 영역만 갱신 */
+static void action_partial_refresh(void)
+{
+    switch (s_current_view) {
+    case UI_VIEW_TIME:
+        UI_Render_TimeView_Partial();    /* 시:분:초 영역만 갱신 */
+        break;
+    case UI_VIEW_SENSOR:
+        UI_Render_SensorView_Partial(); /* 온도+습도 영역만 갱신 */
+        break;
+    case UI_VIEW_STOPWATCH:
+        UI_Render_StopwatchView_Partial(); /* 경과 시간만 갱신 */
+        break;
+    default:
+        break;
+    }
+}
+  </code></pre>
+
+  <h3>메인 루프에서 버튼 이벤트 처리</h3>
+
+  <pre><code class="language-c">/* main.c (또는 main_app.c) — 이벤트 폴링 패턴 */
+
+/* EXTI 콜백: 버튼 누름 감지 (ISR) */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == GPIO_PIN_13) {     /* NUCLEO User Button: PC13 */
+        g_btn_short_pressed = 1U;      /* ISR에서는 플래그만 설정 */
+    }
+}
+
+/* RTC 1초 알람 콜백 (ISR) */
+void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
+{
+    (void)hrtc;
+    g_rtc_1sec_tick = 1U;
+    UI_RequestRefresh();               /* 갱신 요청 플래그 설정 */
+}
+
+/* 메인 루프 (main.c while(1) 내부) */
+while (1) {
+    /* 버튼 이벤트 처리 */
+    if (g_btn_short_pressed != 0U) {
+        g_btn_short_pressed = 0U;
+        UI_HandleEvent(UI_EVENT_BTN_SHORT);
+    }
+
+    /* RTC 1초 틱 처리 */
+    if (g_rtc_1sec_tick != 0U) {
+        g_rtc_1sec_tick = 0U;
+
+        /* RTC에서 현재 시각 읽기 */
+        RTC_GetTime(&htc_time);
+        UI_TimeData_t td = {
+            .hour = htc_time.hours, .min = htc_time.minutes,
+            .sec  = htc_time.seconds
+        };
+        UI_UpdateTimeData(&td);
+
+        /* FSM에 TICK 이벤트 전달 → 부분 갱신 */
+        UI_HandleEvent(UI_EVENT_TICK);
+    }
+}
+  </code></pre>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    "테이블 기반 FSM과 switch-case 기반 FSM의 차이를 설명해 보세요."<br>
+    <strong>핵심 답변</strong>: "switch-case FSM은 상태와 이벤트 조합마다 case를 추가해야 해서 N개 상태 × M개 이벤트 = N×M개 case가 필요합니다.
+    테이블 기반 FSM은 전이 규칙을 구조체 배열로 표현하여, 새 상태나 이벤트 추가 시 테이블에 행 하나만 추가하면 됩니다.
+    함수 포인터를 통해 액션 함수를 동적으로 호출하므로 코드 확장성과 가독성이 뛰어납니다.
+    임베디드에서는 ROM 사용량이 증가하지만, 유지보수성 향상으로 실무에서 자주 사용됩니다."
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> 배경 지우기를 FSM 진입 액션에서 해야 하나요, 아니면 각 Render 함수 내부에서 해야 하나요?<br>
+    <strong>A.</strong> <strong>FSM 진입 액션에서 전체 화면 지우기, Render 함수에서는 데이터 영역만 지우기</strong>로
+    역할을 분리하는 것이 권장 패턴입니다.
+    비유하면: "방 청소(진입 액션) = 전체 청소", "매일 정리(Partial Render) = 어지른 부분만 정리".
+    진입 시에만 전체 화면을 새로 그리므로, 화면 전환 직후 잠깐의 깜박임은 정상입니다.
+  </aside>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    ISR(인터럽트 서비스 루틴)에서 <code>UI_HandleEvent()</code>를 직접 호출하면 안 됩니다.
+    GFX_DrawString 내부에서 SPI DMA를 사용하는데, DMA 전송 중에 다시 DMA를 시작하면
+    데이터가 오염됩니다. 반드시 <strong>"ISR에서 플래그 설정 → 메인 루프에서 처리"</strong> 패턴을 지키세요.
+    이 패턴을 "Deferred Processing(지연 처리)"이라고 합니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>테이블 기반 FSM과 if-else 기반 FSM의 차이점은 무엇인가요?</li>
+      <li>DISPLAY FSM에 새 화면을 추가하려면 어떤 작업이 필요한가요?</li>
+      <li>ISR에서 <code>UI_HandleEvent()</code>를 직접 호출하면 안 되는 이유는 무엇인가요?</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 5절: 프레임버퍼 DMA 최적화 ===== -->
+<section id="sec-05">
+  <h2>5절. 프레임버퍼 DMA 최적화</h2>
+
+  <p>
+    5절은 <strong>심화 내용</strong>입니다. 4절까지의 내용만으로도 동작하는 UI를 만들 수 있습니다.
+    이 절은 "왜 전체 갱신이 느린가", "어떻게 최적화하는가"를 이해하고 싶은 분을 위한 내용입니다.
+    시간이 부족하다면 이 절을 건너뛰고 실습으로 바로 넘어가도 됩니다.
+  </p>
+
+  <h3>전체 갱신의 문제점 — 숫자로 확인</h3>
+
+  <p>
+    ILI9341 전체 화면(240×320)을 갱신하는 데 얼마나 걸릴까요?
+  </p>
+
+  <ul>
+    <li>전체 픽셀 수: 240 × 320 = 76,800 픽셀</li>
+    <li>픽셀당 2바이트(RGB565): 76,800 × 2 = 153,600 바이트</li>
+    <li>전송 시간 = (153,600 바이트 × 8 비트) ÷ (28,000,000 Hz × 0.7 효율) = 1,228,800 ÷ 19,600,000 ≈ <strong>63ms</strong></li>
+  </ul>
+  <p>
+    <small>※ 효율 0.7을 적용하는 이유: SPI 전송 중 CS 핀 제어, DMA 설정, 커맨드/데이터 전환 등의 오버헤드가 약 30%를 차지합니다.</small>
+  </p>
+
+  <p>
+    즉, 매 1초마다 전체 화면을 갱신하면 63ms 동안 CPU가 DMA 완료를 기다려야 합니다.
+    이 시간에 다른 작업(센서 읽기, 모터 제어)이 지연됩니다.
+    반면 시각 표시 영역만 갱신하면 어떨까요?
+  </p>
+
+  <ul>
+    <li>시각 영역: 220×68 = 14,960 픽셀 → 29,920 바이트 → 약 <strong>13ms</strong></li>
+    <li>절감률: 약 79% 감소!</li>
+  </ul>
+
+  <figure>
+    <img src="../../figures/ch13_sec05_framebuffer.svg" alt="전체 갱신 vs 부분 갱신(Partial Update) DMA 비교">
+    <figcaption>그림 13-7. 전체 갱신(153KB) vs 부분 갱신(~10KB) — DMA 전송량 비교</figcaption>
+  </figure>
+
+  <h3>Dirty Flag(더티 플래그) 패턴</h3>
+
+  <p>
+    부분 갱신의 핵심은 <strong>"변경된 영역이 어디인가"를 추적하는 것</strong>입니다.
+    가장 단순한 방법은 더티 플래그(dirty_flag) 패턴입니다:
+  </p>
+
+  <pre><code class="language-c">/* ui_service.c — Dirty Flag 패턴 */
+
+static uint8_t s_time_dirty = 0;    /* 시각 데이터 변경 여부 */
+static uint8_t s_sensor_dirty = 0;  /* 센서 데이터 변경 여부 */
+
+/* 데이터 업데이트 시 플래그 설정 */
+void UI_UpdateTimeData(const UI_TimeData_t *data)
+{
+    if (data == NULL) return;
+    memcpy(&s_time_data, data, sizeof(UI_TimeData_t));
+    s_time_dirty = 1U;  /* 갱신 필요 표시 */
+    LOG_D("UI_UpdateTimeData: dirty 플래그 설정");
+}
+
+/* 부분 갱신 처리: dirty 플래그가 설정된 영역만 갱신 */
+static void action_partial_refresh(void)
+{
+    switch (s_current_view) {
+    case UI_VIEW_TIME:
+        if (s_time_dirty) {
+            s_time_dirty = 0U;
+            UI_Render_TimeView_Partial();  /* 시각 영역만 DMA 전송 */
+            LOG_D("TIME_VIEW 부분 갱신 완료");
+        }
+        break;
+    case UI_VIEW_SENSOR:
+        if (s_sensor_dirty) {
+            s_sensor_dirty = 0U;
+            UI_Render_SensorView_Partial();
+        }
+        break;
+    default:
+        break;
+    }
+}
+  </code></pre>
+
+  <h3>ILI9341 Address Window — 부분 갱신의 핵심</h3>
+
+  <p>
+    ILI9341은 "주소 윈도우(Address Window)" 기능을 제공합니다.
+    <code>Column Address Set</code>(0x2A)과 <code>Page Address Set</code>(0x2B) 명령으로
+    다음에 쓸 영역의 사각형 범위를 지정합니다. 이 범위를 작게 설정하면
+    해당 영역의 픽셀만 DMA로 전송됩니다.
+  </p>
+
+  <pre><code class="language-c">/* ili9341_driver.c — 주소 윈도우 설정 함수 */
+
+void ILI9341_Set_Address_Window(uint16_t x0, uint16_t y0,
+                                 uint16_t x1, uint16_t y1)
+{
+    uint8_t data[4];
+
+    /* Column Address Set (0x2A): x 범위 설정 */
+    ILI9341_Send_Command(0x2A);
+    data[0] = (uint8_t)(x0 >> 8);
+    data[1] = (uint8_t)(x0 & 0xFF);
+    data[2] = (uint8_t)(x1 >> 8);
+    data[3] = (uint8_t)(x1 & 0xFF);
+    ILI9341_Send_Data(data, 4);
+
+    /* Page Address Set (0x2B): y 범위 설정 */
+    ILI9341_Send_Command(0x2B);
+    data[0] = (uint8_t)(y0 >> 8);
+    data[1] = (uint8_t)(y0 & 0xFF);
+    data[2] = (uint8_t)(y1 >> 8);
+    data[3] = (uint8_t)(y1 & 0xFF);
+    ILI9341_Send_Data(data, 4);
+
+    /* Memory Write 명령 시작 (0x2C) */
+    ILI9341_Send_Command(0x2C);
+
+    /* 이후 SPI DMA로 픽셀 데이터 전송 */
+}
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    <code>ILI9341_Set_Address_Window(x, y, x+w-1, y+h-1)</code>에서 <strong>끝 좌표는 x+w-1, y+h-1</strong>임을
+    주의하세요. 예를 들어 (10, 89) 위치에 220×68 영역을 지정하려면
+    <code>ILI9341_Set_Address_Window(10, 89, 229, 156)</code>이 됩니다.
+    230, 157로 잘못 쓰면 1픽셀씩 어긋난 화면이 나타납니다.
+    이 "off-by-one" 오류는 처음 배울 때 거의 모두가 겪는 것이니 당황하지 마세요.
+    LCD 화면에서 선이 어긋나거나 글자가 삐져나오면 주소 윈도우 계산을 먼저 점검하세요.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>ILI9341 전체 화면 갱신에 필요한 바이트 수는 얼마인가요? (계산 과정 포함)</li>
+      <li>Dirty Flag 패턴에서 플래그를 0으로 초기화하는 시점은 언제인가요? 왜 그 시점인가요?</li>
+      <li><code>Set_Address_Window(0, 89, 239, 156)</code>으로 지정되는 영역의 크기는 몇 픽셀인가요?</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 6절: 전체 아키텍처 다이어그램 갱신 ===== -->
+<section id="sec-06">
+  <h2>6절. 전체 아키텍처 다이어그램 갱신</h2>
+
+  <p>
+    Ch13을 완료하면서 프로젝트 아키텍처가 크게 성장했습니다. Ch03에서 처음 설계한 4계층 구조에
+    이제 GFX Service와 UI Service라는 두 핵심 Service 레이어가 추가되었습니다.
+    전체 시스템 아키텍처 다이어그램을 갱신합니다.
+  </p>
+
+  <h3>v1.3 아키텍처 변경 사항 요약</h3>
+
+  <table style="width:100%; border-collapse:collapse; margin-bottom:1rem;">
+    <thead>
+      <tr style="background:#1A73E8; color:white;">
+        <th style="padding:8px; text-align:left;">컴포넌트</th>
+        <th style="padding:8px; text-align:left;">레이어</th>
+        <th style="padding:8px; text-align:left;">추가된 챕터</th>
+        <th style="padding:8px; text-align:left;">의존 관계</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#E8F5E9;">
+        <td style="padding:8px; border:1px solid #ddd;"><code>ui_service.c</code></td>
+        <td style="padding:8px; border:1px solid #ddd;">Service</td>
+        <td style="padding:8px; border:1px solid #ddd;">Ch13 ★ NEW</td>
+        <td style="padding:8px; border:1px solid #ddd;">gfx_service.h</td>
+      </tr>
+      <tr>
+        <td style="padding:8px; border:1px solid #ddd;"><code>gfx_service.c</code></td>
+        <td style="padding:8px; border:1px solid #ddd;">Service</td>
+        <td style="padding:8px; border:1px solid #ddd;">Ch13 ★ NEW</td>
+        <td style="padding:8px; border:1px solid #ddd;">ili9341_driver.h</td>
+      </tr>
+      <tr style="background:#E8F5E9;">
+        <td style="padding:8px; border:1px solid #ddd;"><code>ili9341_driver.c</code></td>
+        <td style="padding:8px; border:1px solid #ddd;">Driver</td>
+        <td style="padding:8px; border:1px solid #ddd;">Ch12</td>
+        <td style="padding:8px; border:1px solid #ddd;">spi_driver.h</td>
+      </tr>
+      <tr>
+        <td style="padding:8px; border:1px solid #ddd;"><code>spi_driver.c</code></td>
+        <td style="padding:8px; border:1px solid #ddd;">Driver</td>
+        <td style="padding:8px; border:1px solid #ddd;">Ch12</td>
+        <td style="padding:8px; border:1px solid #ddd;">HAL_SPI</td>
+      </tr>
+      <tr style="background:#E8F5E9;">
+        <td style="padding:8px; border:1px solid #ddd;"><code>sensor_service.c</code></td>
+        <td style="padding:8px; border:1px solid #ddd;">Service</td>
+        <td style="padding:8px; border:1px solid #ddd;">Ch11</td>
+        <td style="padding:8px; border:1px solid #ddd;">sht31_driver.h</td>
+      </tr>
+      <tr>
+        <td style="padding:8px; border:1px solid #ddd;"><code>clock_service.c</code></td>
+        <td style="padding:8px; border:1px solid #ddd;">Service</td>
+        <td style="padding:8px; border:1px solid #ddd;">Ch10</td>
+        <td style="padding:8px; border:1px solid #ddd;">rtc_driver.h, stepper_driver.h</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>v1.3 완성 아키텍처</h3>
+
+  <p>
+    아래 다이어그램은 Ch13 완료 후 프로젝트의 전체 레이어 구조를 보여줍니다.
+    이 구조는 Ch17(소프트웨어 아키텍처 심화)에서 최종 검증되고, Ch19에서 완성본이 됩니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch13_sec_final_architecture.svg" alt="v1.3 완성 아키텍처">
+    <figcaption>그림 13-8. v1.3 완성 아키텍처 — App → UI Service → GFX Service → LCD Driver → SPI DMA</figcaption>
+  </figure>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    실제 프로젝트에서 이 다이어그램은 팀 내 공용 문서로 관리됩니다.
+    새 컴포넌트를 추가할 때마다 다이어그램을 최신 상태로 유지하는 것이 팀워크의 기본입니다.
+    "코드는 진실, 다이어그램은 이해를 돕는 도구"라는 원칙을 기억하세요.
+    다이어그램이 실제 코드와 불일치하면 오히려 혼란을 야기합니다.
+  </aside>
+</section>
+
+<!-- ===== 실습: 3-화면 전환 시스템 완성 ===== -->
+<section id="lab">
+  <h2>실습: 스마트 시계 UI 3화면 전환 시스템 완성</h2>
+  <p><strong>목표</strong>: GFX Service와 UI Service를 통합하여 ILI9341 LCD에 3종 화면(시각/온습도/스톱워치)을 구현하고, 버튼으로 화면을 전환합니다.</p>
+  <p><strong>환경</strong>: STM32CubeIDE, NUCLEO-F411RE, ILI9341 TFT LCD, SHT31 모듈 (Ch11, Ch12 회로 유지)</p>
+
+  <h3>Step 1. 파일 추가 및 CubeMX 확인</h3>
+  <p>
+    Ch12에서 생성한 STM32 프로젝트에 파일을 추가합니다.
+    CubeMX 설정은 Ch12에서 완료했으므로 변경 사항이 없습니다.
+  </p>
+  <ol>
+    <li>프로젝트 루트 → <code>Core/Src/</code> 폴더에 <code>gfx_service.c</code>, <code>ui_service.c</code> 복사</li>
+    <li>프로젝트 루트 → <code>Core/Inc/</code> 폴더에 <code>gfx_service.h</code>, <code>ui_service.h</code> 복사</li>
+    <li>STM32CubeIDE에서 <strong>Refresh</strong>하여 파일 인식 확인</li>
+  </ol>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> <code>UI_Init()</code>을 호출하면 <code>ILI9341_Init()</code>도 자동으로 호출되나요?
+    따로 호출해야 하나요?<br>
+    <strong>A.</strong> 자동으로 호출됩니다. 호출 체인은 다음과 같습니다:
+    <code>UI_Init()</code> → <code>GFX_Init()</code> → <code>ILI9341_Init()</code>.
+    레이어별 초기화가 연쇄적으로 수행되므로, main.c에서는 <code>UI_Init()</code> 하나만 호출하면 됩니다.
+    Ch12에서 사용하던 <code>ILI9341_Init()</code> 직접 호출은 제거하세요.
+  </aside>
+
+  <h3>Step 2. main.c에 UI 통합</h3>
+  <pre><code class="language-c">/* main.c — Ch13 UI 통합 */
+
+#include "ui_service.h"
+#include "rtc_driver.h"    /* Ch09 */
+#include "sensor_service.h" /* Ch11 */
+
+/* 이벤트 플래그 (ISR에서 설정, 메인 루프에서 처리) */
+volatile uint8_t g_btn_short = 0;
+volatile uint8_t g_rtc_tick  = 0;
+
+int main(void)
+{
+    HAL_Init();
+    SystemClock_Config();
+    /* CubeMX 초기화 코드 ... */
+
+    LOG_I("시스템 시작 — v1.3");
+
+    /* UI Service 초기화 (GFX + LCD 포함) */
+    UI_Init();
+
+    LOG_I("UI 초기화 완료 — 메인 루프 시작");
+
+    while (1) {
+        /* 버튼 이벤트 처리 */
+        if (g_btn_short != 0U) {
+            g_btn_short = 0U;
+            LOG_I("BTN_SHORT → 화면 전환");
+            UI_HandleEvent(UI_EVENT_BTN_SHORT);
+        }
+
+        /* RTC 1초 틱 처리 */
+        if (g_rtc_tick != 0U) {
+            g_rtc_tick = 0U;
+
+            RTC_TimeTypeDef sTime;
+            RTC_DateTypeDef sDate;
+            HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+            HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+
+            UI_TimeData_t td = {
+                .hour    = sTime.Hours,
+                .min     = sTime.Minutes,
+                .sec     = sTime.Seconds,
+                .day     = sDate.Date,
+                .month   = sDate.Month,
+                .year    = (uint16_t)(2000U + sDate.Year),
+                .weekday = sDate.WeekDay
+            };
+            UI_UpdateTimeData(&td);
+
+            /* 센서 데이터 업데이트 (2초마다) */
+            static uint8_t sensor_skip = 0;
+            sensor_skip++;
+            if (sensor_skip >= 2U) {
+                sensor_skip = 0U;
+                float temp, humi;
+                if (SHT31_Read(&temp, &humi) == HAL_OK) {
+                    UI_SensorData_t sd = {
+                        .temp_integer = (int32_t)temp,
+                        .temp_decimal = (int32_t)((temp - (int32_t)temp) * 10.0f),
+                        .humi_integer = (int32_t)humi,
+                        .humi_decimal = (int32_t)((humi - (int32_t)humi) * 10.0f)
+                    };
+                    UI_UpdateSensorData(&sd);
+                    LOG_D("센서 갱신: %ld.%ld°C %ld.%ld%%RH",
+                          sd.temp_integer, sd.temp_decimal,
+                          sd.humi_integer, sd.humi_decimal);
+                }
+            }
+
+            /* FSM에 TICK 이벤트 → 부분 갱신 */
+            UI_HandleEvent(UI_EVENT_TICK);
+        }
+    }
+}
+
+/* EXTI 콜백 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == GPIO_PIN_13) {
+        g_btn_short = 1U;
+    }
+}
+
+/* RTC 알람 콜백 (1초마다) */
+void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
+{
+    (void)hrtc;
+    g_rtc_tick = 1U;
+
+    /* 알람 재설정: 매 1초마다 반복 */
+    RTC_AlarmTypeDef sAlarm;
+    HAL_RTC_GetAlarm(hrtc, &sAlarm, RTC_ALARM_A, RTC_FORMAT_BIN);
+    sAlarm.AlarmTime.Seconds = (sAlarm.AlarmTime.Seconds + 1U) % 60U;
+    HAL_RTC_SetAlarm_IT(hrtc, &sAlarm, RTC_FORMAT_BIN);
+}
+  </code></pre>
+
+  <h3>Step 3. 동작 확인</h3>
+  <p><strong>예상 결과</strong>:</p>
+  <ol>
+    <li>LCD에 검은 배경의 "SMART CLOCK" 헤더와 현재 시각(HH:MM:SS)이 청록색으로 표시됩니다.</li>
+    <li>User Button(B1)을 누를 때마다 화면이 TIME_VIEW → SENSOR_VIEW → STOPWATCH_VIEW → TIME_VIEW 순으로 전환됩니다.</li>
+    <li>시각 화면에서 1초마다 초(seconds)만 갱신되며 깜박임이 거의 없습니다.</li>
+    <li>온습도 화면에서 온도와 습도가 2초마다 갱신됩니다.</li>
+  </ol>
+  <p><strong>로그 출력 예시</strong>:</p>
+  <pre><code>[INFO ] 시스템 시작 — v1.3
+[INFO ] GFX_Init: 완료 (LCD 240x320, RGB565)
+[INFO ] UI_Init: 완료 — TIME_VIEW 표시 중
+[DEBUG] UI_Render_TimeView_Full
+[INFO ] BTN_SHORT → 화면 전환
+[INFO ] FSM: SENSOR_VIEW 진입
+[DEBUG] UI_UpdateSensorData: 23.4°C 58.3%
+[DEBUG] UI_Render_SensorView_Partial
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실습이 안 될 때 — 흔한 실수 체크리스트</strong><br>
+    <strong>1. 화면이 아무것도 표시되지 않는 경우</strong><br>
+    → Ch12에서 ILI9341_Init()이 정상 동작했는지 확인. <code>LOG_I</code> 출력으로 UI_Init 단계별 진행 추적.<br>
+    <br>
+    <strong>2. 글자가 뭉개지거나 이전 글자가 남아있는 경우</strong><br>
+    → <code>GFX_FillRect()</code>로 배경을 먼저 지우지 않은 것. Render 함수에서 FillRect 호출 확인.<br>
+    <br>
+    <strong>3. 버튼을 눌러도 화면이 전환되지 않는 경우</strong><br>
+    → <code>HAL_GPIO_EXTI_Callback</code>에서 <code>GPIO_PIN_13</code> 조건 확인. NUCLEO-F411RE User Button은 PC13.<br>
+    <br>
+    <strong>4. 화면이 일부 잘리거나 선이 어긋나는 경우</strong><br>
+    → <code>ILI9341_Set_Address_Window</code>의 끝 좌표가 <code>x+w-1, y+h-1</code>인지 확인. off-by-one 오류입니다.
+  </aside>
+</section>
+
+<!-- ===== 핵심 정리 ===== -->
+<section class="chapter-summary-section">
+  <h2>핵심 정리</h2>
+  <ul>
+    <li><strong>GFX 추상화 레이어</strong>: LCD Driver를 직접 호출하지 않고 GFX Service를 통해 하드웨어 독립적인 그래픽 작업을 수행합니다. LCD 교체 시 <code>gfx_service.c</code>만 수정하면 됩니다.</li>
+    <li><strong>비트맵 폰트 렌더링</strong>: 8×16 픽셀 그리드에서 각 바이트의 비트를 전경색/배경색 픽셀로 변환하여 그립니다. MSB가 왼쪽 픽셀이며, scale 파라미터로 확대할 수 있습니다.</li>
+    <li><strong>레이아웃 상수 관리</strong>: 좌표 값을 매직 넘버로 쓰지 않고 이름 있는 상수(<code>#define</code>)로 집중 관리하면 레이아웃 변경이 쉬워집니다.</li>
+    <li><strong>테이블 기반 FSM</strong>: 화면 전이 로직을 구조체 배열로 표현하여 새 화면 추가 시 테이블에 행만 추가하면 됩니다. 진입 액션과 부분 갱신 액션을 명확히 분리합니다.</li>
+    <li><strong>부분 갱신(Partial Update)</strong>: 전체 화면 대신 변경된 영역만 DMA로 전송하여 갱신 시간을 최대 90% 절감합니다. Dirty Flag 패턴으로 변경 여부를 추적합니다.</li>
+    <li><strong>ISR-safe 패턴</strong>: ISR에서는 플래그만 설정하고 실제 UI 작업은 메인 루프에서 처리합니다. DMA 충돌을 방지하는 필수 패턴입니다.</li>
+  </ul>
+
+  <h3>아키텍처 업데이트</h3>
+  <p>이 챕터 완료 후 전체 아키텍처에 <code>gfx_service.c</code>와 <code>ui_service.c</code>가 추가되었습니다.
+  Service 레이어가 완성되어 App → Service → Driver → HAL 4계층 구조가 완전히 채워졌습니다.</p>
+  <figure>
+    <img src="../../figures/ch13_sec_final_architecture.svg" alt="v1.3 완성 아키텍처">
+    <figcaption>그림 13-최종. v1.3 완성 아키텍처 — GFX Service · UI Service 추가로 Service 레이어 완성</figcaption>
+  </figure>
+</section>
+
+<!-- ===== 연습문제 ===== -->
+<section class="exercises">
+  <h2>연습문제</h2>
+
+  <div class="exercise">
+    <span class="level">기억</span>
+    <strong>1.</strong>
+    RGB565 색상 포맷에서 빨강(R), 초록(G), 파랑(B) 각각 몇 비트를 사용하나요?
+    초록이 빨강, 파랑보다 1비트 더 많은 이유는 무엇인가요?
+  </div>
+
+  <div class="exercise">
+    <span class="level">이해</span>
+    <strong>2.</strong>
+    테이블 기반 FSM과 if-else 체인 FSM의 차이를 비교하세요. 새 화면을 추가할 때 각 방식에서 수정해야 할 코드의 위치와 양을 비교하여 테이블 기반의 장점을 설명하세요.
+  </div>
+
+  <div class="exercise">
+    <span class="level">적용</span>
+    <strong>3.</strong>
+    현재 TIME_VIEW에는 날짜(연월일)만 표시됩니다. 여기에 <strong>요일(월/화/수/목/금/토/일)</strong>을
+    한국어로 추가하는 코드를 작성하세요. <code>UI_Render_TimeView_Full()</code>과
+    <code>UI_Render_TimeView_Partial()</code>을 모두 수정해야 합니다.
+    (힌트: <code>s_time_data.weekday</code>를 활용하세요)
+  </div>
+
+  <div class="exercise">
+    <span class="level">분석</span>
+    <strong>4.</strong>
+    SHT31 센서 읽기 실패 시(HAL_OK가 아닌 경우) SENSOR_VIEW에 어떤 표시를 보여줘야 할까요?
+    현재 코드의 문제점을 찾고, 에러 상태를 <code>UI_SensorData_t</code>에 추가하여 화면에
+    "--.-°C"처럼 표시하도록 개선안을 제시하고 구현하세요.
+  </div>
+</section>
+
+<!-- ===== 다음 챕터 예고 ===== -->
+<section class="next-chapter">
+  <h2>다음 챕터 예고</h2>
+  <p>
+    현재 프로젝트는 <strong>v1.3</strong> 상태로,
+    ILI9341 LCD에 디지털 시각 · 온습도 · 스톱워치 세 화면이 동작하고 있습니다.
+    하지만 SHT31 센서 읽기는 여전히 I2C 폴링 방식이라 CPU를 블로킹합니다.
+  </p>
+  <p>
+    다음 <strong>Ch14. I2C DMA 심화</strong>에서는
+    SHT31 센서 읽기를 DMA 비동기 방식으로 전환하여 CPU 부하를 줄이고,
+    UART DMA · SPI DMA · I2C DMA 세 가지 DMA가 동시에 운용되는 아키텍처를 완성하여
+    프로젝트를 <strong>v1.4</strong>로 업그레이드합니다.
+  </p>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+</body>
+</html>

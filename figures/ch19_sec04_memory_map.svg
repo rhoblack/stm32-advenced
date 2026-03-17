@@ -1,0 +1,71 @@
+<svg viewBox="0 0 700 500" xmlns="http://www.w3.org/2000/svg" font-family="'Noto Sans KR', sans-serif" font-size="13">
+  <!-- Title -->
+  <text x="350" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#212121">STM32F411RE 메모리 맵 &amp; .map 파일 분석</text>
+
+  <!-- FLASH Memory -->
+  <rect x="60" y="50" width="220" height="350" rx="6" fill="#E3F2FD" stroke="#1A73E8" stroke-width="2"/>
+  <text x="170" y="74" text-anchor="middle" font-weight="bold" fill="#1A73E8">FLASH (512 KB)</text>
+  <text x="170" y="92" text-anchor="middle" font-size="11" fill="#555">0x0800_0000 ~ 0x0807_FFFF</text>
+
+  <!-- FLASH Sections -->
+  <rect x="70" y="100" width="200" height="50" rx="4" fill="#1A73E8" fill-opacity="0.7"/>
+  <text x="170" y="120" text-anchor="middle" fill="white" font-size="12">.text (코드)</text>
+  <text x="170" y="138" text-anchor="middle" fill="white" font-size="11">함수 바이트코드</text>
+
+  <rect x="70" y="158" width="200" height="40" rx="4" fill="#42A5F5" fill-opacity="0.7"/>
+  <text x="170" y="183" text-anchor="middle" fill="white" font-size="12">.rodata (읽기전용 데이터)</text>
+
+  <rect x="70" y="206" width="200" height="35" rx="4" fill="#90CAF9" fill-opacity="0.7"/>
+  <text x="170" y="229" text-anchor="middle" fill="#1A237E" font-size="12">.data (초기값 원본)</text>
+
+  <rect x="70" y="249" width="200" height="30" rx="4" fill="#BBDEFB"/>
+  <text x="170" y="270" text-anchor="middle" fill="#1565C0" font-size="11">벡터 테이블 (0x0800_0000)</text>
+
+  <rect x="70" y="287" width="200" height="100" rx="4" fill="#E8F5E9" stroke="#34A853" stroke-dasharray="4"/>
+  <text x="170" y="310" text-anchor="middle" fill="#2E7D32" font-size="12">사용 가능 (Free)</text>
+  <text x="170" y="330" text-anchor="middle" fill="#388E3C" font-size="11">최적화 여지</text>
+  <text x="170" y="350" text-anchor="middle" fill="#388E3C" font-size="11">static inline 활용</text>
+  <text x="170" y="370" text-anchor="middle" fill="#388E3C" font-size="11">불필요 함수 제거</text>
+
+  <!-- RAM Memory -->
+  <rect x="420" y="50" width="220" height="350" rx="6" fill="#FFF3E0" stroke="#FBBC04" stroke-width="2"/>
+  <text x="530" y="74" text-anchor="middle" font-weight="bold" fill="#E37400">SRAM (128 KB)</text>
+  <text x="530" y="92" text-anchor="middle" font-size="11" fill="#555">0x2000_0000 ~ 0x2001_FFFF</text>
+
+  <!-- RAM Sections -->
+  <rect x="430" y="100" width="200" height="45" rx="4" fill="#EA4335" fill-opacity="0.7"/>
+  <text x="530" y="120" text-anchor="middle" fill="white" font-size="12">Stack (스택)</text>
+  <text x="530" y="138" text-anchor="middle" fill="white" font-size="11">기본 1024 B → 권장 분석</text>
+
+  <rect x="430" y="153" width="200" height="35" rx="4" fill="#FF7043" fill-opacity="0.7"/>
+  <text x="530" y="176" text-anchor="middle" fill="white" font-size="12">Heap (힙) — 임베디드 비권장</text>
+
+  <rect x="430" y="196" width="200" height="40" rx="4" fill="#FBBC04" fill-opacity="0.7"/>
+  <text x="530" y="214" text-anchor="middle" fill="#333" font-size="12">.bss (0으로 초기화)</text>
+  <text x="530" y="230" text-anchor="middle" fill="#555" font-size="11">전역/static 미초기화 변수</text>
+
+  <rect x="430" y="244" width="200" height="40" rx="4" fill="#FFE082"/>
+  <text x="530" y="262" text-anchor="middle" fill="#E37400" font-size="12">.data (초기화된 전역변수)</text>
+  <text x="530" y="278" text-anchor="middle" fill="#BF360C" font-size="11">FLASH에서 복사됨</text>
+
+  <rect x="430" y="292" width="200" height="95" rx="4" fill="#E8F5E9" stroke="#34A853" stroke-dasharray="4"/>
+  <text x="530" y="315" text-anchor="middle" fill="#2E7D32" font-size="12">사용 가능 (Free)</text>
+  <text x="530" y="335" text-anchor="middle" fill="#388E3C" font-size="11">static 변수로 스택 절약</text>
+  <text x="530" y="355" text-anchor="middle" fill="#388E3C" font-size="11">링버퍼/버퍼 크기 최적화</text>
+
+  <!-- Connection arrow -->
+  <line x1="290" y1="220" x2="420" y2="260" stroke="#999" stroke-width="1.5" stroke-dasharray="6" marker-end="url(#arrow)"/>
+  <text x="355" y="235" text-anchor="middle" font-size="11" fill="#666">부팅 시 복사</text>
+
+  <!-- .map 파일 영역 -->
+  <rect x="60" y="415" width="580" height="65" rx="6" fill="#F3E5F5" stroke="#7B1FA2" stroke-width="1.5"/>
+  <text x="350" y="436" text-anchor="middle" font-weight="bold" fill="#4A148C">.map 파일 핵심 섹션 분석</text>
+  <text x="90" y="456" font-size="11" fill="#333">Memory Configuration: FLASH origin=0x08000000, length=0x80000 | RAM origin=0x20000000, length=0x20000</text>
+  <text x="90" y="474" font-size="11" fill="#333">Cross Reference: 미사용 함수 심볼 확인 → --gc-sections 링커 옵션으로 제거</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#999"/>
+    </marker>
+  </defs>
+</svg>

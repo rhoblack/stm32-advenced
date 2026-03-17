@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="760" height="420" viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      text { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
+    </style>
+  </defs>
+
+  <rect width="760" height="420" fill="#F8F9FA" rx="8"/>
+  <text x="380" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">화면 레이아웃 설계 — 3종 View (ILI9341: 240×320px)</text>
+
+  <!-- TIME_VIEW -->
+  <text x="130" y="58" text-anchor="middle" font-size="12" font-weight="bold" fill="#1A73E8">TIME_VIEW</text>
+  <!-- LCD 외곽선 -->
+  <rect x="30" y="65" width="200" height="267" rx="4" fill="#111" stroke="#555" stroke-width="2"/>
+  <!-- 상태바 영역 -->
+  <rect x="30" y="65" width="200" height="24" rx="4" fill="#333"/>
+  <text x="130" y="81" text-anchor="middle" font-size="9" fill="#AAA">STATUS BAR (y:0~24)</text>
+  <!-- 시간 영역 (메인) -->
+  <rect x="30" y="89" width="200" height="88" fill="#0D1B2A"/>
+  <text x="130" y="126" text-anchor="middle" font-size="22" font-weight="bold" fill="#00E5FF">12:34:56</text>
+  <text x="130" y="152" text-anchor="middle" font-size="11" fill="#B0BEC5">HH:MM:SS  (y:89~177)</text>
+  <!-- 날짜 영역 -->
+  <rect x="30" y="177" width="200" height="44" fill="#0D1B2A"/>
+  <line x1="30" y1="177" x2="230" y2="177" stroke="#333" stroke-width="1"/>
+  <text x="130" y="201" text-anchor="middle" font-size="13" fill="#B0BEC5">2026.03.17 TUE</text>
+  <text x="130" y="217" text-anchor="middle" font-size="9" fill="#666">(y:177~221)</text>
+  <!-- 온도 힌트 -->
+  <rect x="30" y="221" width="200" height="44" fill="#0D2B0D"/>
+  <text x="130" y="246" text-anchor="middle" font-size="13" fill="#69F0AE">23.4°C  58%RH</text>
+  <text x="130" y="260" text-anchor="middle" font-size="9" fill="#666">(y:221~265)</text>
+  <!-- 하단 버튼 힌트 -->
+  <rect x="30" y="265" width="200" height="67" rx="4" fill="#1A237E"/>
+  <text x="130" y="290" text-anchor="middle" font-size="10" fill="#9FA8DA">BTN: 화면 전환</text>
+  <text x="130" y="308" text-anchor="middle" font-size="9" fill="#666">(y:265~332)</text>
+
+  <!-- 좌표 레이블 -->
+  <text x="240" y="90" font-size="9" fill="#999">y=0</text>
+  <text x="240" y="115" font-size="9" fill="#999">y=24</text>
+  <text x="240" y="178" font-size="9" fill="#999">y=89</text>
+  <text x="240" y="225" font-size="9" fill="#999">y=177</text>
+  <text x="240" y="265" font-size="9" fill="#999">y=221</text>
+  <text x="240" y="305" font-size="9" fill="#999">y=265</text>
+  <text x="240" y="335" font-size="9" fill="#999">y=320</text>
+
+  <!-- SENSOR_VIEW -->
+  <text x="420" y="58" text-anchor="middle" font-size="12" font-weight="bold" fill="#34A853">SENSOR_VIEW</text>
+  <rect x="320" y="65" width="200" height="267" rx="4" fill="#111" stroke="#555" stroke-width="2"/>
+  <rect x="320" y="65" width="200" height="24" rx="4" fill="#333"/>
+  <text x="420" y="81" text-anchor="middle" font-size="9" fill="#AAA">헤더: SENSOR (y:0~24)</text>
+  <!-- 온도 대형 표시 -->
+  <rect x="320" y="89" width="200" height="100" fill="#0A1628"/>
+  <text x="420" y="138" text-anchor="middle" font-size="26" font-weight="bold" fill="#FF6E40">23.4°C</text>
+  <text x="420" y="160" text-anchor="middle" font-size="10" fill="#999">온도 (y:89~189)</text>
+  <!-- 구분선 -->
+  <line x1="320" y1="189" x2="520" y2="189" stroke="#333" stroke-width="1"/>
+  <!-- 습도 표시 -->
+  <rect x="320" y="189" width="200" height="100" fill="#0A1628"/>
+  <text x="420" y="238" text-anchor="middle" font-size="26" font-weight="bold" fill="#40C4FF">58 %RH</text>
+  <text x="420" y="265" text-anchor="middle" font-size="10" fill="#999">습도 (y:189~289)</text>
+  <!-- 하단 -->
+  <rect x="320" y="289" width="200" height="43" rx="4" fill="#1A237E"/>
+  <text x="420" y="313" text-anchor="middle" font-size="10" fill="#9FA8DA">갱신: 2초마다</text>
+
+  <!-- STOPWATCH_VIEW -->
+  <text x="640" y="58" text-anchor="middle" font-size="12" font-weight="bold" fill="#F57F17">STOPWATCH_VIEW</text>
+  <rect x="540" y="65" width="200" height="267" rx="4" fill="#111" stroke="#555" stroke-width="2"/>
+  <rect x="540" y="65" width="200" height="24" rx="4" fill="#333"/>
+  <text x="640" y="81" text-anchor="middle" font-size="9" fill="#AAA">헤더: STOPWATCH (y:0~24)</text>
+  <!-- 경과 시간 대형 -->
+  <rect x="540" y="89" width="200" height="100" fill="#1A0A00"/>
+  <text x="640" y="135" text-anchor="middle" font-size="22" font-weight="bold" fill="#FFD740">00:12.345</text>
+  <text x="640" y="160" text-anchor="middle" font-size="10" fill="#999">MM:SS.ms (y:89~189)</text>
+  <!-- 이전 랩 -->
+  <rect x="540" y="189" width="200" height="80" fill="#1A0A00"/>
+  <text x="640" y="215" text-anchor="middle" font-size="11" fill="#FFCC80">Lap 1: 00:08.120</text>
+  <text x="640" y="233" text-anchor="middle" font-size="11" fill="#FFCC80">Lap 2: 00:12.345</text>
+  <text x="640" y="260" text-anchor="middle" font-size="9" fill="#999">(y:189~269)</text>
+  <!-- 버튼 안내 -->
+  <rect x="540" y="269" width="200" height="63" rx="4" fill="#1A1A00"/>
+  <text x="640" y="293" text-anchor="middle" font-size="10" fill="#FFCC80">SHORT: 랩 / 정지</text>
+  <text x="640" y="311" text-anchor="middle" font-size="10" fill="#FFCC80">LONG: 리셋</text>
+
+  <!-- 범례 -->
+  <rect x="30" y="345" width="700" height="60" rx="4" fill="#E3F2FD"/>
+  <text x="380" y="365" text-anchor="middle" font-size="12" font-weight="bold" fill="#0D47A1">좌표 기준: 좌상단 (0,0), X=가로(0~239), Y=세로(0~319)</text>
+  <text x="380" y="383" text-anchor="middle" font-size="11" fill="#0D47A1">각 영역은 GFX_FillRect()로 배경 먼저 지우고, GFX_DrawString()으로 데이터 갱신</text>
+  <text x="380" y="399" text-anchor="middle" font-size="11" fill="#0D47A1">부분 갱신(Partial Update): 데이터 영역만 지우고 다시 그려서 깜박임 방지</text>
+</svg>

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 460" width="640" height="460" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <rect width="640" height="460" fill="#F8F9FA" rx="8"/>
+  <text x="320" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#1A1A1A">HardFault 스택 프레임 레이아웃</text>
+  <text x="320" y="50" text-anchor="middle" font-size="12" fill="#555">ARM Cortex-M4 예외 발생 시 CPU가 자동 저장하는 8개 레지스터</text>
+
+  <!-- 스택 주소 방향 화살표 -->
+  <text x="30" y="105" font-size="11" fill="#888">높은 주소</text>
+  <line x1="55" y1="112" x2="55" y2="390" stroke="#888" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <text x="30" y="402" font-size="11" fill="#888">낮은 주소</text>
+  <text x="23" y="250" font-size="11" fill="#888" transform="rotate(-90,23,250)">스택 성장 방향 ↓</text>
+
+  <!-- 스택 프레임 박스들 (SP+0 ~ SP+28) -->
+  <!-- SP+28: xPSR -->
+  <rect x="120" y="100" width="300" height="38" fill="#EA4335" stroke="#C62828" stroke-width="1.5"/>
+  <text x="270" y="119" text-anchor="middle" fill="white" font-weight="bold">xPSR</text>
+  <text x="270" y="132" text-anchor="middle" fill="white" font-size="11">프로그램 상태 레지스터 (Thumb 비트 등)</text>
+  <text x="440" y="122" font-size="12" fill="#EA4335" font-weight="bold">SP+0x1C</text>
+
+  <!-- SP+24: PC -->
+  <rect x="120" y="138" width="300" height="38" fill="#EA4335" stroke="#C62828" stroke-width="1.5"/>
+  <text x="270" y="157" text-anchor="middle" fill="white" font-weight="bold">PC (Return Address)</text>
+  <text x="270" y="170" text-anchor="middle" fill="white" font-size="11">예외 발생 시점의 명령어 주소 ← 핵심!</text>
+  <text x="440" y="160" font-size="12" fill="#EA4335" font-weight="bold">SP+0x18</text>
+
+  <!-- SP+20: LR -->
+  <rect x="120" y="176" width="300" height="38" fill="#EA4335" stroke="#C62828" stroke-width="1.5"/>
+  <text x="270" y="195" text-anchor="middle" fill="white" font-weight="bold">LR (Link Register)</text>
+  <text x="270" y="208" text-anchor="middle" fill="white" font-size="11">EXC_RETURN 값 또는 함수 복귀 주소</text>
+  <text x="440" y="198" font-size="12" fill="#EA4335" font-weight="bold">SP+0x14</text>
+
+  <!-- SP+16: R12 -->
+  <rect x="120" y="214" width="300" height="38" fill="#1A73E8" stroke="#1558B0" stroke-width="1.5"/>
+  <text x="270" y="233" text-anchor="middle" fill="white" font-weight="bold">R12 (IP)</text>
+  <text x="270" y="246" text-anchor="middle" fill="white" font-size="11">인트라 프로시저 콜 레지스터</text>
+  <text x="440" y="236" font-size="12" fill="#1A73E8" font-weight="bold">SP+0x10</text>
+
+  <!-- SP+12: R3 -->
+  <rect x="120" y="252" width="300" height="38" fill="#34A853" stroke="#256429" stroke-width="1.5"/>
+  <text x="270" y="271" text-anchor="middle" fill="white" font-weight="bold">R3</text>
+  <text x="270" y="284" text-anchor="middle" fill="white" font-size="11">함수 4번째 인수 / 로컬 변수</text>
+  <text x="440" y="274" font-size="12" fill="#34A853" font-weight="bold">SP+0x0C</text>
+
+  <!-- SP+8: R2 -->
+  <rect x="120" y="290" width="300" height="38" fill="#34A853" stroke="#256429" stroke-width="1.5"/>
+  <text x="270" y="309" text-anchor="middle" fill="white" font-weight="bold">R2</text>
+  <text x="270" y="322" text-anchor="middle" fill="white" font-size="11">함수 3번째 인수 / 로컬 변수</text>
+  <text x="440" y="312" font-size="12" fill="#34A853" font-weight="bold">SP+0x08</text>
+
+  <!-- SP+4: R1 -->
+  <rect x="120" y="328" width="300" height="38" fill="#34A853" stroke="#256429" stroke-width="1.5"/>
+  <text x="270" y="347" text-anchor="middle" fill="white" font-weight="bold">R1</text>
+  <text x="270" y="360" text-anchor="middle" fill="white" font-size="11">함수 2번째 인수 / 로컬 변수</text>
+  <text x="440" y="350" font-size="12" fill="#34A853" font-weight="bold">SP+0x04</text>
+
+  <!-- SP+0: R0 -->
+  <rect x="120" y="366" width="300" height="38" fill="#34A853" stroke="#256429" stroke-width="1.5"/>
+  <text x="270" y="385" text-anchor="middle" fill="white" font-weight="bold">R0 ← SP 위치</text>
+  <text x="270" y="398" text-anchor="middle" fill="white" font-size="11">함수 1번째 인수 / 반환값</text>
+  <text x="440" y="388" font-size="12" fill="#34A853" font-weight="bold">SP+0x00</text>
+
+  <!-- 범례 -->
+  <rect x="120" y="418" width="14" height="14" fill="#EA4335" rx="2"/>
+  <text x="140" y="430" font-size="11" fill="#555">디버깅 핵심 (PC, LR, xPSR)</text>
+  <rect x="320" y="418" width="14" height="14" fill="#1A73E8" rx="2"/>
+  <text x="340" y="430" font-size="11" fill="#555">스크래치 레지스터</text>
+  <rect x="120" y="438" width="14" height="14" fill="#34A853" rx="2"/>
+  <text x="140" y="450" font-size="11" fill="#555">인수/반환값 레지스터</text>
+
+  <defs>
+    <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#888"/>
+    </marker>
+  </defs>
+</svg>

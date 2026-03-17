@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 460" width="820" height="460" font-family="'Noto Sans KR', sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+    <marker id="arr-g" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#34A853"/>
+    </marker>
+  </defs>
+
+  <rect width="820" height="460" fill="#FAFAFA" rx="8"/>
+  <text x="410" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">Repeated Start vs Stop+Start — I2C DMA 우회 패턴</text>
+
+  <!-- ===== 방식 1: Repeated Start (폴링) ===== -->
+  <text x="20" y="58" font-size="13" font-weight="bold" fill="#EA4335">■ Repeated Start 방식 (폴링 HAL 내부 동작 — DMA 미지원)</text>
+
+  <!-- I2C 버스 신호 타임라인 -->
+  <rect x="20" y="65" width="780" height="50" rx="4" fill="#FFF9C4" stroke="#F9A825"/>
+
+  <!-- START -->
+  <rect x="30" y="72" width="38" height="36" rx="3" fill="#E53935"/>
+  <text x="49" y="89" text-anchor="middle" font-size="10" fill="white" font-weight="bold">START</text>
+
+  <!-- ADDR+W -->
+  <rect x="72" y="72" width="58" height="36" rx="3" fill="#1565C0"/>
+  <text x="101" y="89" text-anchor="middle" font-size="10" fill="white">ADDR</text>
+  <text x="101" y="101" text-anchor="middle" font-size="9" fill="white">+WRITE</text>
+
+  <!-- CMD[1] -->
+  <rect x="134" y="72" width="52" height="36" rx="3" fill="#1565C0"/>
+  <text x="160" y="89" text-anchor="middle" font-size="10" fill="white">CMD</text>
+  <text x="160" y="101" text-anchor="middle" font-size="9" fill="white">[HIGH]</text>
+
+  <!-- CMD[2] -->
+  <rect x="190" y="72" width="52" height="36" rx="3" fill="#1565C0"/>
+  <text x="216" y="89" text-anchor="middle" font-size="10" fill="white">CMD</text>
+  <text x="216" y="101" text-anchor="middle" font-size="9" fill="white">[LOW]</text>
+
+  <!-- REPEATED START (강조) -->
+  <rect x="246" y="68" width="68" height="44" rx="3" fill="#E53935" stroke="#B71C1C" stroke-width="2"/>
+  <text x="280" y="86" text-anchor="middle" font-size="10" fill="white" font-weight="bold">REPEATED</text>
+  <text x="280" y="100" text-anchor="middle" font-size="10" fill="white" font-weight="bold">START</text>
+  <text x="280" y="113" text-anchor="middle" font-size="9" fill="#FFCDD2">★ HAL DMA</text>
+  <text x="280" y="123" text-anchor="middle" font-size="9" fill="#FFCDD2">미지원</text>
+
+  <!-- ADDR+R -->
+  <rect x="318" y="72" width="58" height="36" rx="3" fill="#2E7D32"/>
+  <text x="347" y="89" text-anchor="middle" font-size="10" fill="white">ADDR</text>
+  <text x="347" y="101" text-anchor="middle" font-size="9" fill="white">+READ</text>
+
+  <!-- DATA 1~6 -->
+  <rect x="380" y="72" width="40" height="36" rx="3" fill="#2E7D32"/>
+  <text x="400" y="92" text-anchor="middle" font-size="10" fill="white">DATA1</text>
+  <rect x="424" y="72" width="40" height="36" rx="3" fill="#2E7D32"/>
+  <text x="444" y="92" text-anchor="middle" font-size="10" fill="white">DATA2</text>
+  <text x="490" y="92" text-anchor="middle" font-size="14" fill="#2E7D32">···</text>
+  <rect x="510" y="72" width="40" height="36" rx="3" fill="#2E7D32"/>
+  <text x="530" y="92" text-anchor="middle" font-size="10" fill="white">DATA6</text>
+
+  <!-- STOP -->
+  <rect x="554" y="72" width="40" height="36" rx="3" fill="#E53935"/>
+  <text x="574" y="92" text-anchor="middle" font-size="10" fill="white" font-weight="bold">STOP</text>
+
+  <!-- 설명 -->
+  <rect x="600" y="65" width="200" height="50" rx="4" fill="#FFCDD2" stroke="#E53935"/>
+  <text x="700" y="84" text-anchor="middle" font-size="11" fill="#B71C1C">HAL DMA는 이 방식</text>
+  <text x="700" y="100" text-anchor="middle" font-size="11" fill="#B71C1C">불가 → 런타임 오류</text>
+
+  <!-- ===== 방식 2: Stop+Start 우회 (DMA 콜백 체인) ===== -->
+  <text x="20" y="148" font-size="13" font-weight="bold" fill="#34A853">■ Stop+Start 우회 패턴 (HAL DMA 콜백 체인 — SHT31 허용)</text>
+
+  <!-- Phase 1 박스 -->
+  <rect x="20" y="158" width="380" height="110" rx="6" fill="#E8F5E9" stroke="#34A853" stroke-width="2"/>
+  <text x="210" y="176" text-anchor="middle" font-size="12" font-weight="bold" fill="#1B5E20">Phase 1: I2C Transmit_DMA (CMD 전송)</text>
+
+  <!-- Phase 1 신호 -->
+  <rect x="30" y="182" width="38" height="32" rx="3" fill="#E53935"/>
+  <text x="49" y="201" text-anchor="middle" font-size="10" fill="white" font-weight="bold">START</text>
+  <rect x="72" y="182" width="58" height="32" rx="3" fill="#1565C0"/>
+  <text x="101" y="201" text-anchor="middle" font-size="10" fill="white">ADDR+W</text>
+  <rect x="134" y="182" width="52" height="32" rx="3" fill="#1565C0"/>
+  <text x="160" y="201" text-anchor="middle" font-size="10" fill="white">CMD[0]</text>
+  <rect x="190" y="182" width="52" height="32" rx="3" fill="#1565C0"/>
+  <text x="216" y="201" text-anchor="middle" font-size="10" fill="white">CMD[1]</text>
+  <rect x="246" y="182" width="40" height="32" rx="3" fill="#E53935"/>
+  <text x="266" y="201" text-anchor="middle" font-size="10" fill="white">STOP</text>
+
+  <text x="210" y="234" text-anchor="middle" font-size="11" fill="#1B5E20">→ HAL_I2C_Master_Transmit_DMA(hi2c, addr, cmd, 2)</text>
+  <text x="210" y="252" text-anchor="middle" font-size="11" fill="#34A853">완료 → HAL_I2C_MasterTxCpltCallback() 호출</text>
+
+  <!-- 화살표: Phase 1 → Phase 2 -->
+  <rect x="406" y="193" width="12" height="12" rx="0" fill="#FBBC04" transform="rotate(45, 412, 199)"/>
+  <text x="412" y="226" text-anchor="middle" font-size="10" fill="#795500">콜백</text>
+  <text x="412" y="238" text-anchor="middle" font-size="10" fill="#795500">체인</text>
+  <line x1="420" y1="213" x2="435" y2="213" stroke="#FBBC04" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Phase 2 박스 -->
+  <rect x="440" y="158" width="360" height="110" rx="6" fill="#E8F5E9" stroke="#34A853" stroke-width="2"/>
+  <text x="620" y="176" text-anchor="middle" font-size="12" font-weight="bold" fill="#1B5E20">Phase 2: I2C Receive_DMA (데이터 수신)</text>
+
+  <!-- SHT31 내부 대기 표시 -->
+  <rect x="450" y="182" width="120" height="32" rx="3" fill="#F5F5F5" stroke="#BDBDBD" stroke-dasharray="4,3"/>
+  <text x="510" y="197" text-anchor="middle" font-size="9" fill="#888">SHT31 내부 처리</text>
+  <text x="510" y="209" text-anchor="middle" font-size="9" fill="#888">(~15ms 자동 대기)</text>
+
+  <rect x="574" y="182" width="38" height="32" rx="3" fill="#E53935"/>
+  <text x="593" y="201" text-anchor="middle" font-size="10" fill="white">START</text>
+  <rect x="616" y="182" width="58" height="32" rx="3" fill="#2E7D32"/>
+  <text x="645" y="201" text-anchor="middle" font-size="10" fill="white">ADDR+R</text>
+  <text x="694" y="197" text-anchor="middle" font-size="14" fill="#2E7D32">···</text>
+  <rect x="710" y="182" width="40" height="32" rx="3" fill="#2E7D32"/>
+  <text x="730" y="197" text-anchor="middle" font-size="9" fill="white">DATA</text>
+  <text x="730" y="209" text-anchor="middle" font-size="9" fill="white">×6</text>
+  <rect x="754" y="182" width="38" height="32" rx="3" fill="#E53935"/>
+  <text x="773" y="201" text-anchor="middle" font-size="10" fill="white">STOP</text>
+
+  <text x="620" y="234" text-anchor="middle" font-size="11" fill="#1B5E20">→ HAL_I2C_Master_Receive_DMA(hi2c, addr, buf, 6)</text>
+  <text x="620" y="252" text-anchor="middle" font-size="11" fill="#34A853">완료 → HAL_I2C_MasterRxCpltCallback() 호출</text>
+
+  <!-- ===== 콜백 코드 패턴 ===== -->
+  <rect x="20" y="280" width="780" height="150" rx="6" fill="#263238" stroke="#546E7A" stroke-width="1.5"/>
+  <text x="410" y="300" text-anchor="middle" font-size="12" font-weight="bold" fill="#80CBC4">콜백 체인 패턴 구현 (핵심 코드)</text>
+
+  <text x="40" y="320" font-size="11" fill="#80CBC4">/* TX 완료 콜백: SHT31 CMD 전송 완료 → 수신 시작 */</text>
+  <text x="40" y="336" font-size="11" fill="#A5D6A7">void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c) {</text>
+  <text x="60" y="352" font-size="11" fill="#E0E0E0">    if (hi2c-&gt;Instance == I2C1) {</text>
+  <text x="80" y="368" font-size="11" fill="#FFE082">        /* SHT31 측정 완료 대기 후 수신 — osDelay 또는 TIM 사용 */</text>
+  <text x="80" y="384" font-size="11" fill="#A5D6A7">        sht31_state = SHT31_STATE_WAIT_MEAS;  /* FSM 전이 */</text>
+  <text x="80" y="400" font-size="11" fill="#A5D6A7">        HAL_TIM_Base_Start_IT(&amp;htim6);         /* 15ms 타이머 시작 */</text>
+  <text x="60" y="416" font-size="11" fill="#E0E0E0">    }</text>
+  <text x="40" y="428" font-size="11" fill="#A5D6A7">}</text>
+</svg>

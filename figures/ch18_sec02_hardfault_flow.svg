@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 520" width="760" height="520" font-family="'Noto Sans KR', sans-serif" font-size="14">
+  <!-- 배경 -->
+  <rect width="760" height="520" fill="#F8F9FA" rx="8"/>
+  <text x="380" y="32" text-anchor="middle" font-size="16" font-weight="bold" fill="#1A1A1A">HardFault 처리 흐름도</text>
+
+  <!-- 1: 예외 발생 -->
+  <rect x="290" y="55" width="180" height="44" rx="8" fill="#EA4335" stroke="#C62828" stroke-width="1.5"/>
+  <text x="380" y="78" text-anchor="middle" fill="white" font-weight="bold">예외 발생</text>
+  <text x="380" y="93" text-anchor="middle" fill="white" font-size="11">(널포인터 / 스택 오버플로 등)</text>
+
+  <!-- 화살표 1→2 -->
+  <line x1="380" y1="99" x2="380" y2="126" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- 2: CPU 자동 스택 저장 -->
+  <rect x="260" y="127" width="240" height="44" rx="8" fill="#1A73E8" stroke="#1558B0" stroke-width="1.5"/>
+  <text x="380" y="150" text-anchor="middle" fill="white" font-weight="bold">CPU 자동 스택 저장</text>
+  <text x="380" y="165" text-anchor="middle" fill="white" font-size="11">R0,R1,R2,R3,R12,LR,PC,xPSR</text>
+
+  <!-- 화살표 2→3 -->
+  <line x1="380" y1="171" x2="380" y2="198" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- 3: HardFault_Handler (ASM 스텁) -->
+  <rect x="255" y="199" width="250" height="44" rx="8" fill="#34A853" stroke="#256429" stroke-width="1.5"/>
+  <text x="380" y="222" text-anchor="middle" fill="white" font-weight="bold">HardFault_Handler (ASM)</text>
+  <text x="380" y="237" text-anchor="middle" fill="white" font-size="11">PSP/MSP 분기 → 스택 포인터 전달</text>
+
+  <!-- 화살표 3→4 -->
+  <line x1="380" y1="243" x2="380" y2="270" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- 4: hard_fault_handler_c() -->
+  <rect x="245" y="271" width="270" height="44" rx="8" fill="#34A853" stroke="#256429" stroke-width="1.5"/>
+  <text x="380" y="294" text-anchor="middle" fill="white" font-weight="bold">hard_fault_handler_c()</text>
+  <text x="380" y="309" text-anchor="middle" fill="white" font-size="11">C 언어 진입점 — 스택 프레임 수신</text>
+
+  <!-- 분기 화살표: 4 → 5a, 5b -->
+  <line x1="380" y1="315" x2="380" y2="342" stroke="#555" stroke-width="1.5"/>
+  <line x1="380" y1="342" x2="200" y2="342" stroke="#555" stroke-width="1.5"/>
+  <line x1="380" y1="342" x2="560" y2="342" stroke="#555" stroke-width="1.5"/>
+  <line x1="200" y1="342" x2="200" y2="362" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="560" y1="342" x2="560" y2="362" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- 5a: 스택 덤프 출력 -->
+  <rect x="100" y="363" width="200" height="44" rx="8" fill="#FBBC04" stroke="#E37400" stroke-width="1.5"/>
+  <text x="200" y="386" text-anchor="middle" fill="#1A1A1A" font-weight="bold">스택 덤프 출력</text>
+  <text x="200" y="401" text-anchor="middle" fill="#1A1A1A" font-size="11">PC, LR, R0~R3 UART/RTT</text>
+
+  <!-- 5b: CFSR 디코딩 -->
+  <rect x="460" y="363" width="200" height="44" rx="8" fill="#FBBC04" stroke="#E37400" stroke-width="1.5"/>
+  <text x="560" y="386" text-anchor="middle" fill="#1A1A1A" font-weight="bold">CFSR 디코딩</text>
+  <text x="560" y="401" text-anchor="middle" fill="#1A1A1A" font-size="11">MMFSR / BFSR / UFSR 비트 해석</text>
+
+  <!-- 화살표 5a,5b → 6 -->
+  <line x1="200" y1="407" x2="200" y2="440" stroke="#555" stroke-width="1.5"/>
+  <line x1="560" y1="407" x2="560" y2="440" stroke="#555" stroke-width="1.5"/>
+  <line x1="200" y1="440" x2="380" y2="440" stroke="#555" stroke-width="1.5"/>
+  <line x1="560" y1="440" x2="380" y2="440" stroke="#555" stroke-width="1.5"/>
+  <line x1="380" y1="440" x2="380" y2="458" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- 6: 무한 루프 (리셋 대기) -->
+  <rect x="265" y="459" width="230" height="44" rx="8" fill="#555" stroke="#333" stroke-width="1.5"/>
+  <text x="380" y="482" text-anchor="middle" fill="white" font-weight="bold">while(1) 무한 루프</text>
+  <text x="380" y="497" text-anchor="middle" fill="white" font-size="11">디버거 연결 대기 / 수동 리셋</text>
+
+  <!-- 화살표 마커 정의 -->
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <!-- 범례 -->
+  <rect x="20" y="460" width="14" height="14" fill="#EA4335" rx="2"/>
+  <text x="40" y="472" font-size="11" fill="#555">예외/오류</text>
+  <rect x="20" y="480" width="14" height="14" fill="#1A73E8" rx="2"/>
+  <text x="40" y="492" font-size="11" fill="#555">CPU 하드웨어</text>
+  <rect x="100" y="460" width="14" height="14" fill="#34A853" rx="2"/>
+  <text x="120" y="472" font-size="11" fill="#555">소프트웨어 핸들러</text>
+  <rect x="100" y="480" width="14" height="14" fill="#FBBC04" rx="2"/>
+  <text x="120" y="492" font-size="11" fill="#555">진단 출력</text>
+</svg>

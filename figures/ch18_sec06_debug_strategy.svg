@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 480" width="720" height="480" font-family="'Noto Sans KR', sans-serif" font-size="13">
+  <rect width="720" height="480" fill="#F8F9FA" rx="8"/>
+  <text x="360" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#1A1A1A">아키텍처 레이어 경계 버그 격리 전략</text>
+
+  <!-- App Layer -->
+  <rect x="40" y="55" width="640" height="72" rx="8" fill="#EA4335" stroke="#C62828" stroke-width="2"/>
+  <text x="360" y="82" text-anchor="middle" fill="white" font-size="15" font-weight="bold">App Layer</text>
+  <text x="360" y="100" text-anchor="middle" fill="white" font-size="12">cli_app.c / protocol_app.c / ui 로직</text>
+  <text x="360" y="116" text-anchor="middle" fill="white" font-size="11">디버그 포인트: CLI 명령 파싱 결과, 화면 출력 데이터 값</text>
+
+  <!-- 레이어 경계 표시 -->
+  <text x="700" y="130" text-anchor="end" fill="#888" font-size="11">경계 ①</text>
+  <line x1="40" y1="127" x2="680" y2="127" stroke="#888" stroke-width="1" stroke-dasharray="6,4"/>
+
+  <!-- Service Layer -->
+  <rect x="40" y="133" width="640" height="72" rx="8" fill="#FBBC04" stroke="#E37400" stroke-width="2"/>
+  <text x="360" y="160" text-anchor="middle" fill="#1A1A1A" font-size="15" font-weight="bold">Service Layer</text>
+  <text x="360" y="178" text-anchor="middle" fill="#1A1A1A" font-size="12">clock_service.c / sensor_service.c / gfx_service.c</text>
+  <text x="360" y="194" text-anchor="middle" fill="#1A1A1A" font-size="11">디버그 포인트: 서비스 API 반환값, 상태 변수, FSM 상태</text>
+
+  <text x="700" y="208" text-anchor="end" fill="#888" font-size="11">경계 ②</text>
+  <line x1="40" y1="205" x2="680" y2="205" stroke="#888" stroke-width="1" stroke-dasharray="6,4"/>
+
+  <!-- Driver Layer -->
+  <rect x="40" y="211" width="640" height="72" rx="8" fill="#34A853" stroke="#256429" stroke-width="2"/>
+  <text x="360" y="238" text-anchor="middle" fill="white" font-size="15" font-weight="bold">Driver Layer</text>
+  <text x="360" y="256" text-anchor="middle" fill="white" font-size="12">uart_driver.c / spi_driver.c / i2c_driver.c / rtc_driver.c</text>
+  <text x="360" y="272" text-anchor="middle" fill="white" font-size="11">디버그 포인트: HAL 함수 반환 코드(HAL_OK/ERROR), 타임아웃</text>
+
+  <text x="700" y="286" text-anchor="end" fill="#888" font-size="11">경계 ③</text>
+  <line x1="40" y1="283" x2="680" y2="283" stroke="#888" stroke-width="1" stroke-dasharray="6,4"/>
+
+  <!-- HAL Layer -->
+  <rect x="40" y="289" width="640" height="72" rx="8" fill="#1A73E8" stroke="#1558B0" stroke-width="2"/>
+  <text x="360" y="316" text-anchor="middle" fill="white" font-size="15" font-weight="bold">HAL Layer</text>
+  <text x="360" y="334" text-anchor="middle" fill="white" font-size="12">STM32 HAL 라이브러리 (ST 제공)</text>
+  <text x="360" y="350" text-anchor="middle" fill="white" font-size="11">디버그 포인트: 레지스터 직접 확인 (Memory View), DMA LISR/HISR</text>
+
+  <!-- 버그 격리 화살표 + 설명 -->
+  <rect x="50" y="378" width="620" height="86" rx="6" fill="#EEF2FF" stroke="#1A73E8" stroke-width="1.5"/>
+  <text x="80" y="398" font-size="13" fill="#1A1A1A" font-weight="bold">격리 전략: Top-Down 방식</text>
+  <text x="80" y="418" font-size="12" fill="#555">① App Layer에서 증상 확인 (잘못된 출력, 예상 외 동작)</text>
+  <text x="80" y="435" font-size="12" fill="#555">② 경계 ①에서 App→Service 인터페이스 반환값 로그 점검</text>
+  <text x="80" y="452" font-size="12" fill="#555">③ Service 정상 → 경계 ②에서 Service→Driver 점검 → 이하 반복</text>
+
+  <!-- 화살표: 아래서 위로 탐색 방향 -->
+  <line x1="20" y1="361" x2="20" y2="295" stroke="#EA4335" stroke-width="2" marker-end="url(#ba)"/>
+  <text x="5" y="330" font-size="10" fill="#EA4335" transform="rotate(-90,5,330)">버그 탐색 방향</text>
+
+  <defs>
+    <marker id="ba" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#EA4335"/>
+    </marker>
+  </defs>
+</svg>

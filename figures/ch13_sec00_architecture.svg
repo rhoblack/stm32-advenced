@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="760" height="480" viewBox="0 0 760 480" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      text { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
+    </style>
+  </defs>
+
+  <!-- 배경 -->
+  <rect width="760" height="480" fill="#F8F9FA" rx="8"/>
+
+  <!-- 제목 -->
+  <text x="380" y="32" text-anchor="middle" font-size="16" font-weight="bold" fill="#333">v1.3 레이어 아키텍처 — GFX Service &amp; UI Service 추가</text>
+
+  <!-- App 레이어 -->
+  <rect x="40" y="55" width="680" height="60" rx="6" fill="#EA4335" fill-opacity="0.15" stroke="#EA4335" stroke-width="2"/>
+  <text x="60" y="79" font-size="13" font-weight="bold" fill="#EA4335">App 레이어</text>
+  <rect x="200" y="63" width="160" height="44" rx="4" fill="#EA4335" fill-opacity="0.3" stroke="#EA4335" stroke-width="1.5"/>
+  <text x="280" y="90" text-anchor="middle" font-size="12" fill="#B71C1C">main_app.c</text>
+  <rect x="380" y="63" width="160" height="44" rx="4" fill="#EA4335" fill-opacity="0.3" stroke="#EA4335" stroke-width="1.5"/>
+  <text x="460" y="90" text-anchor="middle" font-size="12" fill="#B71C1C">clock_app.c</text>
+
+  <!-- 화살표: App → Service -->
+  <line x1="380" y1="115" x2="380" y2="140" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Service 레이어 (Ch13 강조) -->
+  <rect x="40" y="140" width="680" height="80" rx="6" fill="#FBBC04" fill-opacity="0.2" stroke="#FBBC04" stroke-width="2.5"/>
+  <text x="60" y="164" font-size="13" font-weight="bold" fill="#F57F17">Service 레이어 ← Ch13 신규</text>
+
+  <!-- UI Service (강조) -->
+  <rect x="100" y="150" width="200" height="58" rx="4" fill="#FBBC04" fill-opacity="0.5" stroke="#F57F17" stroke-width="2"/>
+  <text x="200" y="172" text-anchor="middle" font-size="13" font-weight="bold" fill="#E65100">ui_service.c</text>
+  <text x="200" y="190" text-anchor="middle" font-size="10" fill="#E65100">TIME/SENSOR/STOPWATCH View</text>
+  <text x="200" y="203" text-anchor="middle" font-size="10" fill="#E65100">DISPLAY FSM 포함</text>
+
+  <!-- GFX Service (강조) -->
+  <rect x="320" y="150" width="200" height="58" rx="4" fill="#FBBC04" fill-opacity="0.5" stroke="#F57F17" stroke-width="2"/>
+  <text x="420" y="172" text-anchor="middle" font-size="13" font-weight="bold" fill="#E65100">gfx_service.c</text>
+  <text x="420" y="190" text-anchor="middle" font-size="10" fill="#E65100">도형/폰트 렌더링 추상화</text>
+  <text x="420" y="203" text-anchor="middle" font-size="10" fill="#E65100">색상 팔레트, 좌표 API</text>
+
+  <!-- Sensor/Clock Service (기존) -->
+  <rect x="540" y="150" width="160" height="58" rx="4" fill="#FBBC04" fill-opacity="0.2" stroke="#F9A825" stroke-width="1.5"/>
+  <text x="620" y="175" text-anchor="middle" font-size="11" fill="#7B6000">sensor_service.c</text>
+  <text x="620" y="193" text-anchor="middle" font-size="11" fill="#7B6000">clock_service.c</text>
+
+  <!-- 화살표: Service → Driver -->
+  <line x1="380" y1="220" x2="380" y2="250" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Driver 레이어 -->
+  <rect x="40" y="250" width="680" height="80" rx="6" fill="#34A853" fill-opacity="0.15" stroke="#34A853" stroke-width="2"/>
+  <text x="60" y="274" font-size="13" font-weight="bold" fill="#1B5E20">Driver 레이어</text>
+  <rect x="80" y="260" width="140" height="58" rx="4" fill="#34A853" fill-opacity="0.25" stroke="#34A853" stroke-width="1.5"/>
+  <text x="150" y="295" text-anchor="middle" font-size="12" fill="#1B5E20">ili9341_driver.c</text>
+  <rect x="235" y="260" width="140" height="58" rx="4" fill="#34A853" fill-opacity="0.25" stroke="#34A853" stroke-width="1.5"/>
+  <text x="305" y="295" text-anchor="middle" font-size="12" fill="#1B5E20">spi_driver.c</text>
+  <rect x="390" y="260" width="140" height="58" rx="4" fill="#34A853" fill-opacity="0.25" stroke="#34A853" stroke-width="1.5"/>
+  <text x="460" y="295" text-anchor="middle" font-size="12" fill="#1B5E20">sht31_driver.c</text>
+  <rect x="545" y="260" width="140" height="58" rx="4" fill="#34A853" fill-opacity="0.25" stroke="#34A853" stroke-width="1.5"/>
+  <text x="615" y="295" text-anchor="middle" font-size="12" fill="#1B5E20">rtc_driver.c</text>
+
+  <!-- 화살표: Driver → HAL -->
+  <line x1="380" y1="330" x2="380" y2="360" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- HAL 레이어 -->
+  <rect x="40" y="360" width="680" height="60" rx="6" fill="#1A73E8" fill-opacity="0.15" stroke="#1A73E8" stroke-width="2"/>
+  <text x="60" y="384" font-size="13" font-weight="bold" fill="#0D47A1">HAL 레이어 (STM32 HAL Library)</text>
+  <text x="400" y="398" text-anchor="middle" font-size="12" fill="#0D47A1">HAL_SPI_*, HAL_I2C_*, HAL_RTC_*, HAL_DMA_*</text>
+
+  <!-- 화살표: HAL → 하드웨어 -->
+  <line x1="380" y1="420" x2="380" y2="450" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- 하드웨어 -->
+  <rect x="40" y="450" width="680" height="22" rx="4" fill="#607D8B" fill-opacity="0.2" stroke="#607D8B" stroke-width="1.5"/>
+  <text x="380" y="466" text-anchor="middle" font-size="12" fill="#37474F">하드웨어: ILI9341 LCD (SPI) / SHT31 (I2C) / RTC / 스텝모터</text>
+
+  <!-- 화살표 마커 -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+  </defs>
+
+  <!-- Ch13 강조 표시 -->
+  <rect x="88" y="146" width="436" height="86" rx="6" fill="none" stroke="#FF6F00" stroke-width="3" stroke-dasharray="8,4"/>
+  <text x="310" y="146" text-anchor="middle" font-size="11" fill="#FF6F00" dy="-4">★ Ch13에서 추가되는 레이어</text>
+</svg>

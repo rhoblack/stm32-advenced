@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="720" height="340" viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" font-family="'Noto Sans KR', Arial, sans-serif">
+  <rect width="720" height="340" fill="#F8F9FA" rx="8"/>
+  <text x="360" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">strtok_r() 토큰화 동작 원리</text>
+
+  <!-- 입력 문자열 -->
+  <text x="30" y="60" font-size="13" font-weight="bold" fill="#333">입력 라인 버퍼 (line_buf):</text>
+  <rect x="30" y="70" width="660" height="40" fill="white" stroke="#333" stroke-width="1.5" rx="4"/>
+
+  <!-- 문자 셀 -->
+  <text x="44" y="96" font-size="14" font-family="monospace" fill="#EA4335" font-weight="bold">t</text>
+  <text x="60" y="96" font-size="14" font-family="monospace" fill="#EA4335" font-weight="bold">i</text>
+  <text x="76" y="96" font-size="14" font-family="monospace" fill="#EA4335" font-weight="bold">m</text>
+  <text x="92" y="96" font-size="14" font-family="monospace" fill="#EA4335" font-weight="bold">e</text>
+  <text x="108" y="96" font-size="14" font-family="monospace" fill="#888">·</text>
+  <text x="124" y="96" font-size="14" font-family="monospace" fill="#1A73E8" font-weight="bold">s</text>
+  <text x="140" y="96" font-size="14" font-family="monospace" fill="#1A73E8" font-weight="bold">e</text>
+  <text x="156" y="96" font-size="14" font-family="monospace" fill="#1A73E8" font-weight="bold">t</text>
+  <text x="172" y="96" font-size="14" font-family="monospace" fill="#888">·</text>
+  <text x="188" y="96" font-size="14" font-family="monospace" fill="#34A853" font-weight="bold">0</text>
+  <text x="204" y="96" font-size="14" font-family="monospace" fill="#34A853" font-weight="bold">9</text>
+  <text x="220" y="96" font-size="14" font-family="monospace" fill="#34A853" font-weight="bold">:</text>
+  <text x="236" y="96" font-size="14" font-family="monospace" fill="#34A853" font-weight="bold">3</text>
+  <text x="252" y="96" font-size="14" font-family="monospace" fill="#34A853" font-weight="bold">0</text>
+  <text x="268" y="96" font-size="14" font-family="monospace" fill="#34A853" font-weight="bold">:</text>
+  <text x="284" y="96" font-size="14" font-family="monospace" fill="#34A853" font-weight="bold">0</text>
+  <text x="300" y="96" font-size="14" font-family="monospace" fill="#34A853" font-weight="bold">0</text>
+  <text x="316" y="96" font-size="14" font-family="monospace" fill="#555">\0</text>
+
+  <!-- strtok_r 1차 호출 -->
+  <text x="30" y="140" font-size="12" font-weight="bold" fill="#333">1차 호출: strtok_r(line_buf, " ", &amp;saveptr)</text>
+  <rect x="30" y="148" width="60" height="28" fill="#EA4335" rx="4" opacity="0.8"/>
+  <text x="60" y="167" text-anchor="middle" font-size="13" font-family="monospace" fill="white" font-weight="bold">time</text>
+  <text x="100" y="165" font-size="12" fill="#333">← argv[0] = "time" (명령어)</text>
+
+  <!-- strtok_r 2차 호출 -->
+  <text x="30" y="200" font-size="12" font-weight="bold" fill="#333">2차 호출: strtok_r(NULL, " ", &amp;saveptr)</text>
+  <rect x="30" y="208" width="42" height="28" fill="#1A73E8" rx="4" opacity="0.8"/>
+  <text x="51" y="227" text-anchor="middle" font-size="13" font-family="monospace" fill="white" font-weight="bold">set</text>
+  <text x="82" y="225" font-size="12" fill="#333">← argv[1] = "set" (서브커맨드)</text>
+
+  <!-- strtok_r 3차 호출 -->
+  <text x="30" y="258" font-size="12" font-weight="bold" fill="#333">3차 호출: strtok_r(NULL, " ", &amp;saveptr)</text>
+  <rect x="30" y="266" width="90" height="28" fill="#34A853" rx="4" opacity="0.8"/>
+  <text x="75" y="285" text-anchor="middle" font-size="13" font-family="monospace" fill="white" font-weight="bold">09:30:00</text>
+  <text x="130" y="283" font-size="12" fill="#333">← argv[2] = "09:30:00" (인수)</text>
+
+  <!-- saveptr 설명 박스 -->
+  <rect x="440" y="140" width="250" height="155" fill="white" stroke="#888" stroke-width="1" rx="6"/>
+  <text x="565" y="160" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">strtok_r vs strtok 차이</text>
+  <text x="450" y="183" font-size="11" fill="#EA4335">strtok():</text>
+  <text x="450" y="200" font-size="11" fill="#555">  내부 전역 포인터 사용</text>
+  <text x="450" y="217" font-size="11" fill="#555">  ISR 호출 시 상태 파괴 위험!</text>
+  <text x="450" y="238" font-size="11" fill="#34A853">strtok_r():</text>
+  <text x="450" y="255" font-size="11" fill="#555">  saveptr = 호출자 제공</text>
+  <text x="450" y="272" font-size="11" fill="#555">  재진입 안전 (reentrant)</text>
+  <text x="450" y="289" font-size="11" fill="#1A73E8">  임베디드 = strtok_r 필수!</text>
+
+  <!-- 결과 -->
+  <text x="30" y="320" font-size="12" font-weight="bold" fill="#333">결과: argc=3, argv=["time", "set", "09:30:00"]</text>
+</svg>

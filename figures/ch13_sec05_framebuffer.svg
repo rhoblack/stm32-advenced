@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="700" height="360" viewBox="0 0 700 360" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      text { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
+    </style>
+    <marker id="arrowFB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect width="700" height="360" fill="#F8F9FA" rx="8"/>
+  <text x="350" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">프레임버퍼 부분 갱신(Partial Update) — DMA 최적화</text>
+
+  <!-- 왼쪽: 전체 갱신 (비효율) -->
+  <rect x="30" y="45" width="300" height="280" rx="8" fill="#FFEBEE" stroke="#E53935" stroke-width="2"/>
+  <text x="180" y="68" text-anchor="middle" font-size="12" font-weight="bold" fill="#C62828">전체 갱신 (비효율적)</text>
+  <text x="180" y="84" text-anchor="middle" font-size="10" fill="#C62828">매 1초마다 전체 화면 다시 그리기</text>
+
+  <!-- LCD 모형 -->
+  <rect x="60" y="95" width="240" height="160" fill="#111" stroke="#555" stroke-width="1.5" rx="3"/>
+  <!-- 전체 갱신 = 빨간 오버레이 -->
+  <rect x="60" y="95" width="240" height="160" fill="#E53935" fill-opacity="0.25"/>
+  <text x="180" y="160" text-anchor="middle" font-size="11" fill="#EF9A9A">전체 화면 지우기</text>
+  <text x="180" y="178" text-anchor="middle" font-size="11" fill="#EF9A9A">76,800 픽셀 × 2바이트</text>
+  <text x="180" y="196" text-anchor="middle" font-size="11" fill="#EF9A9A">= 153,600 바이트 전송</text>
+  <text x="180" y="214" text-anchor="middle" font-size="11" fill="#EF9A9A">≈ 43ms @ 28MHz SPI</text>
+
+  <text x="180" y="270" text-anchor="middle" font-size="12" fill="#C62828">⚠ 깜박임 유발</text>
+  <text x="180" y="290" text-anchor="middle" font-size="12" fill="#C62828">⚠ CPU 점유율 높음</text>
+  <text x="180" y="310" text-anchor="middle" font-size="12" fill="#C62828">⚠ DMA 시간 낭비</text>
+
+  <!-- 오른쪽: 부분 갱신 (최적화) -->
+  <rect x="370" y="45" width="300" height="280" rx="8" fill="#E8F5E9" stroke="#43A047" stroke-width="2"/>
+  <text x="520" y="68" text-anchor="middle" font-size="12" font-weight="bold" fill="#1B5E20">부분 갱신 (Partial Update)</text>
+  <text x="520" y="84" text-anchor="middle" font-size="10" fill="#1B5E20">변경된 영역만 선택적으로 갱신</text>
+
+  <!-- LCD 모형 -->
+  <rect x="400" y="95" width="240" height="160" fill="#111" stroke="#555" stroke-width="1.5" rx="3"/>
+  <!-- 상태바 영역 (고정) -->
+  <rect x="400" y="95" width="240" height="20" fill="#263238"/>
+  <text x="520" y="110" text-anchor="middle" font-size="9" fill="#607D8B">헤더 고정 (갱신 안 함)</text>
+  <!-- 시간 데이터 영역 (갱신됨) -->
+  <rect x="400" y="115" width="240" height="45" fill="#0D47A1" fill-opacity="0.5"/>
+  <rect x="400" y="115" width="240" height="45" fill="#43A047" fill-opacity="0.3"/>
+  <text x="520" y="142" text-anchor="middle" font-size="11" fill="#A5D6A7">시간 영역 갱신</text>
+  <text x="520" y="157" text-anchor="middle" font-size="9" fill="#81C784">50×48px = 4,800px = 9,600B</text>
+  <!-- 나머지 고정 -->
+  <rect x="400" y="160" width="240" height="95" fill="#1A1A2E"/>
+  <text x="520" y="210" text-anchor="middle" font-size="9" fill="#666">고정 영역 (갱신 안 함)</text>
+
+  <!-- 절약 수치 -->
+  <text x="520" y="270" text-anchor="middle" font-size="12" fill="#1B5E20">✅ 전송량: 94% 절감</text>
+  <text x="520" y="290" text-anchor="middle" font-size="12" fill="#1B5E20">✅ 깜박임 없음</text>
+  <text x="520" y="310" text-anchor="middle" font-size="12" fill="#1B5E20">✅ dirty_flag 패턴 사용</text>
+
+  <!-- 하단 핵심 원리 -->
+  <rect x="30" y="335" width="640" height="20" rx="4" fill="#E8EAF6"/>
+  <text x="350" y="349" text-anchor="middle" font-size="11" fill="#283593">핵심: ILI9341_Set_Address_Window(x, y, x+w-1, y+h-1) → 갱신 영역 지정 → SPI DMA 전송</text>
+</svg>

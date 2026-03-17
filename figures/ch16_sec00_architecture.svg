@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 520" width="760" height="520" font-family="'Noto Sans KR', sans-serif">
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+  </defs>
+
+  <!-- 배경 -->
+  <rect width="760" height="520" fill="#F8F9FA" rx="8"/>
+  <text x="380" y="32" text-anchor="middle" font-size="16" font-weight="bold" fill="#202124">Ch16 아키텍처 위치 — App 레이어: protocol_app.c</text>
+
+  <!-- App Layer (강조) -->
+  <rect x="30" y="55" width="700" height="90" fill="#EA4335" fill-opacity="0.12" rx="6" stroke="#EA4335" stroke-width="2.5"/>
+  <text x="50" y="78" font-size="13" font-weight="bold" fill="#EA4335">App Layer</text>
+  <rect x="55" y="88" width="180" height="42" fill="#EA4335" fill-opacity="0.25" rx="4" stroke="#EA4335" stroke-width="1.5"/>
+  <text x="145" y="108" text-anchor="middle" font-size="12" font-weight="bold" fill="#C62828">cli_app.c</text>
+  <text x="145" y="123" text-anchor="middle" font-size="10" fill="#C62828">CLI 명령 처리</text>
+  <!-- protocol_app.c 강조 박스 -->
+  <rect x="255" y="83" width="220" height="52" fill="#EA4335" fill-opacity="0.6" rx="4" stroke="#B71C1C" stroke-width="2.5"/>
+  <text x="365" y="106" text-anchor="middle" font-size="13" font-weight="bold" fill="white">protocol_app.c</text>
+  <text x="365" y="123" text-anchor="middle" font-size="10" fill="white">★ Ch16 — PC 대시보드 프레임</text>
+  <!-- 화살표 표시 -->
+  <polygon points="488,109 508,104 508,114" fill="#EA4335"/>
+  <text x="520" y="113" font-size="11" fill="#EA4335" font-style="italic">← 이 챕터</text>
+
+  <!-- Service Layer -->
+  <rect x="30" y="160" width="700" height="75" fill="#FBBC04" fill-opacity="0.12" rx="6" stroke="#FBBC04" stroke-width="1.5"/>
+  <text x="50" y="180" font-size="13" font-weight="bold" fill="#B8860B">Service Layer</text>
+  <rect x="55" y="190" width="130" height="35" fill="#FBBC04" fill-opacity="0.35" rx="4"/>
+  <text x="120" y="212" text-anchor="middle" font-size="10" fill="#7A5C00">clock_service.c</text>
+  <rect x="195" y="190" width="130" height="35" fill="#FBBC04" fill-opacity="0.35" rx="4"/>
+  <text x="260" y="212" text-anchor="middle" font-size="10" fill="#7A5C00">sensor_service.c</text>
+  <rect x="335" y="190" width="130" height="35" fill="#FBBC04" fill-opacity="0.35" rx="4"/>
+  <text x="400" y="212" text-anchor="middle" font-size="10" fill="#7A5C00">gfx_service.c</text>
+  <rect x="475" y="190" width="130" height="35" fill="#FBBC04" fill-opacity="0.35" rx="4"/>
+  <text x="540" y="212" text-anchor="middle" font-size="10" fill="#7A5C00">ui_service.c</text>
+
+  <!-- Driver Layer -->
+  <rect x="30" y="250" width="700" height="75" fill="#34A853" fill-opacity="0.12" rx="6" stroke="#34A853" stroke-width="1.5"/>
+  <text x="50" y="270" font-size="13" font-weight="bold" fill="#1B5E20">Driver Layer</text>
+  <rect x="55" y="280" width="96" height="35" fill="#34A853" fill-opacity="0.35" rx="4"/>
+  <text x="103" y="302" text-anchor="middle" font-size="9" fill="#1B5E20">uart_driver.c</text>
+  <rect x="158" y="280" width="96" height="35" fill="#34A853" fill-opacity="0.35" rx="4"/>
+  <text x="206" y="302" text-anchor="middle" font-size="9" fill="#1B5E20">tim_driver.c</text>
+  <rect x="261" y="280" width="96" height="35" fill="#34A853" fill-opacity="0.35" rx="4"/>
+  <text x="309" y="302" text-anchor="middle" font-size="9" fill="#1B5E20">rtc_driver.c</text>
+  <rect x="364" y="280" width="96" height="35" fill="#34A853" fill-opacity="0.35" rx="4"/>
+  <text x="412" y="302" text-anchor="middle" font-size="9" fill="#1B5E20">stepper_driver.c</text>
+  <rect x="467" y="280" width="96" height="35" fill="#34A853" fill-opacity="0.35" rx="4"/>
+  <text x="515" y="302" text-anchor="middle" font-size="9" fill="#1B5E20">sht31_driver.c</text>
+  <rect x="570" y="280" width="96" height="35" fill="#34A853" fill-opacity="0.35" rx="4"/>
+  <text x="618" y="302" text-anchor="middle" font-size="9" fill="#1B5E20">ili9341_driver.c</text>
+
+  <!-- HAL Layer -->
+  <rect x="30" y="340" width="700" height="50" fill="#1A73E8" fill-opacity="0.12" rx="6" stroke="#1A73E8" stroke-width="1.5"/>
+  <text x="50" y="360" font-size="13" font-weight="bold" fill="#0D47A1">HAL Layer</text>
+  <text x="380" y="372" text-anchor="middle" font-size="11" fill="#0D47A1">STM32 HAL (STM32CubeMX 자동 생성)</text>
+
+  <!-- Hardware Layer -->
+  <rect x="30" y="405" width="700" height="50" fill="#607D8B" fill-opacity="0.15" rx="6" stroke="#607D8B" stroke-width="1"/>
+  <text x="50" y="425" font-size="13" font-weight="bold" fill="#37474F">Hardware</text>
+  <text x="380" y="440" text-anchor="middle" font-size="11" fill="#37474F">NUCLEO-F411RE + UART2 → USB-Serial → PC</text>
+
+  <!-- PC Side -->
+  <rect x="30" y="468" width="700" height="42" fill="#9C27B0" fill-opacity="0.12" rx="6" stroke="#9C27B0" stroke-width="1.5"/>
+  <text x="50" y="485" font-size="13" font-weight="bold" fill="#6A1B9A">PC (Python)</text>
+  <text x="280" y="493" font-size="10" fill="#6A1B9A">pyserial 수신 스레드</text>
+  <text x="460" y="493" font-size="10" fill="#6A1B9A">PyQt5 실시간 대시보드</text>
+
+  <!-- 화살표: App → Service -->
+  <line x1="380" y1="147" x2="380" y2="158" stroke="#555" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <!-- 화살표: Service → Driver -->
+  <line x1="380" y1="237" x2="380" y2="248" stroke="#555" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <!-- 화살표: Driver → HAL -->
+  <line x1="380" y1="327" x2="380" y2="338" stroke="#555" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <!-- 화살표: HAL → HW -->
+  <line x1="380" y1="392" x2="380" y2="403" stroke="#555" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <!-- 화살표: HW → PC -->
+  <line x1="380" y1="457" x2="380" y2="466" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- 레이어 레이블 (우측) -->
+  <text x="735" y="100" text-anchor="middle" font-size="9" fill="#EA4335" transform="rotate(90,735,100)">App</text>
+  <text x="735" y="198" text-anchor="middle" font-size="9" fill="#B8860B" transform="rotate(90,735,198)">Service</text>
+  <text x="735" y="288" text-anchor="middle" font-size="9" fill="#1B5E20" transform="rotate(90,735,288)">Driver</text>
+</svg>

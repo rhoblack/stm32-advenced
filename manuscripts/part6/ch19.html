@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch19. 코드 리팩토링 &amp; 실무 품질 — STM32 고급 실무교육</title>
+  <link rel="stylesheet" href="../../templates/book_style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+
+<!-- ===== 챕터 헤더 ===== -->
+<header class="chapter-header">
+  <div class="chapter-meta">Part 6 · Chapter 19 · 프로젝트 <span class="version">v2.2</span></div>
+  <h1>Ch19. 코드 리팩토링 &amp; 실무 품질</h1>
+  <p class="chapter-summary">
+    지난 18개 챕터를 통해 완성한 스마트 시계 &amp; 환경 모니터링 시스템을
+    실무 수준의 코드 품질로 끌어올리고, 마일스톤 ③ v2.2를 달성합니다.
+  </p>
+  <div class="chapter-badge">
+    누적 기능: 전체 프로젝트 최종 완성 — MISRA-C 준수, 레이어 분리 리팩토링,
+    공통 버그 제거, 메모리 최적화, 단위 테스트, 코드 리뷰, 실무 면접 준비
+  </div>
+</header>
+
+<!-- ===== 아키텍처 위치 ===== -->
+<section class="architecture-position">
+  <h2>이 챕터의 아키텍처 위치</h2>
+  <p>
+    Ch19는 특정 레이어 하나에 새 기능을 추가하는 챕터가 아닙니다.
+    <strong>전체 레이어드 아키텍처(HAL → Driver → Service → App)를 수직으로 관통</strong>하며
+    품질을 향상시키는 챕터입니다.
+    각 레이어 경계가 올바르게 유지되고 있는지 검증하고,
+    레이어 위반이 있다면 리팩토링으로 바로잡습니다.
+  </p>
+  <figure>
+    <img src="../../figures/ch19_sec00_architecture.svg" alt="전체 레이어드 아키텍처 최종 현황">
+    <figcaption>그림 19-1. v2.2 전체 레이어드 아키텍처 — Ch19 리팩토링 검증 대상 범위</figcaption>
+  </figure>
+
+  <h3>인터페이스 검증 관점</h3>
+  <p>Ch19에서는 새 API를 추가하는 대신, <strong>기존 API가 레이어 원칙을 준수하는지 검증</strong>합니다.</p>
+  <pre><code class="language-c">/* 레이어 위반 탐지 패턴 — App 레이어에서 HAL 직접 호출 여부 확인 */
+
+/* BAD: App 레이어 (app_main.c)에서 HAL 직접 호출 — 레이어 위반 */
+HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);  /* 금지! */
+
+/* GOOD: App 레이어에서 Driver 인터페이스만 사용 */
+LED_SetState(LED_GREEN, LED_ON);  /* led_driver.h의 공개 API */
+  </code></pre>
+</section>
+
+<!-- ===== 학습 목표 ===== -->
+<section class="learning-objectives">
+  <h2>학습 목표</h2>
+  <p>이 챕터를 완료하면 다음을 할 수 있습니다.</p>
+  <ul>
+    <li>[이해/분석] MISRA-C 핵심 10개 규칙의 목적을 설명하고, 현재 프로젝트 코드에서 위반 사례를 찾을 수 있다.</li>
+    <li>[적용/창조] 레이어 의존성 위반 코드를 Before/After 형태로 리팩토링하여 아키텍처 원칙을 복원할 수 있다.</li>
+    <li>[적용] <code>volatile</code> 누락, 정수 오버플로우, 재진입 문제 등 공통 버그 패턴을 진단하고 수정할 수 있다.</li>
+    <li>[분석] .map 파일을 분석하여 스택/힙 사용량을 파악하고 <code>static</code> 활용으로 메모리를 최적화할 수 있다.</li>
+    <li>[창조/평가] HAL Mock 기법으로 단위 테스트를 작성하고, 코드 리뷰 체크리스트로 전체 프로젝트를 v2.2로 인증할 수 있다.</li>
+  </ul>
+  <div class="project-milestone">
+    <strong>프로젝트 v2.2 — 마일스톤 ③</strong>:
+    이 챕터 완료 후 전체 STM32 스마트 시계 &amp; 환경 모니터링 시스템이
+    MISRA-C 기준, 레이어드 아키텍처 원칙, 단위 테스트 포함 상태로 완성됩니다.
+  </div>
+</section>
+
+<!-- ===== 1절: MISRA-C 핵심 규칙 ===== -->
+<section id="sec-01">
+  <h2>1절. MISRA-C 핵심 규칙과 임베디드 코딩 표준</h2>
+
+  <p>
+    "MISRA-C(Motor Industry Software Reliability Association C)"라는 이름을 처음 들으면
+    자동차 산업 전용 규칙처럼 느껴질 수 있습니다.
+    하지만 MISRA-C 규칙은 자동차 뿐만 아니라 의료기기, 항공, 산업용 임베디드 전반에서
+    코드 품질의 기준으로 인정받고 있습니다.
+    이 절에서는 STM32 실무에서 가장 직접적으로 적용할 수 있는 10개 핵심 규칙을
+    왜, 어떻게 지켜야 하는지 실제 코드와 함께 살펴봅니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    MISRA-C는 임베디드 소프트웨어의 "도로교통법"과 같습니다.
+    법을 어겨도 운전이 불가능한 것은 아니지만,
+    사고(버그)가 발생할 확률이 높아집니다.
+    특히 자동차 브레이크나 의료 인슐린 펌프처럼 사람의 생명에 영향을 주는 시스템에서는
+    반드시 지켜야 할 최소한의 안전 규칙입니다.
+    <br><small>※ 이 비유의 한계: 도로교통법과 달리 MISRA-C 위반 자체는 컴파일 오류가 아닙니다.
+    MISRA-C 준수를 확인하려면 별도의 정적 분석 도구(PC-lint, Polyspace 등)가 필요합니다.</small>
+  </div>
+
+  <h3>MISRA-C 핵심 10개 규칙 (STM32 실무 기준)</h3>
+
+  <h4>규칙 1 — 정수 연산 결과 명시적 캐스팅</h4>
+  <p>
+    C 언어의 암시적 타입 변환(implicit type conversion)은 의도치 않은 결과를 낳습니다.
+    특히 <code>uint8_t</code>와 <code>int</code> 사이의 연산에서 부호 확장(sign extension)이
+    발생할 수 있습니다.
+  </p>
+  <pre><code class="language-c">/* ❌ BAD: 암시적 변환 — 결과가 uint8_t 범위를 초과할 수 있음 */
+uint8_t adc_8bit = (uint8_t)(HAL_ADC_GetValue(&hadc1));  /* 값이 잘림 */
+
+/* ✅ GOOD: 명시적 캐스팅으로 의도 표현 */
+uint16_t adc_raw = (uint16_t)HAL_ADC_GetValue(&hadc1);
+uint16_t voltage_mv = (uint16_t)((uint32_t)adc_raw * 3300U / 4095U);
+LOG_D("ADC 전압: %u mV", voltage_mv);
+  </code></pre>
+
+  <h4>규칙 2 — volatile 한정자 필수 선언</h4>
+  <p>
+    ISR(인터럽트 서비스 루틴)에서 설정하고 main()에서 읽는 변수는 반드시
+    <code>volatile</code>로 선언해야 합니다.
+    컴파일러는 <code>volatile</code> 없이는 "이 변수는 변하지 않는다"고 가정하여
+    최적화로 읽기 동작을 제거할 수 있습니다.
+  </p>
+  <pre><code class="language-c">/* ❌ BAD: volatile 없음 — -O2 이상에서 컴파일러가 루프 제거 가능 */
+uint8_t dma_done = 0;
+while (dma_done == 0) {}  /* 무한 루프 또는 루프 사라짐 */
+
+/* ✅ GOOD: volatile 선언으로 매번 메모리에서 읽기 강제 */
+volatile uint8_t dma_done = 0;
+while (dma_done == 0U) {}  /* 항상 메모리에서 최신 값 읽음 */
+  </code></pre>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> <code>volatile</code>을 모든 전역 변수에 붙이면 안 되나요? 안전하지 않나요?<br>
+    <strong>A.</strong> 그렇게 하면 안 됩니다. <code>volatile</code>은 컴파일러 최적화를 완전히 막아
+    성능이 크게 저하됩니다. ISR과 main()이 <strong>공유하는 변수</strong>에만 선택적으로 사용해야 합니다.
+    공유하지 않는 일반 전역 변수에는 사용하지 않는 것이 원칙입니다.
+  </aside>
+
+  <h4>규칙 3 — 함수 반환값 반드시 확인</h4>
+  <pre><code class="language-c">/* ❌ BAD: 반환값 무시 — 전송이 실패해도 알 수 없음 */
+HAL_UART_Transmit(&huart2, buf, len, 100U);
+
+/* ✅ GOOD: 반환값 확인 및 오류 처리 */
+HAL_StatusTypeDef ret = HAL_UART_Transmit(&huart2, buf, len, 100U);
+if (ret != HAL_OK)
+{
+    LOG_E("UART 전송 실패: ret=%d, len=%u", (int)ret, len);
+    /* 오류 복구 또는 상위 레이어에 에러 전파 */
+}
+  </code></pre>
+
+  <h4>규칙 4 — 동적 메모리 할당 금지</h4>
+  <p>
+    <code>malloc()</code>/<code>free()</code>는 힙 단편화(heap fragmentation)를 일으키고
+    실시간 시스템에서 결정론적 동작을 보장하지 못합니다.
+    임베디드 시스템에서는 정적 버퍼나 메모리 풀을 사용합니다.
+  </p>
+  <pre><code class="language-c">/* ❌ BAD: 동적 메모리 할당 */
+uint8_t *sensor_buf = (uint8_t *)malloc(256U);
+if (sensor_buf == NULL) { /* ... */ }
+/* ... */
+free(sensor_buf);  /* 언제, 어디서 해제? 추적 어려움 */
+
+/* ✅ GOOD: 정적 버퍼 사용 */
+static uint8_t sensor_buf[256U];  /* 컴파일 타임에 크기 확정 */
+/* 항상 사용 가능, 단편화 없음 */
+  </code></pre>
+
+  <h4>규칙 5~10 요약</h4>
+  <ul>
+    <li><strong>R5 매크로 괄호:</strong> <code>#define MAX(a,b) ((a)>(b)?(a):(b))</code> — 인수와 결과 모두 괄호</li>
+    <li><strong>R6 switch default:</strong> 모든 <code>switch</code>에 <code>default</code> 브랜치 필수</li>
+    <li><strong>R7 재귀 금지:</strong> 스택 오버플로우 방지 — 반복문으로 대체</li>
+    <li><strong>R8 초기화 필수:</strong> 선언 즉시 초기값 대입 (<code>uint8_t cnt = 0U;</code>)</li>
+    <li><strong>R9 단일 return:</strong> 함수 내 return은 하나(출구 하나 원칙) — 자원 해제 누락 방지</li>
+    <li><strong>R10 함수 길이:</strong> 함수 본체 60줄 이하 — 단일 책임 원칙(SRP) 연동</li>
+  </ul>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    STM32CubeIDE에서 기본 제공되는 컴파일러 경고 옵션(<code>-Wall -Wextra</code>)만으로도
+    MISRA-C 규칙의 약 40%를 탐지할 수 있습니다.
+    프로젝트 Properties → C/C++ Build → Settings → Tool Settings → Warnings에서
+    <code>-Wall -Wextra -Wshadow -Wundef</code>를 추가하세요.
+    전문 정적 분석이 필요하다면 PC-lint Plus 또는 Polyspace를 검토하세요.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    "MISRA-C를 알고 있나요?" 질문에 단순히 "자동차 표준입니다"라고 답하면 부족합니다.
+    핵심 답변 키워드:
+    <strong>volatile 누락 최적화 문제, 동적 메모리 금지 이유(힙 단편화/결정론적 실시간),
+    HAL 반환값 확인 의무</strong> 중 하나라도 구체적으로 설명할 수 있어야 합니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>지금까지 작성한 코드에서 <code>volatile</code> 없이 ISR 공유 변수를 사용한 곳이 있는가?</li>
+      <li>HAL 함수 호출 후 반환값을 확인하지 않은 곳이 몇 군데인가?</li>
+      <li><code>malloc</code>/<code>free</code>를 사용한 곳이 있는가? 정적 버퍼로 대체 가능한가?</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 2절: 레이어 분리 리팩토링 ===== -->
+<section id="sec-02">
+  <h2>2절. 레이어 분리 리팩토링 실습 (Before → After)</h2>
+
+  <p>
+    소프트웨어가 커지면서 가장 흔하게 발생하는 품질 저하 패턴은
+    <strong>"레이어 경계 붕괴(Layer Boundary Erosion)"</strong>입니다.
+    처음에는 빠른 구현을 위해 App에서 HAL을 직접 호출하지만,
+    시간이 지날수록 각 파일이 시스템 전체에 의존하게 되어
+    수정 하나가 예상치 못한 곳에서 버그를 일으킵니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    레이어 위반은 식당의 홀 직원이 주방을 건너뛰고 식재료 창고에서 직접 재료를 꺼내 요리하는 것과 같습니다.
+    처음 한 번은 빠르게 해결되지만,
+    나중에 창고 위치가 바뀌거나 식재료 종류가 변경되면
+    홀 직원이 알아서 적응해야 하는 혼돈이 생깁니다.
+    <br><small>※ 이 비유의 한계: 실제 코드에서 레이어 위반은 컴파일 오류가 아닌 설계 오류이므로
+    코드 리뷰나 정적 분석 없이는 즉시 발견하기 어렵습니다.</small>
+  </div>
+
+  <h3>사례 1: App → HAL 직접 호출 제거</h3>
+  <pre><code class="language-c">/* ========== BEFORE: app_main.c — 레이어 위반 ==========  */
+
+#include "stm32f4xx_hal.h"  /* App이 HAL을 직접 include — 위반! */
+
+void App_UpdateSystemStatus(uint8_t err_count)
+{
+    if (err_count > 5U)
+    {
+        /* App이 HAL 직접 호출 — 레이어 경계 위반 */
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+
+        extern UART_HandleTypeDef huart2;
+        uint8_t msg[] = "SYS_ERR\r\n";
+        HAL_UART_Transmit(&huart2, msg, 9U, 100U);
+    }
+}
+
+/* ========== AFTER: app_main.c — 레이어 준수 ==========  */
+
+#include "led_driver.h"     /* Driver 레이어 인터페이스만 include */
+#include "uart_driver.h"    /* Driver 레이어 인터페이스만 include */
+
+void App_UpdateSystemStatus(uint8_t err_count)
+{
+    if (err_count > 5U)
+    {
+        /* GOOD: Driver 레이어의 공개 API를 통해 요청 */
+        LED_SetState(LED_STATUS, LED_ON);
+        UART_SendString("SYS_ERR\r\n");
+        LOG_W("시스템 오류 횟수 초과: count=%u", err_count);
+    }
+    else
+    {
+        LED_SetState(LED_STATUS, LED_OFF);
+    }
+}
+  </code></pre>
+
+  <h3>사례 2: Service → Driver 직접 HAL 우회 제거</h3>
+  <pre><code class="language-c">/* ========== BEFORE: sensor_service.c — 레이어 위반 ==========  */
+
+void SensorService_Trigger(void)
+{
+    /* Service가 HAL을 직접 호출 — Driver 레이어 우회 */
+    extern I2C_HandleTypeDef hi2c1;
+    uint8_t cmd[2] = {0x2CU, 0x06U};
+    HAL_I2C_Master_Transmit(&hi2c1, 0x88U, cmd, 2U, 100U);
+    /* ... */
+}
+
+/* ========== AFTER: sensor_service.c — 레이어 준수 ========== */
+
+#include "sht31_driver.h"   /* Driver 레이어만 사용 */
+
+void SensorService_Trigger(void)
+{
+    /* GOOD: Driver의 인터페이스를 통해 요청 */
+    HAL_StatusTypeDef ret = SHT31_StartMeasurement();
+    if (ret != HAL_OK)
+    {
+        LOG_E("센서 측정 시작 실패: ret=%d", (int)ret);
+        /* 오류를 App 레이어로 전파 */
+    }
+    LOG_D("센서 측정 요청 완료");
+}
+  </code></pre>
+
+  <h3>사례 3: 전역 HAL 핸들을 Driver 내부로 은닉</h3>
+  <pre><code class="language-c">/* ========== BEFORE: 전역으로 노출된 HAL 핸들 ==========  */
+/* main.c 또는 전역 헤더 */
+extern I2C_HandleTypeDef hi2c1;  /* 전체 코드에서 접근 가능 */
+extern UART_HandleTypeDef huart2;
+
+/* ========== AFTER: Driver 내부로 캡슐화 ========== */
+/* i2c_driver.c — 핸들을 static으로 은닉 */
+static I2C_HandleTypeDef *s_hi2c = NULL;  /* 모듈 내부에서만 접근 */
+
+void I2C_Driver_Init(I2C_HandleTypeDef *hi2c)
+{
+    s_hi2c = hi2c;  /* 초기화 시 한 번만 주입 */
+    LOG_I("I2C Driver 초기화 완료");
+}
+
+/* 외부에서는 핸들 직접 접근 불가 — 인터페이스만 사용 */
+HAL_StatusTypeDef I2C_Write(uint8_t addr, const uint8_t *data, uint16_t len)
+{
+    return HAL_I2C_Master_Transmit(s_hi2c, (uint16_t)(addr << 1U), (uint8_t *)data, len, 100U);
+}
+  </code></pre>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    리팩토링 실습 전에 수강생들에게 질문하세요:
+    "지금 여러분의 app_main.c에 <code>#include "stm32f4xx_hal.h"</code>가 있나요?"
+    있다면 그것이 레이어 위반의 출발점입니다.
+    App 레이어는 오직 Service/Driver 헤더만 include해야 합니다.
+    이 규칙 하나만 지켜도 아키텍처가 상당히 깨끗해집니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>app_main.c에서 <code>extern UART_HandleTypeDef huart2;</code>를 직접 선언한 곳이 있는가?</li>
+      <li>Service 레이어 파일이 HAL 헤더를 직접 include하고 있지 않은가?</li>
+      <li>리팩토링 후 기능이 그대로 동작하는지 테스트했는가?</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 3절: 공통 버그 패턴 ===== -->
+<section id="sec-03">
+  <h2>3절. 공통 버그 패턴: volatile 누락, 정수 오버플로우, 재진입 문제</h2>
+
+  <p>
+    임베디드 C 개발에서 반복적으로 나타나는 버그 패턴이 있습니다.
+    이 패턴들은 컴파일 오류가 아니어서 코드 리뷰 없이는 발견하기 어렵고,
+    특정 조건(최적화 레벨, 타이밍)에서만 재현되어 디버깅도 까다롭습니다.
+    이 절에서는 세 가지 핵심 버그 패턴을 증상, 원인, 수정 방법 순으로 살펴봅니다.
+  </p>
+
+  <h3>버그 패턴 1: volatile 누락</h3>
+  <p>
+    <strong>증상:</strong> 디버거를 연결하면 정상 동작하지만, 빌드 후 플래시에서 실행하면 무한 루프에 빠집니다.
+    최적화 레벨을 <code>-O0</code>에서 <code>-O2</code>로 올리면 문제가 나타납니다.
+  </p>
+  <pre><code class="language-c">/* 원인 분석: 컴파일러 최적화 관점 */
+
+/* volatile 없이 선언 */
+uint8_t g_rx_done = 0U;
+
+/* ISR에서 설정 */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    g_rx_done = 1U;  /* 컴파일러는 이 코드를 알지 못함 */
+}
+
+/* main에서 대기 — 컴파일러는 g_rx_done이 항상 0이라고 판단 */
+/* -O2 이상에서 컴파일러가 "while (0 == 0) {}" 즉 무한루프로 최적화 가능 */
+while (g_rx_done == 0U) {}
+
+/* 수정: volatile 추가 */
+volatile uint8_t g_rx_done = 0U;  /* 컴파일러 최적화에서 제외 */
+  </code></pre>
+
+  <h3>버그 패턴 2: 정수 오버플로우</h3>
+  <p>
+    <strong>증상:</strong> 특정 값 이상에서 계산 결과가 음수나 예상과 전혀 다른 값이 됩니다.
+    타이머 주기 계산, 스텝 수 계산에서 자주 발생합니다.
+  </p>
+  <pre><code class="language-c">/* 위험한 패턴: 연산 중간 결과가 오버플로우 */
+#define STEPS_PER_REV   4096U
+#define MS_PER_MIN      60000U
+
+/* ❌ BAD: rpm=200, duration_ms=1000 → 200 * 1000 * 4096 = 819,200,000 */
+/* uint32_t 최대값은 4,294,967,295이지만 아슬아슬함 */
+/* rpm이 커지면 오버플로우 발생 */
+uint32_t bad_steps = rpm * duration_ms * STEPS_PER_REV / MS_PER_MIN;
+
+/* ✅ GOOD: 나눗셈을 먼저 수행하여 중간값 제한 */
+/* steps_per_ms = rpm * 4096 / 60000: 최대 200*4096/60000 ≈ 13 (안전) */
+uint32_t steps_per_ms = (rpm * STEPS_PER_REV) / MS_PER_MIN;
+uint32_t good_steps   = steps_per_ms * duration_ms;  /* 최대 13 * 60000 = 780000 (안전) */
+
+LOG_D("스텝 계산: rpm=%lu, dur=%lu ms, steps=%lu", rpm, duration_ms, good_steps);
+  </code></pre>
+
+  <h3>버그 패턴 3: 재진입(Re-entrant) 문제</h3>
+  <p>
+    <strong>증상:</strong> UART 전송 내용이 가끔 깨지거나, 두 메시지가 섞여 출력됩니다.
+    인터럽트 우선순위가 높을수록, 시스템 부하가 높을수록 재현 빈도가 높아집니다.
+  </p>
+  <pre><code class="language-c">/* 재진입 문제 발생 시나리오 */
+static uint8_t g_tx_buf[64];
+static uint8_t g_tx_len = 0U;
+
+void uart_send(const char *str)
+{
+    g_tx_len = (uint8_t)strlen(str);    /* ← 여기서 인터럽트 발생! */
+    /* 인터럽트 핸들러에서 uart_send() 재호출 시 g_tx_buf 덮어쓰기 */
+    memcpy(g_tx_buf, str, g_tx_len);    /* ← 이미 내용이 오염됨 */
+    HAL_UART_Transmit_DMA(&huart2, g_tx_buf, g_tx_len);
+}
+
+/* ✅ GOOD: Critical Section으로 원자적 처리 보장 */
+void uart_send_safe(const char *str)
+{
+    uint32_t primask;
+
+    /* PRIMASK로 모든 인터럽트 일시 차단 */
+    primask = __get_PRIMASK();
+    __disable_irq();
+
+    g_tx_len = (uint8_t)strlen(str);
+    memcpy(g_tx_buf, str, g_tx_len);
+
+    __set_PRIMASK(primask);  /* 인터럽트 복원 */
+
+    HAL_UART_Transmit_DMA(&huart2, g_tx_buf, g_tx_len);
+    LOG_D("UART 안전 전송: len=%u", g_tx_len);
+}
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    <code>__disable_irq()</code>/<code>__enable_irq()</code> 쌍 대신
+    <code>__get_PRIMASK()</code>/<code>__set_PRIMASK()</code>를 사용하는 이유:
+    Critical Section이 중첩될 때 내부 Section이 <code>__enable_irq()</code>를 호출해도
+    외부 Section의 인터럽트 차단 상태가 유지됩니다.
+    이 패턴은 FreeRTOS의 <code>taskENTER_CRITICAL()</code>과 동일한 방식입니다.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> Critical Section 안에서 너무 오래 작업하면 어떻게 되나요?<br>
+    <strong>A.</strong> 인터럽트가 차단된 동안 새 인터럽트는 무시되거나 지연됩니다.
+    HAL_Delay()도 SysTick 인터럽트가 차단되어 동작하지 않습니다.
+    Critical Section은 변수 복사, 플래그 설정처럼 <strong>몇 줄 이내의 빠른 작업</strong>에만 사용하세요.
+    절대 HAL 통신 함수를 Critical Section 안에 넣지 마세요.
+  </aside>
+</section>
+
+<!-- ===== 4절: 메모리 최적화 ===== -->
+<section id="sec-04">
+  <h2>4절. 메모리 최적화: 스택/힙 분석과 .map 파일 읽기</h2>
+
+  <p>
+    STM32F411RE는 FLASH 512 KB, SRAM 128 KB를 갖고 있습니다.
+    앱이 커질수록 메모리 부족으로 인한 스택 오버플로우나 하드폴트(HardFault)가 발생할 수 있습니다.
+    이 절에서는 STM32CubeIDE가 생성하는 <code>.map</code> 파일을 분석하여
+    현재 메모리 사용 현황을 파악하고 최적화하는 방법을 배웁니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch19_sec04_memory_map.svg" alt="STM32F411RE 메모리 맵 및 .map 파일 분석">
+    <figcaption>그림 19-2. STM32F411RE 메모리 맵과 .map 파일 섹션 구조</figcaption>
+  </figure>
+
+  <h3>.map 파일 핵심 분석 포인트</h3>
+  <p>
+    STM32CubeIDE에서 빌드하면 <code>Debug/</code> 폴더에 <code>프로젝트명.map</code> 파일이 생성됩니다.
+    텍스트 에디터로 열어 다음 3가지 항목을 확인합니다.
+  </p>
+
+  <pre><code class="language-c">/* .map 파일 예시 — 실제 내용 발췌 */
+
+/* 1. Memory Configuration */
+Memory region         Used Size  Region Size  %age Used
+           FLASH:       142820 B       512 KB     27.24%
+             RAM:        14256 B       128 KB     10.87%
+
+/* 2. 가장 많은 메모리를 차지하는 심볼 확인 */
+/* .bss 섹션에서 큰 전역 버퍼 찾기 */
+.bss.g_display_frame_buf
+                0x20001000      0x2580 display_service.o
+
+/* 3. 미사용 함수 심볼 (--gc-sections 링커 옵션 적용 후 확인) */
+LOAD linker_flags = -Wl,--gc-sections  /* 미사용 코드 자동 제거 */
+  </code></pre>
+
+  <h3>static 키워드로 RAM 절약</h3>
+  <pre><code class="language-c">/* ❌ BAD: 함수 내 대형 배열 — 스택에 할당, 스택 오버플로우 위험 */
+void bad_process_data(void)
+{
+    uint8_t work_buf[512];  /* 스택에 512 B 할당 — 기본 스택 1 KB의 절반! */
+    /* ... */
+}
+
+/* ✅ GOOD: static으로 선언 — .bss 섹션으로 이동 (스택 아닌 RAM 영역) */
+void good_process_data(void)
+{
+    static uint8_t work_buf[512];  /* .bss 섹션에 배치, 스택 부담 없음 */
+    /* 주의: 재진입 불가 — 동시에 여러 곳에서 호출되면 공유됨 */
+    /* 단일 태스크(main loop)에서만 호출되는 경우에 적합 */
+    LOG_D("work_buf 주소: 0x%08lX", (uint32_t)work_buf);
+}
+  </code></pre>
+
+  <h3>스택 크기 설정 및 모니터링</h3>
+  <pre><code class="language-c">/* STM32CubeIDE: Project → Properties → C/C++ Build → Settings */
+/* Linker Script (STM32F411RETx_FLASH.ld) 에서 스택 크기 조정 */
+
+/* 스택 사용량 런타임 모니터링 — 스택 페인팅 기법 */
+#define STACK_CANARY_VALUE   0xDEADBEEFU
+#define STACK_CHECK_DEPTH    64U
+
+void Stack_FillCanary(void)
+{
+    /* 현재 SP 아래를 0xDEADBEEF로 채움 (초기화 시 한 번) */
+    extern uint32_t _estack;
+    uint32_t *p = (uint32_t *)((uint32_t)&_estack - 1024U);
+    for (uint32_t i = 0U; i < STACK_CHECK_DEPTH; i++)
+    {
+        p[i] = STACK_CANARY_VALUE;
+    }
+}
+
+uint32_t Stack_GetUsage(void)
+{
+    extern uint32_t _estack;
+    uint32_t *p = (uint32_t *)((uint32_t)&_estack - 1024U);
+    uint32_t i;
+
+    for (i = 0U; i < STACK_CHECK_DEPTH; i++)
+    {
+        if (p[i] != STACK_CANARY_VALUE)
+        {
+            break;
+        }
+    }
+    uint32_t used = (STACK_CHECK_DEPTH - i) * sizeof(uint32_t);
+    LOG_I("스택 최대 사용량: %lu / 1024 Bytes", used);
+    return used;
+}
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    STM32CubeIDE Build Analyzer 기능을 사용하면 .map 파일을 그래픽으로 시각화할 수 있습니다.
+    <code>Window → Show View → Build Analyzer</code>를 열고 빌드하면
+    각 파일/모듈이 얼마나 FLASH/RAM을 사용하는지 한눈에 볼 수 있습니다.
+    "가장 많이 차지하는 모듈"을 찾아 최적화 우선순위를 정하세요.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>현재 프로젝트의 FLASH 사용률이 몇 %인가? 80%를 넘으면 최적화를 고려해야 합니다.</li>
+      <li>함수 안에 선언한 배열 중 크기가 100 B 이상인 것이 있는가?</li>
+      <li>링커 스크립트에서 스택 크기(<code>_Min_Stack_Size</code>)가 얼마로 설정되어 있는가?</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 5절: 단위 테스트 ===== -->
+<section id="sec-05">
+  <h2>5절. HAL Mock 기반 단위 테스트 전략</h2>
+
+  <p>
+    "임베디드 시스템에 단위 테스트가 가능한가?"라는 질문에
+    많은 개발자가 "하드웨어가 없으면 테스트할 수 없다"고 생각합니다.
+    하지만 레이어드 아키텍처를 올바르게 적용했다면,
+    <strong>HAL 레이어만 Mock(가짜 구현)으로 교체</strong>하여
+    Driver와 Service 레이어를 PC에서 바로 테스트할 수 있습니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    비행기 파일럿이 실제 비행기로 훈련하기 전에 시뮬레이터를 사용하는 것과 같습니다.
+    시뮬레이터는 실제 비행기와 동일한 인터페이스(조종간, 계기판)를 제공하지만
+    실제 엔진 대신 소프트웨어로 동작합니다.
+    HAL Mock도 동일한 함수 시그니처를 제공하되 실제 하드웨어 동작 대신 미리 정해진 값을 반환합니다.
+    <br><small>※ 이 비유의 한계: 시뮬레이터가 실제 비행의 모든 물리적 변수를 재현하지 못하듯,
+    HAL Mock도 타이밍, 전기적 잡음, DMA 지연 등 하드웨어 특성은 검증하지 못합니다.
+    Mock 테스트는 로직 검증에 초점을 맞추고, 하드웨어 검증은 실물에서 별도로 수행합니다.</small>
+  </div>
+
+  <figure>
+    <img src="../../figures/ch19_sec05_mock_test.svg" alt="HAL Mock 기반 단위 테스트 구조">
+    <figcaption>그림 19-3. HAL Mock 테스트 구조 — HAL 레이어만 교체하여 PC에서 실행</figcaption>
+  </figure>
+
+  <h3>HAL Mock 구현 — 핵심 아이디어</h3>
+  <pre><code class="language-c">/* hal_mock_i2c.h — Mock HAL I2C 헤더 (테스트 빌드에서 stm32f4xx_hal.h 대체) */
+
+#ifndef HAL_MOCK_I2C_H
+#define HAL_MOCK_I2C_H
+
+#include &lt;stdint.h&gt;
+
+typedef enum { HAL_OK=0, HAL_ERROR=1, HAL_BUSY=2, HAL_TIMEOUT=3 } HAL_StatusTypeDef;
+typedef struct { uint32_t Instance; } I2C_HandleTypeDef;
+
+/* Mock 제어 인터페이스 — 테스트 케이스에서 동작 주입 */
+void MockI2C_SetTxResult(HAL_StatusTypeDef result);
+void MockI2C_SetRxResult(HAL_StatusTypeDef result);
+void MockI2C_SetRxData(const uint8_t *data, uint16_t size);
+
+/* 호출 기록 조회 */
+int MockI2C_GetTxCallCount(void);
+int MockI2C_GetRxCallCount(void);
+
+/* HAL 표준 인터페이스 (테스트 대상 코드가 호출하는 함수) */
+HAL_StatusTypeDef HAL_I2C_Master_Transmit(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
+                                           uint8_t *pData, uint16_t Size, uint32_t Timeout);
+HAL_StatusTypeDef HAL_I2C_Master_Receive(I2C_HandleTypeDef *hi2c,  uint16_t DevAddress,
+                                          uint8_t *pData, uint16_t Size, uint32_t Timeout);
+void HAL_Delay(uint32_t Delay);
+
+#endif /* HAL_MOCK_I2C_H */
+  </code></pre>
+
+  <h3>테스트 케이스 — Given/When/Then 패턴</h3>
+  <pre><code class="language-c">/* test_sht31_driver.c */
+#include "hal_mock_i2c.h"
+#include "sht31_driver.h"
+#include &lt;assert.h&gt;
+#include &lt;stdio.h&gt;
+
+/* TC01: 정상 측정 시나리오 */
+void test_SHT31_normal_read(void)
+{
+    /* Given: 25°C, 50% RH에 해당하는 원시 데이터 */
+    uint8_t mock_data[6] = {0x66, 0x66, 0xFF, 0x80, 0x00, 0xFF};
+    MockI2C_SetRxData(mock_data, 6U);
+    MockI2C_SetTxResult(HAL_OK);
+    MockI2C_SetRxResult(HAL_OK);
+
+    /* When: 센서 읽기 */
+    float temp, humi;
+    HAL_StatusTypeDef ret = SHT31_Read(&temp, &humi);
+
+    /* Then: 정상 반환, 올바른 값 */
+    assert(ret == HAL_OK);
+    assert(temp > 24.5f &amp;&amp; temp &lt; 25.5f);
+    assert(humi > 49.0f &amp;&amp; humi &lt; 51.0f);
+    assert(MockI2C_GetTxCallCount() == 1);  /* Transmit 1회 */
+    assert(MockI2C_GetRxCallCount() == 1);  /* Receive 1회 */
+
+    printf("[PASS] TC01: SHT31 정상 읽기 — temp=%.1f°C, humi=%.1f%%\n", temp, humi);
+}
+
+/* TC02: I2C 오류 시 조기 반환 */
+void test_SHT31_i2c_error(void)
+{
+    /* Given: Transmit 실패 주입 */
+    MockI2C_SetTxResult(HAL_ERROR);
+
+    /* When: 센서 읽기 시도 */
+    float temp, humi;
+    HAL_StatusTypeDef ret = SHT31_Read(&temp, &humi);
+
+    /* Then: HAL_ERROR 전파, Receive 미호출 */
+    assert(ret == HAL_ERROR);
+    assert(MockI2C_GetRxCallCount() == 0);
+
+    printf("[PASS] TC02: I2C 오류 처리 확인\n");
+}
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    PC에서 HAL Mock 테스트를 실행하려면 CMake 또는 GCC 단독 컴파일을 사용합니다.
+    <code>gcc sht31_driver.c hal_mock_i2c.c test_sht31_driver.c -o test_runner &amp;&amp; ./test_runner</code>
+    CI/CD 파이프라인(GitHub Actions 등)에 연결하면 코드를 push할 때마다
+    하드웨어 없이 자동으로 테스트가 실행됩니다.
+    이것이 바로 <strong>하드웨어 독립적인 임베디드 TDD(테스트 주도 개발)</strong>의 시작입니다.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> HAL Mock 테스트가 통과하면 실물 하드웨어에서도 동작이 보장되나요?<br>
+    <strong>A.</strong> 보장되지 않습니다. Mock 테스트는 <strong>로직 오류</strong>(잘못된 명령어 전송, 오류 처리 누락 등)를 잡는 도구입니다.
+    타이밍, 전기적 잡음, DMA 지연, 하드웨어 초기화 순서 등 하드웨어 특성에서 비롯된 버그는
+    실물에서 별도로 검증해야 합니다.
+    Mock 테스트 통과 → 실물 연결 순서로 진행하며, 두 테스트는 상호 보완 관계입니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    "임베디드에서 단위 테스트를 어떻게 하시나요?" 질문에 핵심 답변:
+    <strong>"레이어드 아키텍처를 적용하면 HAL 레이어만 Mock으로 교체하여 PC에서 Driver/Service 로직을 테스트할 수 있습니다.
+    이를 위해 HAL 핸들을 함수 파라미터로 주입(Dependency Injection)하거나 모듈 초기화 함수에서 한 번 설정합니다."</strong>
+  </aside>
+</section>
+
+<!-- ===== 6절: 코드 리뷰 체크리스트 ===== -->
+<section id="sec-06">
+  <h2>6절. 코드 리뷰 체크리스트</h2>
+
+  <p>
+    좋은 코드 리뷰는 버그를 잡는 것을 넘어 팀 전체의 코드 품질 기준을 높입니다.
+    이 절에서는 STM32 임베디드 프로젝트에 특화된 코드 리뷰 체크리스트를 소개합니다.
+    v2.2 마일스톤 달성을 위해 이 체크리스트를 통과해야 합니다.
+  </p>
+
+  <h3>카테고리 1: 아키텍처 &amp; 레이어</h3>
+  <ul>
+    <li>✅ App 레이어가 HAL 헤더를 직접 include하지 않는가?</li>
+    <li>✅ Service 레이어가 HAL 핸들(<code>huart2</code> 등)을 직접 참조하지 않는가?</li>
+    <li>✅ 상위 레이어 함수가 하위 레이어 함수를 콜백으로 받는가? (의존성 역전)</li>
+    <li>✅ 레이어 간 인터페이스(헤더 파일)가 최소 필요한 API만 노출하는가?</li>
+  </ul>
+
+  <h3>카테고리 2: 안전성 &amp; 방어적 코딩</h3>
+  <ul>
+    <li>✅ ISR과 main이 공유하는 모든 변수에 <code>volatile</code>이 선언되어 있는가?</li>
+    <li>✅ 모든 HAL 함수 반환값(<code>HAL_StatusTypeDef</code>)을 확인하는가?</li>
+    <li>✅ 포인터 파라미터를 사용하기 전에 NULL 검사를 하는가?</li>
+    <li>✅ 배열/버퍼 접근 시 경계값 검사(bounds check)를 하는가?</li>
+    <li>✅ 타임아웃이 없는 무한 대기 루프가 없는가?</li>
+  </ul>
+
+  <h3>카테고리 3: 코딩 표준</h3>
+  <ul>
+    <li>✅ 모든 정수 리터럴에 <code>U</code> 접미사가 붙어 있는가? (<code>100U</code>, <code>0x2CU</code>)</li>
+    <li>✅ <code>malloc</code>/<code>free</code>가 사용되지 않는가?</li>
+    <li>✅ 모든 <code>switch</code>에 <code>default</code> 케이스가 있는가?</li>
+    <li>✅ 함수 길이가 60줄 이하인가?</li>
+    <li>✅ 모든 함수에 Doxygen 주석(<code>@brief</code>, <code>@param</code>, <code>@return</code>)이 있는가?</li>
+  </ul>
+
+  <h3>카테고리 4: 로그 &amp; 디버깅</h3>
+  <ul>
+    <li>✅ 모든 오류 경로에 <code>LOG_E()</code> 또는 <code>LOG_W()</code>가 있는가?</li>
+    <li>✅ 핵심 상태 변화(초기화 완료, FSM 전이)에 <code>LOG_I()</code>가 있는가?</li>
+    <li>✅ 루프 내부의 빈번한 출력에 <code>LOG_D()</code>를 사용하여 성능 영향을 최소화하는가?</li>
+    <li>✅ 릴리즈 빌드 시 디버그 로그가 자동으로 비활성화되는가? (<code>LOG_LEVEL</code> 매크로)</li>
+  </ul>
+
+  <h3>카테고리 5: 테스트 가능성</h3>
+  <ul>
+    <li>✅ HAL 핸들이 함수 파라미터 또는 초기화 주입으로 관리되는가? (전역 직접 접근 최소화)</li>
+    <li>✅ 핵심 계산 로직이 HAL 호출과 분리되어 있어 PC에서 테스트 가능한가?</li>
+    <li>✅ 단위 테스트 케이스가 최소 정상/오류 두 가지 시나리오를 포함하는가?</li>
+  </ul>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    코드 리뷰 체크리스트를 수강생들에게 팀별로 나눠 서로의 코드를 리뷰하게 하면
+    학습 효과가 배가됩니다.
+    자신이 짠 코드를 다른 사람이 리뷰할 때 "내가 미처 몰랐던 것"을 발견하는 경험이
+    실무 코드 리뷰 문화를 이해하는 가장 빠른 방법입니다.
+    리뷰 시간은 20분으로 제한하고, 발견한 이슈를 카테고리별로 정리하도록 안내하세요.
+  </aside>
+</section>
+
+<!-- ===== 7절: 면접 예상 질문 20선 ===== -->
+<section id="sec-07">
+  <h2>7절. 실무 면접 예상 질문 20선</h2>
+
+  <p>
+    이 절에서는 STM32/임베디드 C 개발자 채용 면접에서 자주 출제되는 20개 질문을
+    DMA, RTC, FSM, 아키텍처, 인터럽트 카테고리별로 정리합니다.
+    이 교재를 완주한 여러분이라면 모두 대답할 수 있어야 하는 질문들입니다.
+  </p>
+
+  <aside class="tip">
+    💡 <strong>면접 답변 전략</strong><br>
+    임베디드 면접에서 "모른다"고 답하는 것보다 최악은 "안다"고 말하고 설명을 못하는 것입니다.
+    핵심 키워드를 정확히 말하고, 이 교재에서 실제로 구현한 경험을 연결하면
+    이론과 실무를 모두 갖춘 지원자로 평가받습니다.
+  </aside>
+
+  <h3>DMA (직접 메모리 접근) — 5문항</h3>
+
+  <div class="qa-card">
+    <p><strong>Q1.</strong> DMA(Direct Memory Access)와 폴링 방식의 CPU 점유율 차이를 설명하시오.</p>
+    <p>
+      <strong>A.</strong> 폴링 방식은 CPU가 데이터 전송이 완료될 때까지 계속 상태를 확인하므로
+      전송 중 CPU 점유율이 100%에 가깝습니다.
+      DMA는 DMA 컨트롤러가 버스를 통해 CPU 개입 없이 메모리 ↔ 주변장치 간 데이터를 이동하므로
+      CPU는 전송 중에 다른 작업을 수행할 수 있습니다.
+      전송 완료 시 DMA가 인터럽트를 발생시켜 CPU에 완료를 알립니다.
+      <br>
+      <strong>[핵심 키워드]</strong> 버스 마스터, DMA 컨트롤러, 완료 인터럽트, CPU 해방
+    </p>
+  </div>
+
+  <div class="qa-card">
+    <p><strong>Q2.</strong> DMA 완료 콜백이 두 번 호출되는 상황은 언제 발생하는가?</p>
+    <p>
+      <strong>A.</strong> 순환 모드(Circular Mode)에서 더블 버퍼링을 사용할 때 발생합니다.
+      전체 버퍼의 절반이 채워지면 <code>HAL_DMA_IRQHandler()</code>가 "반완료(Half-Complete)" 콜백을 호출하고,
+      전체 버퍼가 채워지면 "완료(Complete)" 콜백을 호출합니다.
+      예를 들어 UART IDLE DMA 수신(<code>HAL_UARTEx_ReceiveToIdle_DMA</code>)에서
+      반완료 콜백을 구현하지 않으면 반완료 시 처리가 누락됩니다.
+      <br>
+      <strong>[핵심 키워드]</strong> Circular Mode, Half-Transfer, HTIF, TCIF
+    </p>
+  </div>
+
+  <div class="qa-card">
+    <p><strong>Q3.</strong> STM32F4 DMA에서 Stream과 Channel의 관계를 설명하시오.</p>
+    <p>
+      <strong>A.</strong> STM32F4에는 DMA1, DMA2 두 개의 컨트롤러가 있으며,
+      각 컨트롤러는 8개의 Stream을 갖고 있습니다.
+      각 Stream은 8개의 Channel 중 하나와 연결되어 어떤 주변장치의 요청을 받을지 결정합니다.
+      예를 들어 UART2 TX는 DMA1 Stream6 Channel4로 고정되어 있습니다.
+      CubeMX는 이 고정 매핑을 자동으로 처리하며,
+      사용자는 Stream 우선순위만 설정합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> DMA1/DMA2, Stream (0~7), Channel (0~7), 요청 매핑 테이블
+    </p>
+  </div>
+
+  <div class="qa-card">
+    <p><strong>Q4.</strong> DMA 전송 중 데이터 일관성 문제가 발생하는 조건과 해결책은?</p>
+    <p>
+      <strong>A.</strong> DMA가 버퍼를 읽는 동안 CPU가 동일한 버퍼를 수정하면 데이터가 깨집니다.
+      해결책: (1) <strong>핑퐁 버퍼(Ping-Pong Buffer)</strong> — DMA는 버퍼 A, CPU는 버퍼 B를 교대로 사용.
+      (2) <strong>Busy 플래그</strong> — DMA 전송 중에 CPU가 버퍼를 수정하지 못하도록 플래그로 보호.
+      STM32F4에 캐시가 없어 캐시 일관성 문제는 발생하지 않으나,
+      STM32H7 등 Cortex-M7은 SCB_CleanDCache() 호출이 필요합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> 핑퐁 버퍼, Busy 플래그, 캐시 일관성, DMA 전송 완료 후 접근
+    </p>
+  </div>
+
+  <div class="qa-card">
+    <p><strong>Q5.</strong> DMA 순환 모드(Circular Mode)와 일반 모드(Normal Mode)의 차이는?</p>
+    <p>
+      <strong>A.</strong> 일반 모드는 설정된 데이터 전송이 완료되면 DMA가 자동으로 비활성화됩니다.
+      다음 전송을 위해 <code>HAL_DMA_Start_IT()</code>나 <code>HAL_UART_Receive_DMA()</code>를 다시 호출해야 합니다.
+      순환 모드는 전송이 완료되면 자동으로 초기 주소로 돌아가 연속 전송을 반복합니다.
+      ADC 연속 변환, UART 실시간 수신 등에 적합합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> CIRC 비트, 자동 재시작, 링 버퍼 연동
+    </p>
+  </div>
+
+  <h3>RTC (실시간 클럭) — 3문항</h3>
+
+  <div class="qa-card">
+    <p><strong>Q6.</strong> NUCLEO-F411RE에서 LSE와 LSI의 정확도 차이 및 선택 기준은?</p>
+    <p>
+      <strong>A.</strong> LSE(저속 외부 클럭)는 외부 32.768 kHz 크리스탈을 사용하며 정확도가 매우 높습니다(±20 ppm).
+      하지만 NUCLEO-F411RE 기본 보드에는 LSE 크리스탈이 미장착되어 있어 SB48/SB49 솔더 브리지를 연결해야 합니다.
+      LSI(저속 내부 RC 오실레이터)는 30~50 kHz 범위에서 동작하며 ±5% 이상의 오차가 있어
+      하루에 수 분씩 오차가 누적될 수 있습니다.
+      시각 정확도가 중요한 스마트 시계에는 LSE, 저전력 경보 기능만 필요하다면 LSI를 선택합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> LSE 32.768 kHz, SB48/SB49, LSI ±5%, 정확도 vs 부품 비용
+    </p>
+  </div>
+
+  <div class="qa-card">
+    <p><strong>Q7.</strong> 전원이 차단된 후에도 RTC 시각이 유지되는 조건은?</p>
+    <p>
+      <strong>A.</strong> RTC가 백업 도메인(Backup Domain)에서 동작하고, VBAT 핀에 배터리가 연결되어야 합니다.
+      백업 도메인은 VDD가 없어도 VBAT로 동작을 유지합니다.
+      이를 위해 (1) RTC 클럭 소스가 LSE 또는 LSI여야 하고,
+      (2) <code>PWR_BackupAccessCmd(ENABLE)</code>으로 백업 도메인에 대한 쓰기 권한을 활성화해야 하며,
+      (3) NUCLEO-F411RE에서는 CN3 배터리 소켓에 CR2032를 장착합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> Backup Domain, VBAT, CR2032, LSE 연속 동작
+    </p>
+  </div>
+
+  <div class="qa-card">
+    <p><strong>Q8.</strong> RTC 백업 레지스터의 용도와 활용 예를 설명하시오.</p>
+    <p>
+      <strong>A.</strong> RTC 백업 레지스터(BKP)는 전원이 차단되어도 VBAT가 있으면 유지되는 20개의 32비트 레지스터입니다.
+      용도: (1) 재부팅 후 RTC가 이미 설정되었는지 확인(마법 숫자 저장), (2) 재부팅 원인 기록, (3) 소량의 설정값 저장.
+      예: <code>HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0xBEEFU)</code>로 초기화 완료 표시를 저장하고,
+      재부팅 시 이 값을 읽어 RTC 재설정 여부를 결정합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> BKP 레지스터, 마법 숫자, 재부팅 후 상태 복원
+    </p>
+  </div>
+
+  <h3>FSM (유한 상태 머신) — 4문항</h3>
+
+  <div class="qa-card">
+    <p><strong>Q9.</strong> 테이블 기반 FSM과 switch-case FSM의 장단점을 비교하시오.</p>
+    <p>
+      <strong>A.</strong>
+      switch-case FSM: 구현이 직관적이고 디버깅이 쉽지만, 상태/이벤트가 늘어날수록 코드가 중첩되어 유지보수가 어렵습니다.
+      테이블 기반 FSM: 전이 테이블(상태 × 이벤트 → 다음 상태 + 액션)을 배열로 정의하므로
+      상태 추가 시 테이블만 수정하면 됩니다. 코드 크기가 일정하게 유지되지만 초기 설계 비용이 높습니다.
+      실무 기준: 상태 5개 이하는 switch-case, 이상은 테이블 기반을 권장합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> 전이 테이블, 함수 포인터 배열, 상태 × 이벤트 매트릭스
+    </p>
+  </div>
+
+  <div class="qa-card">
+    <p><strong>Q10.</strong> 계층적 FSM(HFSM)이 필요한 상황의 예를 드시오.</p>
+    <p>
+      <strong>A.</strong> 공통 동작을 공유하는 슈퍼 상태(Super State)가 있을 때 HFSM이 유용합니다.
+      예: 스마트 시계의 DISPLAY FSM에서 TIME_VIEW, SENSOR_VIEW, STOPWATCH_VIEW 모두 공통으로
+      "버튼 길게 누르기 → 설정 모드 진입" 전이가 필요합니다.
+      HFSM 없이 구현하면 이 전이를 세 상태 모두에 중복 작성해야 합니다.
+      HFSM에서는 공통 전이를 슈퍼 상태인 DISPLAY에 한 번만 정의합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> 슈퍼 상태, 전이 공유, 이벤트 버블링, 중복 제거
+    </p>
+  </div>
+
+  <div class="qa-card">
+    <p><strong>Q11.</strong> FSM에서 재진입(re-entrant) 문제가 발생하는 조건과 방지책은?</p>
+    <p>
+      <strong>A.</strong> ISR에서 FSM 상태 전이 함수를 직접 호출할 때 main()이 동일 함수를 실행 중이면
+      공유 상태 변수가 동시에 수정되어 FSM이 예측 불가능한 상태로 전이됩니다.
+      방지책: (1) ISR에서는 이벤트 큐에 이벤트를 넣고, main loop에서 큐를 처리합니다.
+      (2) 상태 변수 접근 시 Critical Section(<code>__disable_irq()</code>)을 사용합니다.
+      (3) 원자적 연산(atomic operation)을 활용합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> 이벤트 큐, Critical Section, 원자적 상태 전이
+    </p>
+  </div>
+
+  <div class="qa-card">
+    <p><strong>Q12.</strong> 인터럽트 핸들러에서 FSM 전이 이벤트를 안전하게 처리하는 패턴은?</p>
+    <p>
+      <strong>A.</strong> "이벤트 플래그 + main loop 처리" 패턴을 사용합니다.
+      ISR에서는 <code>volatile uint8_t g_event_flags</code>에 이벤트 비트를 설정하고 즉시 반환합니다.
+      main loop에서 플래그를 확인하여 FSM 전이를 처리합니다.
+      이 패턴은 ISR을 짧고 빠르게 유지하면서 FSM 로직의 재진입 문제를 방지합니다.
+      FreeRTOS를 사용한다면 xEventGroupSetBitsFromISR()을 활용합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> 이벤트 플래그, volatile, ISR 최소화, defer to main loop
+    </p>
+  </div>
+
+  <h3>아키텍처 — 4문항</h3>
+
+  <div class="qa-card">
+    <p><strong>Q13.</strong> 레이어드 아키텍처에서 상향 의존성(upward dependency)이 발생하면 어떤 문제가 생기는가?</p>
+    <p>
+      <strong>A.</strong> 상향 의존성이란 하위 레이어(Driver)가 상위 레이어(App)를 참조하는 것입니다.
+      예: UART Driver가 App의 오류 처리 함수를 직접 호출하는 경우.
+      이렇게 되면 (1) Driver를 다른 프로젝트에 재사용할 때 App 코드도 함께 가져와야 하고,
+      (2) 순환 의존성(circular dependency)이 생겨 링크 오류가 발생하며,
+      (3) 테스트 시 App 없이 Driver만 독립 테스트가 불가능합니다.
+      해결책: 콜백 함수 포인터를 사용하거나 이벤트 버스 패턴을 적용합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> 순환 의존성, 재사용성 저하, 콜백 패턴, 의존성 역전
+    </p>
+  </div>
+
+  <div class="qa-card">
+    <p><strong>Q14.</strong> HAL → Driver → Service → App 각 레이어의 책임을 예를 들어 설명하시오.</p>
+    <p>
+      <strong>A.</strong>
+      <strong>HAL 레이어:</strong> STM32 하드웨어 추상화 — <code>HAL_I2C_Master_Transmit()</code>로 I2C 비트를 전송합니다.
+      <strong>Driver 레이어:</strong> 특정 디바이스 프로토콜 처리 — <code>SHT31_Read()</code>로 명령 전송 → 15ms 대기 → 데이터 수신 → CRC 검증을 캡슐화합니다.
+      <strong>Service 레이어:</strong> 비즈니스 로직 — <code>SensorService_Update()</code>로 주기적 읽기, 이동 평균, 임계값 알람 처리를 담당합니다.
+      <strong>App 레이어:</strong> 사용자 요구사항 — <code>App_Main()</code>에서 온습도 데이터를 LCD에 표시하고 RTC 알람을 연동합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> 단일 책임, 추상화 수준, 재사용 가능성, 테스트 용이성
+    </p>
+  </div>
+
+  <div class="qa-card">
+    <p><strong>Q15.</strong> 단일 책임 원칙(SRP)이 임베디드 C에서 어떻게 적용되는가?</p>
+    <p>
+      <strong>A.</strong> 하나의 .c 파일(모듈)은 하나의 책임만 가져야 합니다.
+      예: <code>sht31_driver.c</code>는 SHT31 센서와의 통신만 담당합니다.
+      온도 이동 평균 계산, LCD 표시, 알람 판단은 별도 모듈의 책임입니다.
+      SRP를 지키면 (1) 함수 길이가 자연스럽게 짧아지고,
+      (2) 테스트 단위가 명확해지며,
+      (3) 요구사항 변경 시 수정 범위가 한 파일로 제한됩니다.
+      <br>
+      <strong>[핵심 키워드]</strong> 변경 이유가 하나, 모듈 응집도, 결합도 최소화
+    </p>
+  </div>
+
+  <div class="qa-card">
+    <p><strong>Q16.</strong> 의존성 역전 원칙(DIP)을 C언어에서 구현하는 방법은?</p>
+    <p>
+      <strong>A.</strong> C에는 인터페이스가 없지만 <strong>함수 포인터를 활용한 콜백</strong>으로 DIP를 구현합니다.
+      예: UART Driver가 App의 특정 함수를 직접 호출하는 대신,
+      <code>void (*on_rx_complete)(const uint8_t *data, uint16_t len)</code> 콜백을 초기화 시 등록받습니다.
+      이렇게 하면 UART Driver는 App에 의존하지 않고, App이 콜백을 통해 UART Driver에 의존합니다.
+      C++ HAL 추상화 계층에서는 순수 가상 함수(인터페이스 클래스)를 사용하기도 합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> 함수 포인터, 콜백 등록, 의존성 방향 역전, 플러그인 패턴
+    </p>
+  </div>
+
+  <h3>인터럽트 &amp; NVIC — 4문항</h3>
+
+  <div class="qa-card">
+    <p><strong>Q17.</strong> NVIC 우선순위 역전(priority inversion)이 발생하는 조건과 해결책은?</p>
+    <p>
+      <strong>A.</strong> 우선순위 역전은 낮은 우선순위 인터럽트가 Critical Section을 점유하여
+      높은 우선순위 인터럽트가 그 자원을 기다리는 동안 중간 우선순위 인터럽트에게 선점당하는 현상입니다.
+      STM32 임베디드에서는 주로 공유 버퍼에 대한 Critical Section 길이가 길 때 발생합니다.
+      해결책: (1) Critical Section을 가능한 짧게 유지, (2) 비슷한 우선순위의 인터럽트끼리 그룹화,
+      (3) FreeRTOS의 뮤텍스(priority inheritance 지원)를 활용합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> Priority Inheritance, Critical Section 최소화, 동일 우선순위 그룹
+    </p>
+  </div>
+
+  <div class="qa-card">
+    <p><strong>Q18.</strong> ISR(인터럽트 서비스 루틴)에서 수행하면 안 되는 작업과 그 이유는?</p>
+    <p>
+      <strong>A.</strong>
+      (1) <strong>HAL_Delay()</strong>: SysTick 인터럽트에 의존하므로 ISR에서 SysTick이 차단되면 무한 대기가 됩니다.
+      (2) <strong>printf/UART 폴링 전송</strong>: 전송 완료까지 CPU를 점유하여 다른 인터럽트를 지연시킵니다.
+      (3) <strong>메모리 할당(malloc)</strong>: 비결정적 시간이 소요되며 힙 손상 가능성이 있습니다.
+      (4) <strong>복잡한 연산/긴 루프</strong>: ISR은 50μs 이내에 반환해야 합니다.
+      일반 원칙: ISR에서는 플래그 설정, 카운터 증가, 큐에 넣기만 수행합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> ISR 최소화, 플래그 패턴, 결정론적 실행 시간
+    </p>
+  </div>
+
+  <div class="qa-card">
+    <p><strong>Q19.</strong> Critical Section을 구현하는 두 가지 방법(PRIMASK vs BASEPRI)의 차이는?</p>
+    <p>
+      <strong>A.</strong>
+      <code>PRIMASK</code>(<code>__disable_irq()</code>)는 NMI와 HardFault를 제외한 <strong>모든 인터럽트를 차단</strong>합니다.
+      시스템 전반의 반응성이 저하되지만 구현이 단순합니다.
+      <code>BASEPRI</code>는 특정 우선순위 <strong>이하의 인터럽트만</strong> 차단합니다.
+      높은 우선순위 인터럽트(긴급 센서 알람 등)는 여전히 처리되므로 시스템 반응성을 유지할 수 있습니다.
+      FreeRTOS는 <code>configMAX_SYSCALL_INTERRUPT_PRIORITY</code>를 기준으로 BASEPRI를 사용합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> PRIMASK 전체 차단, BASEPRI 선택적 차단, FreeRTOS Critical Section
+    </p>
+  </div>
+
+  <div class="qa-card">
+    <p><strong>Q20.</strong> HAL_Delay()가 인터럽트 핸들러 내부에서 동작하지 않는 이유와 대안은?</p>
+    <p>
+      <strong>A.</strong> <code>HAL_Delay()</code>는 SysTick 인터럽트가 <code>uwTick</code> 카운터를 증가시키는 방식으로 동작합니다.
+      그런데 <code>HAL_UART_RxCpltCallback()</code> 같은 ISR 내부에서 <code>HAL_Delay()</code>를 호출하면
+      SysTick 인터럽트가 현재 실행 중인 ISR보다 같거나 낮은 우선순위를 가질 경우 선점이 불가능하여
+      <code>uwTick</code>이 영원히 증가하지 않아 무한 대기에 빠집니다.
+      대안: (1) ISR에서 지연이 필요한 로직은 main loop로 defer합니다.
+      (2) SysTick 우선순위를 가장 높게 설정합니다(프리엠션 가능하도록).
+      (3) 하드웨어 타이머를 사용하여 비블로킹 지연을 구현합니다.
+      <br>
+      <strong>[핵심 키워드]</strong> SysTick 선점 불가, uwTick, ISR에서 폴링 대기 금지, defer to main
+    </p>
+  </div>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong><br>
+    <ul>
+      <li>DMA 관련 5문항 중 자신 있게 설명할 수 있는 것은 몇 개인가?</li>
+      <li>FSM Q11~Q12는 이 교재 Ch08~Ch09에서 직접 구현한 내용입니다. 코드를 다시 살펴보세요.</li>
+      <li>면접에서 "이 프로젝트에서 가장 어려웠던 점은 무엇인가요?"라는 질문에 답할 수 있도록
+        이 교재에서 가장 기억에 남는 디버깅 경험 하나를 정리해두세요.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 8절: 마무리 회고 ===== -->
+<section id="sec-08">
+  <h2>8절. 전체 교재 마무리 회고 — v0.1에서 v2.2까지의 여정</h2>
+
+  <p>
+    드디어 마지막 절에 도달했습니다.
+    잠시 멈추고 이 여정을 돌아볼 시간입니다.
+  </p>
+
+  <p>
+    여러분은 Ch01에서 LED 하나를 깜빡이는 코드를 작성했습니다.
+    <code>HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET)</code>을 처음 실행했을 때의 그 느낌 —
+    "내가 쓴 코드가 진짜 전기를 켰다"는 그 성취감을 기억하시나요?
+  </p>
+
+  <figure>
+    <img src="../../figures/ch19_sec08_journey.svg" alt="v0.1에서 v2.2까지의 성장 여정">
+    <figcaption>그림 19-4. 19개 챕터의 성장 로드맵 — v0.1 LED 점등에서 v2.2 실무급 시스템으로</figcaption>
+  </figure>
+
+  <h3>우리가 함께 만든 것들</h3>
+
+  <ul>
+    <li><strong>Part 0 (v0.1~v0.3)</strong>: GPIO 제어, UART 로그 인프라, 레이어드 아키텍처 설계도 —
+      이 세 챕터가 이후 모든 챕터의 기반이 되었습니다.</li>
+    <li><strong>Part 1 (v0.4~v0.6)</strong>: UART, DMA, 링 버퍼 —
+      "CPU를 자유롭게"라는 임베디드의 핵심 철학을 코드로 경험했습니다.</li>
+    <li><strong>Part 2 (v0.7~v1.0)</strong>: TIM, RTC, 스텝 모터 —
+      마일스톤 ①에서 실제로 시침이 움직이는 순간, 모두가 환호했습니다.</li>
+    <li><strong>Part 3 (v1.1~v1.4)</strong>: I2C, SPI, TFT LCD, GFX —
+      센서 데이터가 화면에 표시될 때의 그 쾌감은 잊을 수 없습니다.</li>
+    <li><strong>Part 4 (v1.5~v1.6)</strong>: CLI, PC 대시보드 —
+      마일스톤 ②에서 PC 화면에 실시간 그래프가 그려졌습니다.</li>
+    <li><strong>Part 5~6 (v2.0~v2.2)</strong>: 아키텍처 심화, 디버깅, 리팩토링 —
+      "동작하는 코드"에서 "좋은 코드"로 성장하는 과정이었습니다.</li>
+  </ul>
+
+  <h3>v2.2 마일스톤 ③ — 최종 완성 기준</h3>
+
+  <div class="milestone-checklist">
+    <p>✅ <strong>기능 완성</strong>: 스마트 시계(시침), 온습도 표시, TFT LCD, PC 대시보드, CLI 모두 동작</p>
+    <p>✅ <strong>아키텍처</strong>: HAL → Driver → Service → App 4계층 레이어 의존성 준수</p>
+    <p>✅ <strong>코딩 표준</strong>: MISRA-C 핵심 10개 규칙 준수, volatile/반환값 처리 완료</p>
+    <p>✅ <strong>단위 테스트</strong>: HAL Mock 기반 Driver 레이어 테스트 케이스 4개 이상 통과</p>
+    <p>✅ <strong>메모리</strong>: FLASH 사용률 90% 미만, 스택 오버플로우 없음 (.map 파일 확인)</p>
+    <p>✅ <strong>코드 리뷰</strong>: 5개 카테고리 체크리스트 모두 통과</p>
+    <p>✅ <strong>면접 준비</strong>: DMA/RTC/FSM/아키텍처/인터럽트 20문항 자신 있게 답변 가능</p>
+  </div>
+
+  <h3>이 여정이 끝이 아닌 시작인 이유</h3>
+
+  <p>
+    이 교재를 완주한 여러분은 이제 다음 수준에 도전할 준비가 되어 있습니다.
+  </p>
+
+  <ul>
+    <li><strong>FreeRTOS</strong>: 지금 배운 FSM, DMA, 인터럽트 관리가 RTOS 태스크 설계의 기반입니다.</li>
+    <li><strong>STM32H7 / Cortex-M7</strong>: 캐시, 더블 정밀도 부동소수점, 더 큰 RAM에 도전하세요.</li>
+    <li><strong>CAN / Ethernet</strong>: 산업용 통신 프로토콜은 이 교재의 UART/SPI/I2C 레이어 설계와 같은 패턴으로 확장됩니다.</li>
+    <li><strong>CI/CD 임베디드</strong>: HAL Mock 단위 테스트를 GitHub Actions에 연결하여 자동화를 경험하세요.</li>
+    <li><strong>ISO 26262 / IEC 62443</strong>: MISRA-C를 시작으로 산업 안전 표준의 세계로 나아가세요.</li>
+  </ul>
+
+  <div class="closing-message">
+    <p>
+      v0.1의 LED 점등에서 출발하여 v2.2의 완성된 임베디드 시스템까지,
+      여러분이 이 모든 과정을 직접 손으로 만들었습니다.
+    </p>
+    <p>
+      코드는 도구입니다. 여러분이 배운 것은 코드가 아니라
+      <strong>문제를 분해하고, 계층으로 설계하고, 안전하게 구현하고, 품질을 검증하는 사고방식</strong>입니다.
+    </p>
+    <p>
+      이 사고방식이 여러분의 실무를 바꿀 것입니다.
+    </p>
+    <p style="text-align: right; font-style: italic; color: #1A73E8;">
+      — STM32 고급 실무교육 교재 일동
+    </p>
+  </div>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    마지막 수업 시간에 15분을 남겨 수강생들에게 "이 과정에서 가장 기억에 남는 버그는 무엇인가?"를
+    돌아가며 이야기하게 하세요.
+    버그 이야기는 배움의 증거이고, 성장의 흔적입니다.
+    "그 버그를 어떻게 해결했나요?"를 이어 묻는 순간,
+    수강생들이 자신의 실력을 스스로 확인하는 가장 강렬한 교육 경험이 됩니다.
+  </aside>
+</section>
+
+<!-- ===== 실습: 코드 품질 감사 ===== -->
+<section id="lab">
+  <h2>실습: 프로젝트 v2.2 코드 품질 감사</h2>
+  <p><strong>목표</strong>: 전체 프로젝트를 코드 리뷰 체크리스트로 검증하여 v2.2 인증을 완료합니다.</p>
+  <p><strong>환경</strong>: STM32CubeIDE, NUCLEO-F411RE, PC(HAL Mock 테스트용)</p>
+
+  <h3>Step 1. volatile 검사</h3>
+  <p>STM32CubeIDE 터미널 또는 PowerShell에서 ISR 공유 변수 확인:</p>
+  <pre><code class="language-c">/* ISR 내에서 설정하는 변수 목록 수동 확인 */
+/* 다음 패턴으로 프로젝트 전체 검색 */
+/* "= 1" 또는 "= 0" 을 ISR 콜백 함수 내에서 찾아 volatile 선언 여부 확인 */
+
+/* 확인할 콜백 함수 목록 */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)  { /* volatile 변수 사용 여부? */ }
+void HAL_DMA_XferCpltCallback(DMA_HandleTypeDef *hdma)   { /* volatile 변수 사용 여부? */ }
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) { /* volatile 변수 사용 여부? */ }
+void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)   { /* volatile 변수 사용 여부? */ }
+  </code></pre>
+
+  <h3>Step 2. HAL Mock 단위 테스트 실행</h3>
+  <pre><code class="language-c">/* Windows PowerShell 또는 Git Bash에서 실행 */
+
+/* 컴파일 (MinGW GCC) */
+/* gcc code_examples/ch19_hal_mock_test.c -o test_runner.exe */
+
+/* 실행 */
+/* ./test_runner.exe */
+
+/* 예상 출력 */
+/* ==================================================== */
+/*   Ch19 — HAL Mock 단위 테스트 실행                    */
+/*   대상: SHT31 Driver (sht31_driver.c)                */
+/* ==================================================== */
+/* [TC01] SHT31 정상 읽기 */
+/*   [PASS] HAL_OK 반환 */
+/*   [PASS] Transmit 1회 호출 */
+/*   [PASS] 온도 ≈ 25°C */
+/* ... */
+/* 결과: PASS=12 / FAIL=0 / TOTAL=12 */
+/* 모든 테스트 통과! (v2.2 품질 인증) */
+  </code></pre>
+
+  <h3>Step 3. .map 파일 메모리 분석</h3>
+  <pre><code class="language-c">/* STM32CubeIDE에서 빌드 후 Debug 폴더의 .map 파일 확인 */
+
+/* 찾아볼 항목 */
+/* 1. Memory Configuration 섹션: FLASH/RAM 사용률 */
+/* 2. .bss 섹션에서 가장 큰 전역 버퍼 크기 확인 */
+/* 3. 스택 크기 설정 확인 (_Min_Stack_Size) */
+
+/* 목표: FLASH < 90%, RAM < 80% 사용 */
+  </code></pre>
+
+  <h3>Step 4. 최종 동작 확인</h3>
+  <p><strong>예상 결과</strong>: 모든 기능이 정상 동작</p>
+  <pre><code>[INFO ] ===== STM32 스마트 시계 v2.2 부팅 =====
+[INFO ] UART Driver 초기화 완료
+[INFO ] I2C Driver 초기화 완료 (SHT31)
+[INFO ] SPI Driver 초기화 완료 (ILI9341)
+[INFO ] RTC: 2026-03-17 09:00:00 (LSE)
+[INFO ] 스텝 모터 홈 복귀 완료
+[INFO ] LCD 초기화 완료 (240x320)
+[INFO ] CLI 준비 완료 — 'help' 명령어로 목록 확인
+[INFO ] ===== v2.2 시스템 초기화 완료 =====
+[DEBUG] SHT31: temp=22.4°C, humi=48.2%
+[DEBUG] 디스플레이 업데이트: TIME_VIEW
+  </code></pre>
+
+  <aside class="tip">
+    💡 <strong>실습이 안 될 때</strong><br>
+    HAL Mock 컴파일 오류가 발생한다면 MinGW GCC가 설치되어 있는지 확인하세요.
+    Windows에서는 <code>winget install GnuWin32.Make</code>로 설치하거나
+    WSL2(Windows Subsystem for Linux)에서 실행하는 것을 권장합니다.
+    컴파일 없이도 코드 리뷰 체크리스트와 .map 파일 분석만으로 v2.2 인증의 80%는 완성할 수 있습니다.
+  </aside>
+</section>
+
+<!-- ===== 핵심 정리 ===== -->
+<section class="chapter-summary-section">
+  <h2>핵심 정리</h2>
+  <ul>
+    <li>MISRA-C 핵심 10개 규칙 중 임베디드에서 가장 중요한 것은 <strong>volatile 선언, HAL 반환값 확인, 동적 메모리 금지</strong>입니다.</li>
+    <li>레이어 위반의 대표 패턴은 "App이 HAL을 직접 호출"이며, Driver 레이어의 공개 인터페이스를 통해 해결합니다.</li>
+    <li><strong>volatile 누락, 정수 오버플로우, 재진입 문제</strong>는 컴파일 오류 없이 발생하는 임베디드 3대 잠재 버그입니다.</li>
+    <li>.map 파일 분석으로 FLASH/RAM 사용률을 파악하고, <code>static</code> 변수로 스택 부담을 줄일 수 있습니다.</li>
+    <li>HAL Mock 테스트는 레이어드 아키텍처의 핵심 이점 중 하나로, 하드웨어 없이 Driver/Service 로직을 검증합니다.</li>
+    <li>코드 리뷰 5개 카테고리(아키텍처, 안전성, 코딩 표준, 로그, 테스트 가능성)를 통과하면 v2.2 인증이 완성됩니다.</li>
+    <li>면접 20문항에 자신 있게 답할 수 있다면, 여러분은 이미 <strong>중급+ 임베디드 C 개발자</strong>입니다.</li>
+  </ul>
+
+  <h3>아키텍처 업데이트 — v2.2 최종 완성</h3>
+  <p>
+    이 챕터 완료로 전체 프로젝트가 <code>v2.2</code>로 업그레이드되었습니다.
+    레이어드 아키텍처가 완전히 정합성을 갖추고, MISRA-C 기준을 준수하며,
+    HAL Mock 단위 테스트가 포함된 실무 수준의 임베디드 시스템이 완성되었습니다.
+  </p>
+  <figure>
+    <img src="../../figures/ch19_sec00_architecture.svg" alt="v2.2 최종 아키텍처">
+    <figcaption>그림 19-5. v2.2 최종 아키텍처 — 19개 챕터의 누적 성장 결과</figcaption>
+  </figure>
+</section>
+
+<!-- ===== 연습문제 ===== -->
+<section class="exercises">
+  <h2>연습문제</h2>
+
+  <div class="exercise">
+    <span class="level">기억</span>
+    <strong>1.</strong> MISRA-C에서 임베디드 환경에서 동적 메모리 할당(<code>malloc</code>)을 금지하는 이유를 두 가지 이상 설명하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">이해</span>
+    <strong>2.</strong> <code>volatile</code> 키워드가 없는 변수를 ISR과 main이 공유할 때, 최적화 레벨 -O2에서 어떤 문제가 발생하는지 컴파일러 동작 관점에서 설명하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">적용</span>
+    <strong>3.</strong> 다음 코드에서 레이어 위반을 찾아 리팩토링하시오.
+    <pre><code class="language-c">/* clock_service.c — Service 레이어 */
+#include "stm32f4xx_hal.h"
+extern I2C_HandleTypeDef hi2c1;
+
+void ClockService_SyncTemperature(void) {
+    uint8_t cmd[2] = {0x2C, 0x06};
+    HAL_I2C_Master_Transmit(&hi2c1, 0x88, cmd, 2, 100);
+}</code></pre>
+  </div>
+
+  <div class="exercise">
+    <span class="level">분석</span>
+    <strong>4.</strong> 빌드 결과 .map 파일에서 RAM 사용량이 예상보다 많을 때, 확인해야 할 사항과 최적화 전략 세 가지를 제시하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">평가</span>
+    <strong>5.</strong> HAL Mock 단위 테스트가 실물 하드웨어 테스트를 완전히 대체할 수 없는 이유를 설명하고, 두 테스트의 적절한 역할 분담을 제안하시오.
+  </div>
+</section>
+
+<!-- ===== 마무리 — 다음 단계 안내 ===== -->
+<section class="next-chapter">
+  <h2>교재를 마치며 — 다음 도전으로</h2>
+  <p>
+    현재 프로젝트는 <strong>v2.2</strong> — 마일스톤 ③으로 완성되었습니다.
+    스마트 시계(시침 구동), 온습도 모니터링, TFT LCD 디스플레이, CLI, PC 대시보드,
+    레이어드 아키텍처, MISRA-C 준수, HAL Mock 단위 테스트까지 모두 구현되었습니다.
+  </p>
+  <p>
+    이 교재가 끝이 아닙니다.
+    다음 도전으로 <strong>FreeRTOS 포팅</strong>을 권장합니다.
+    지금 배운 FSM, DMA, 인터럽트 관리, 레이어드 아키텍처가
+    RTOS 멀티태스킹 설계의 완벽한 기반이 됩니다.
+    여러분이 만든 v2.2 코드를 FreeRTOS로 마이그레이션하면서
+    <strong>태스크, 큐, 뮤텍스, 세마포어</strong>를 자연스럽게 배울 수 있습니다.
+  </p>
+  <p style="text-align: center; font-size: 1.1em; font-weight: bold; color: #1A73E8; margin-top: 2em;">
+    수고하셨습니다. 여러분이 만든 v2.2 시스템이 자랑스럽습니다.
+  </p>
+</section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+</body>
+</html>

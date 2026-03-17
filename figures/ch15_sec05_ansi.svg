@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="700" height="320" viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg" font-family="'Noto Sans KR', Arial, sans-serif">
+  <rect width="700" height="320" fill="#1E1E1E" rx="8"/>
+  <text x="350" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#CCCCCC">ANSI 이스케이프 코드 터미널 출력 예시</text>
+
+  <!-- 터미널 프롬프트 줄 -->
+  <text x="30" y="65" font-size="13" font-family="monospace" fill="#56B6C2" font-weight="bold">STM32&gt;</text>
+  <text x="100" y="65" font-size="13" font-family="monospace" fill="#ABB2BF">sensor read</text>
+
+  <!-- 성공 응답 -->
+  <text x="30" y="90" font-size="13" font-family="monospace" fill="#98C379">온도: 25.3°C  습도: 62.1%</text>
+
+  <!-- 구분선 -->
+  <line x1="30" y1="105" x2="670" y2="105" stroke="#444" stroke-width="1"/>
+
+  <!-- time set 예시 -->
+  <text x="30" y="130" font-size="13" font-family="monospace" fill="#56B6C2" font-weight="bold">STM32&gt;</text>
+  <text x="100" y="130" font-size="13" font-family="monospace" fill="#ABB2BF">time set 09:30:00</text>
+  <text x="30" y="152" font-size="13" font-family="monospace" fill="#98C379">시각 설정 완료: 09:30:00</text>
+
+  <!-- 구분선 -->
+  <line x1="30" y1="168" x2="670" y2="168" stroke="#444" stroke-width="1"/>
+
+  <!-- 에러 예시 -->
+  <text x="30" y="193" font-size="13" font-family="monospace" fill="#56B6C2" font-weight="bold">STM32&gt;</text>
+  <text x="100" y="193" font-size="13" font-family="monospace" fill="#ABB2BF">time set 25:00:00</text>
+  <text x="30" y="215" font-size="13" font-family="monospace" fill="#E06C75">범위 오류: 시(0-23) 분(0-59) 초(0-59)</text>
+
+  <!-- 구분선 -->
+  <line x1="30" y1="230" x2="670" y2="230" stroke="#444" stroke-width="1"/>
+
+  <!-- 코드 설명 -->
+  <text x="30" y="255" font-size="11" fill="#888">ANSI 코드 참조:</text>
+  <rect x="30" y="262" width="12" height="12" fill="#56B6C2" rx="2"/>
+  <text x="48" y="273" font-size="11" font-family="monospace" fill="#888">\033[1;36m = 굵은 청록 (프롬프트)</text>
+  <rect x="230" y="262" width="12" height="12" fill="#98C379" rx="2"/>
+  <text x="248" y="273" font-size="11" font-family="monospace" fill="#888">\033[32m = 초록 (성공)</text>
+  <rect x="430" y="262" width="12" height="12" fill="#E06C75" rx="2"/>
+  <text x="448" y="273" font-size="11" font-family="monospace" fill="#888">\033[31m = 빨강 (에러)</text>
+
+  <text x="30" y="300" font-size="11" fill="#888">\033[0m = 리셋 (색상 해제)   |   \033[2J\033[H = 화면 지우기</text>
+</svg>

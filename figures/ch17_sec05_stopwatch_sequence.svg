@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 430" font-family="'Noto Sans KR', sans-serif">
+  <rect width="760" height="430" fill="#F8F9FA" rx="12"/>
+  <text x="380" y="32" text-anchor="middle" font-size="16" font-weight="bold" fill="#1A1A2E">시나리오 2: 스톱워치(Stopwatch) 시퀀스 다이어그램</text>
+  <text x="380" y="52" text-anchor="middle" font-size="11" fill="#666">Button EXTI → Stopwatch FSM 전이 → LCD + UART 동기화</text>
+
+  <!-- 참가자 -->
+  <rect x="30" y="70" width="80" height="36" fill="#607D8B" rx="5"/>
+  <text x="70" y="85" text-anchor="middle" font-size="10" fill="white" font-weight="bold">Button HW</text>
+  <text x="70" y="98" text-anchor="middle" font-size="9" fill="white">(EXTI)</text>
+
+  <rect x="150" y="70" width="90" height="36" fill="#34A853" rx="5"/>
+  <text x="195" y="85" text-anchor="middle" font-size="10" fill="white" font-weight="bold">tim_driver</text>
+  <text x="195" y="98" text-anchor="middle" font-size="9" fill="white">(Driver)</text>
+
+  <rect x="280" y="70" width="90" height="36" fill="#EA4335" rx="5"/>
+  <text x="325" y="85" text-anchor="middle" font-size="10" fill="white" font-weight="bold">stopwatch_app</text>
+  <text x="325" y="98" text-anchor="middle" font-size="9" fill="white">(App)</text>
+
+  <rect x="410" y="70" width="90" height="36" fill="#FBBC04" rx="5"/>
+  <text x="455" y="85" text-anchor="middle" font-size="10" fill="#333" font-weight="bold">ui_service</text>
+  <text x="455" y="98" text-anchor="middle" font-size="9" fill="#333">(Service)</text>
+
+  <rect x="540" y="70" width="90" height="36" fill="#34A853" rx="5"/>
+  <text x="585" y="85" text-anchor="middle" font-size="10" fill="white" font-weight="bold">uart_driver</text>
+  <text x="585" y="98" text-anchor="middle" font-size="9" fill="white">(Driver)</text>
+
+  <!-- 생명선 -->
+  <line x1="70" y1="106" x2="70" y2="400" stroke="#607D8B" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="195" y1="106" x2="195" y2="400" stroke="#34A853" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="325" y1="106" x2="325" y2="400" stroke="#EA4335" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="455" y1="106" x2="455" y2="400" stroke="#FBBC04" stroke-width="1" stroke-dasharray="5,3"/>
+  <line x1="585" y1="106" x2="585" y2="400" stroke="#34A853" stroke-width="1" stroke-dasharray="5,3"/>
+
+  <!-- Step 1: IDLE → RUNNING (짧은 버튼) -->
+  <text x="30" y="128" font-size="10" fill="#888">① 시작</text>
+  <line x1="70" y1="135" x2="320" y2="135" stroke="#607D8B" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="70" y="120" width="250" height="16" fill="#ECEFF1" rx="2"/>
+  <text x="195" y="131" text-anchor="middle" font-size="9" fill="#455A64">HAL_GPIO_EXTI_Callback(BTN_SHORT)</text>
+
+  <line x1="325" y1="155" x2="325" y2="171" stroke="#EA4335"/>
+  <rect x="280" y="143" width="90" height="28" fill="#FFEBEE" stroke="#EA4335" rx="3"/>
+  <text x="325" y="157" text-anchor="middle" font-size="9" fill="#C62828">FSM: IDLE</text>
+  <text x="325" y="169" text-anchor="middle" font-size="9" fill="#C62828">→ RUNNING</text>
+
+  <line x1="325" y1="185" x2="190" y2="185" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="200" y="172" width="125" height="14" fill="#FFEBEE" rx="2"/>
+  <text x="262" y="182" text-anchor="middle" font-size="9" fill="#C62828">HAL_TIM_Base_Start_IT(TIM2)</text>
+
+  <line x1="325" y1="205" x2="450" y2="205" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="325" y="192" width="125" height="14" fill="#FFEBEE" rx="2"/>
+  <text x="387" y="202" text-anchor="middle" font-size="9" fill="#C62828">ui_update_stopwatch(0)</text>
+
+  <!-- Step 2: RUNNING — 매 10ms tick -->
+  <text x="30" y="228" font-size="10" fill="#888">② Tick</text>
+  <line x1="195" y1="235" x2="320" y2="235" stroke="#34A853" stroke-width="1.5" stroke-dasharray="5,2" marker-end="url(#arr2)"/>
+  <rect x="195" y="221" width="125" height="14" fill="#E8F5E9" rx="2"/>
+  <text x="257" y="231" text-anchor="middle" font-size="9" fill="#2E7D32">HAL_TIM_PeriodElapsedCallback() 10ms</text>
+
+  <line x1="325" y1="255" x2="450" y2="255" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="325" y="241" width="125" height="14" fill="#FFEBEE" rx="2"/>
+  <text x="387" y="251" text-anchor="middle" font-size="9" fill="#C62828">ui_update_stopwatch(elapsed)</text>
+
+  <!-- Step 3: RUNNING → PAUSED (짧은 버튼) -->
+  <text x="30" y="278" font-size="10" fill="#888">③ 일시정지</text>
+  <line x1="70" y1="285" x2="320" y2="285" stroke="#607D8B" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="70" y="271" width="250" height="14" fill="#ECEFF1" rx="2"/>
+  <text x="195" y="281" text-anchor="middle" font-size="9" fill="#455A64">BTN_SHORT (RUNNING 중)</text>
+
+  <rect x="280" y="292" width="90" height="28" fill="#FFEBEE" stroke="#EA4335" rx="3"/>
+  <text x="325" y="305" text-anchor="middle" font-size="9" fill="#C62828">FSM: RUNNING</text>
+  <text x="325" y="317" text-anchor="middle" font-size="9" fill="#C62828">→ PAUSED</text>
+
+  <line x1="325" y1="332" x2="190" y2="332" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="197" y="319" width="128" height="14" fill="#FFEBEE" rx="2"/>
+  <text x="261" y="329" text-anchor="middle" font-size="9" fill="#C62828">HAL_TIM_Base_Stop_IT(TIM2)</text>
+
+  <!-- Step 4: PAUSED → IDLE (긴 버튼) — UART 전송 -->
+  <text x="30" y="358" font-size="10" fill="#888">④ 기록</text>
+  <line x1="70" y1="365" x2="320" y2="365" stroke="#607D8B" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="70" y="352" width="250" height="14" fill="#ECEFF1" rx="2"/>
+  <text x="195" y="362" text-anchor="middle" font-size="9" fill="#455A64">BTN_LONG → IDLE (리셋)</text>
+
+  <line x1="325" y1="385" x2="580" y2="385" stroke="#EA4335" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="325" y="372" width="255" height="14" fill="#FFEBEE" rx="2"/>
+  <text x="452" y="382" text-anchor="middle" font-size="9" fill="#C62828">uart_send_frame(STOPWATCH_RECORD, elapsed)</text>
+
+  <!-- 마커 정의 -->
+  <defs>
+    <marker id="arr2" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L7,3 z" fill="#333"/>
+    </marker>
+  </defs>
+</svg>

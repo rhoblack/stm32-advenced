@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="700" height="380" viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      text { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
+    </style>
+    <marker id="arrowFSM" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect width="700" height="380" fill="#F8F9FA" rx="8"/>
+  <text x="350" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#333">DISPLAY FSM — 화면 전환 상태 전이 다이어그램</text>
+
+  <!-- 초기 상태 점 -->
+  <circle cx="80" cy="190" r="10" fill="#333"/>
+  <line x1="90" y1="190" x2="148" y2="190" stroke="#333" stroke-width="2" marker-end="url(#arrowFSM)"/>
+
+  <!-- TIME_VIEW 상태 -->
+  <rect x="150" y="148" width="160" height="84" rx="12" fill="#1A73E8" fill-opacity="0.15" stroke="#1A73E8" stroke-width="2.5"/>
+  <text x="230" y="179" text-anchor="middle" font-size="15" font-weight="bold" fill="#0D47A1">TIME_VIEW</text>
+  <text x="230" y="197" text-anchor="middle" font-size="11" fill="#0D47A1">진입: 화면 지우기 + 레이아웃</text>
+  <text x="230" y="213" text-anchor="middle" font-size="11" fill="#0D47A1">갱신: 시:분:초, 날짜 표시</text>
+
+  <!-- SENSOR_VIEW 상태 -->
+  <rect x="390" y="80" width="160" height="84" rx="12" fill="#34A853" fill-opacity="0.15" stroke="#34A853" stroke-width="2.5"/>
+  <text x="470" y="111" text-anchor="middle" font-size="15" font-weight="bold" fill="#1B5E20">SENSOR_VIEW</text>
+  <text x="470" y="129" text-anchor="middle" font-size="11" fill="#1B5E20">진입: 화면 지우기 + 레이아웃</text>
+  <text x="470" y="145" text-anchor="middle" font-size="11" fill="#1B5E20">갱신: 온도, 습도 표시</text>
+
+  <!-- STOPWATCH_VIEW 상태 -->
+  <rect x="390" y="258" width="160" height="84" rx="12" fill="#FBBC04" fill-opacity="0.2" stroke="#F57F17" stroke-width="2.5"/>
+  <text x="470" y="289" text-anchor="middle" font-size="14" font-weight="bold" fill="#E65100">STOPWATCH</text>
+  <text x="470" y="307" text-anchor="middle" font-size="14" font-weight="bold" fill="#E65100">_VIEW</text>
+  <text x="470" y="323" text-anchor="middle" font-size="11" fill="#E65100">갱신: 경과 시간 표시</text>
+
+  <!-- TIME → SENSOR (BTN_SHORT) -->
+  <path d="M 310 170 Q 360 110 390 110" stroke="#2196F3" stroke-width="2" fill="none" marker-end="url(#arrowFSM)"/>
+  <text x="355" y="126" text-anchor="middle" font-size="11" fill="#1565C0">BTN_SHORT</text>
+
+  <!-- SENSOR → STOPWATCH (BTN_SHORT) -->
+  <path d="M 470 164 L 470 258" stroke="#2196F3" stroke-width="2" fill="none" marker-end="url(#arrowFSM)"/>
+  <text x="490" y="217" font-size="11" fill="#1565C0">BTN_SHORT</text>
+
+  <!-- STOPWATCH → TIME (BTN_SHORT) -->
+  <path d="M 390 310 Q 300 340 280 232" stroke="#2196F3" stroke-width="2" fill="none" marker-end="url(#arrowFSM)"/>
+  <text x="305" y="348" text-anchor="middle" font-size="11" fill="#1565C0">BTN_SHORT</text>
+
+  <!-- BTN_LONG (자기 자신으로 루프) -->
+  <path d="M 180 148 Q 100 90 158 148" stroke="#E91E63" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrowFSM)"/>
+  <text x="108" y="108" text-anchor="middle" font-size="10" fill="#C2185B">BTN_LONG</text>
+  <text x="108" y="122" text-anchor="middle" font-size="10" fill="#C2185B">(강제 갱신)</text>
+
+  <!-- 범례 -->
+  <rect x="20" y="340" width="660" height="30" rx="4" fill="#EEE"/>
+  <line x1="30" y1="355" x2="60" y2="355" stroke="#2196F3" stroke-width="2" marker-end="url(#arrowFSM)"/>
+  <text x="65" y="359" font-size="11" fill="#333">BTN_SHORT: 화면 전환</text>
+  <line x1="200" y1="355" x2="230" y2="355" stroke="#E91E63" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowFSM)"/>
+  <text x="235" y="359" font-size="11" fill="#333">BTN_LONG: 강제 갱신 (자기 전이)</text>
+  <text x="460" y="359" font-size="11" fill="#333">●: 초기 상태 → TIME_VIEW</text>
+</svg>

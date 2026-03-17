@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="760" height="440" viewBox="0 0 760 440" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      text { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
+    </style>
+    <marker id="arrowSeq" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#333"/>
+    </marker>
+    <marker id="arrowRet" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#888"/>
+    </marker>
+  </defs>
+
+  <rect width="760" height="440" fill="#F8F9FA" rx="8"/>
+  <text x="380" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">UI 갱신 시퀀스 — 1초 RTC 인터럽트 → LCD 표시까지</text>
+
+  <!-- 참여자 헤더 -->
+  <rect x="30" y="45" width="100" height="36" rx="4" fill="#EA4335" fill-opacity="0.2" stroke="#EA4335" stroke-width="1.5"/>
+  <text x="80" y="68" text-anchor="middle" font-size="11" font-weight="bold" fill="#C62828">RTC ISR</text>
+
+  <rect x="165" y="45" width="110" height="36" rx="4" fill="#EA4335" fill-opacity="0.15" stroke="#EA4335" stroke-width="1.5"/>
+  <text x="220" y="68" text-anchor="middle" font-size="11" font-weight="bold" fill="#C62828">main_app</text>
+
+  <rect x="305" y="45" width="110" height="36" rx="4" fill="#FBBC04" fill-opacity="0.25" stroke="#F57F17" stroke-width="2"/>
+  <text x="360" y="62" text-anchor="middle" font-size="11" font-weight="bold" fill="#E65100">UI Service</text>
+  <text x="360" y="76" text-anchor="middle" font-size="10" fill="#E65100">(DISPLAY FSM)</text>
+
+  <rect x="445" y="45" width="110" height="36" rx="4" fill="#FBBC04" fill-opacity="0.15" stroke="#F9A825" stroke-width="1.5"/>
+  <text x="500" y="62" text-anchor="middle" font-size="11" font-weight="bold" fill="#7B6000">GFX Service</text>
+  <text x="500" y="76" text-anchor="middle" font-size="10" fill="#7B6000">(추상 렌더링)</text>
+
+  <rect x="585" y="45" width="110" height="36" rx="4" fill="#34A853" fill-opacity="0.15" stroke="#34A853" stroke-width="1.5"/>
+  <text x="640" y="62" text-anchor="middle" font-size="11" font-weight="bold" fill="#1B5E20">LCD Driver</text>
+  <text x="640" y="76" text-anchor="middle" font-size="10" fill="#1B5E20">(SPI DMA)</text>
+
+  <!-- 수직 생명선 -->
+  <line x1="80" y1="81" x2="80" y2="430" stroke="#EA4335" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="220" y1="81" x2="220" y2="430" stroke="#EA4335" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="360" y1="81" x2="360" y2="430" stroke="#F57F17" stroke-width="1.5" stroke-dasharray="4,4"/>
+  <line x1="500" y1="81" x2="500" y2="430" stroke="#F9A825" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="640" y1="81" x2="640" y2="430" stroke="#34A853" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- 시퀀스 1: RTC 인터럽트 발생 -->
+  <text x="10" y="112" font-size="10" fill="#666">①</text>
+  <line x1="80" y1="108" x2="218" y2="108" stroke="#333" stroke-width="1.5" marker-end="url(#arrowSeq)"/>
+  <text x="145" y="103" text-anchor="middle" font-size="10" fill="#333">HAL_RTC_AlarmAEventCallback()</text>
+  <text x="145" y="117" text-anchor="middle" font-size="10" fill="#555">g_rtc_updated = 1</text>
+
+  <!-- 시퀀스 2: main_app 루프에서 감지 -->
+  <text x="10" y="148" font-size="10" fill="#666">②</text>
+  <line x1="220" y1="144" x2="358" y2="144" stroke="#333" stroke-width="1.5" marker-end="url(#arrowSeq)"/>
+  <text x="285" y="138" text-anchor="middle" font-size="10" fill="#333">UI_Refresh()</text>
+  <text x="285" y="152" text-anchor="middle" font-size="10" fill="#555">현재 FSM 상태 확인</text>
+
+  <!-- 시퀀스 3: FSM 분기 -->
+  <text x="10" y="183" font-size="10" fill="#666">③</text>
+  <rect x="340" y="170" width="40" height="18" rx="3" fill="#FBBC04" fill-opacity="0.4"/>
+  <text x="360" y="183" text-anchor="middle" font-size="10" fill="#E65100">[TIME]</text>
+  <line x1="360" y1="188" x2="498" y2="188" stroke="#333" stroke-width="1.5" marker-end="url(#arrowSeq)"/>
+  <text x="424" y="182" text-anchor="middle" font-size="10" fill="#333">UI_Render_TimeView(h,m,s,d)</text>
+
+  <!-- 시퀀스 4: GFX DrawString -->
+  <text x="10" y="222" font-size="10" fill="#666">④</text>
+  <line x1="500" y1="218" x2="638" y2="218" stroke="#333" stroke-width="1.5" marker-end="url(#arrowSeq)"/>
+  <text x="565" y="212" text-anchor="middle" font-size="10" fill="#333">GFX_DrawString("12:34:56")</text>
+  <text x="565" y="226" text-anchor="middle" font-size="10" fill="#555">→ ILI9341_Draw_String()</text>
+
+  <!-- 시퀀스 5: SPI DMA 전송 -->
+  <text x="10" y="257" font-size="10" fill="#666">⑤</text>
+  <line x1="640" y1="253" x2="640" y2="253" stroke="#333" stroke-width="1.5"/>
+  <rect x="615" y="245" width="60" height="20" rx="3" fill="#34A853" fill-opacity="0.3"/>
+  <text x="645" y="259" text-anchor="middle" font-size="10" fill="#1B5E20">SPI DMA TX</text>
+
+  <!-- 리턴 화살표 -->
+  <text x="10" y="292" font-size="10" fill="#666">⑥</text>
+  <line x1="638" y1="288" x2="502" y2="288" stroke="#888" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowRet)"/>
+  <text x="565" y="283" text-anchor="middle" font-size="10" fill="#777">DMA 완료 콜백</text>
+
+  <line x1="498" y1="310" x2="362" y2="310" stroke="#888" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowRet)"/>
+  <text x="424" y="305" text-anchor="middle" font-size="10" fill="#777">return</text>
+
+  <line x1="358" y1="332" x2="222" y2="332" stroke="#888" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowRet)"/>
+  <text x="285" y="327" text-anchor="middle" font-size="10" fill="#777">return (완료)</text>
+
+  <!-- 버튼 이벤트 화살표 -->
+  <text x="10" y="370" font-size="10" fill="#666">⑦</text>
+  <line x1="80" y1="366" x2="358" y2="366" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrowSeq)"/>
+  <text x="215" y="360" text-anchor="middle" font-size="10" fill="#E91E63">EXTI_Callback → UI_HandleEvent(BTN_SHORT)</text>
+  <text x="215" y="374" text-anchor="middle" font-size="10" fill="#E91E63">→ FSM 상태 전환 (SENSOR_VIEW)</text>
+
+  <!-- 주석 박스 -->
+  <rect x="30" y="390" width="700" height="35" rx="4" fill="#E3F2FD"/>
+  <text x="380" y="407" text-anchor="middle" font-size="11" fill="#0D47A1">★ GFX Service는 "무엇을" 그릴지만 알고, LCD Driver는 "어떻게" 전송할지만 알면 됩니다</text>
+  <text x="380" y="422" text-anchor="middle" font-size="11" fill="#0D47A1">— 관심사 분리(Separation of Concerns) 원칙</text>
+</svg>

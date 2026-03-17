@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="760" height="500" viewBox="0 0 760 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      text { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
+    </style>
+    <marker id="arrowFinal" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect width="760" height="500" fill="#F0F4F8" rx="10"/>
+  <text x="380" y="32" text-anchor="middle" font-size="17" font-weight="bold" fill="#212121">v1.3 완성 아키텍처 — 스마트 시계 &amp; 환경 모니터링</text>
+  <text x="380" y="50" text-anchor="middle" font-size="12" fill="#666">App → UI Service → GFX Service → LCD Driver → SPI DMA → ILI9341</text>
+
+  <!-- App 레이어 -->
+  <rect x="30" y="64" width="700" height="64" rx="8" fill="#EA4335" fill-opacity="0.12" stroke="#EA4335" stroke-width="2"/>
+  <text x="50" y="84" font-size="12" font-weight="bold" fill="#C62828">App 레이어</text>
+  <rect x="180" y="72" width="120" height="48" rx="4" fill="#EA4335" fill-opacity="0.25" stroke="#EA4335" stroke-width="1.5"/>
+  <text x="240" y="101" text-anchor="middle" font-size="11" fill="#B71C1C">main_app.c</text>
+  <rect x="320" y="72" width="120" height="48" rx="4" fill="#EA4335" fill-opacity="0.25" stroke="#EA4335" stroke-width="1.5"/>
+  <text x="380" y="101" text-anchor="middle" font-size="11" fill="#B71C1C">clock_app.c</text>
+  <rect x="460" y="72" width="120" height="48" rx="4" fill="#EA4335" fill-opacity="0.25" stroke="#EA4335" stroke-width="1.5"/>
+  <text x="520" y="101" text-anchor="middle" font-size="11" fill="#B71C1C">button_app.c</text>
+
+  <!-- ↓ -->
+  <line x1="380" y1="128" x2="380" y2="154" stroke="#555" stroke-width="2" marker-end="url(#arrowFinal)"/>
+
+  <!-- Service 레이어 -->
+  <rect x="30" y="154" width="700" height="80" rx="8" fill="#FBBC04" fill-opacity="0.15" stroke="#FBBC04" stroke-width="2.5"/>
+  <text x="50" y="174" font-size="12" font-weight="bold" fill="#F57F17">Service 레이어 ★ Ch13 완성</text>
+
+  <rect x="60" y="162" width="130" height="64" rx="4" fill="#FBBC04" fill-opacity="0.45" stroke="#F57F17" stroke-width="2"/>
+  <text x="125" y="185" text-anchor="middle" font-size="11" font-weight="bold" fill="#E65100">ui_service.c</text>
+  <text x="125" y="200" text-anchor="middle" font-size="9" fill="#E65100">DISPLAY FSM</text>
+  <text x="125" y="214" text-anchor="middle" font-size="9" fill="#E65100">3종 View 렌더링</text>
+
+  <rect x="205" y="162" width="130" height="64" rx="4" fill="#FBBC04" fill-opacity="0.45" stroke="#F57F17" stroke-width="2"/>
+  <text x="270" y="185" text-anchor="middle" font-size="11" font-weight="bold" fill="#E65100">gfx_service.c</text>
+  <text x="270" y="200" text-anchor="middle" font-size="9" fill="#E65100">도형/폰트 추상화</text>
+  <text x="270" y="214" text-anchor="middle" font-size="9" fill="#E65100">색상 팔레트</text>
+
+  <rect x="350" y="162" width="130" height="64" rx="4" fill="#FBBC04" fill-opacity="0.2" stroke="#F9A825" stroke-width="1.5"/>
+  <text x="415" y="193" text-anchor="middle" font-size="11" fill="#7B6000">sensor_service.c</text>
+
+  <rect x="495" y="162" width="130" height="64" rx="4" fill="#FBBC04" fill-opacity="0.2" stroke="#F9A825" stroke-width="1.5"/>
+  <text x="560" y="193" text-anchor="middle" font-size="11" fill="#7B6000">clock_service.c</text>
+
+  <!-- ↓ -->
+  <line x1="380" y1="234" x2="380" y2="260" stroke="#555" stroke-width="2" marker-end="url(#arrowFinal)"/>
+
+  <!-- Driver 레이어 -->
+  <rect x="30" y="260" width="700" height="80" rx="8" fill="#34A853" fill-opacity="0.12" stroke="#34A853" stroke-width="2"/>
+  <text x="50" y="280" font-size="12" font-weight="bold" fill="#1B5E20">Driver 레이어</text>
+  <rect x="60" y="268" width="120" height="64" rx="4" fill="#34A853" fill-opacity="0.25" stroke="#34A853" stroke-width="1.5"/>
+  <text x="120" y="305" text-anchor="middle" font-size="11" fill="#1B5E20">ili9341_driver.c</text>
+  <rect x="195" y="268" width="110" height="64" rx="4" fill="#34A853" fill-opacity="0.25" stroke="#34A853" stroke-width="1.5"/>
+  <text x="250" y="305" text-anchor="middle" font-size="11" fill="#1B5E20">spi_driver.c</text>
+  <rect x="320" y="268" width="120" height="64" rx="4" fill="#34A853" fill-opacity="0.25" stroke="#34A853" stroke-width="1.5"/>
+  <text x="380" y="305" text-anchor="middle" font-size="11" fill="#1B5E20">sht31_driver.c</text>
+  <rect x="455" y="268" width="120" height="64" rx="4" fill="#34A853" fill-opacity="0.25" stroke="#34A853" stroke-width="1.5"/>
+  <text x="515" y="305" text-anchor="middle" font-size="11" fill="#1B5E20">rtc_driver.c</text>
+  <rect x="590" y="268" width="120" height="64" rx="4" fill="#34A853" fill-opacity="0.25" stroke="#34A853" stroke-width="1.5"/>
+  <text x="650" y="305" text-anchor="middle" font-size="11" fill="#1B5E20">stepper_driver.c</text>
+
+  <!-- ↓ -->
+  <line x1="380" y1="340" x2="380" y2="366" stroke="#555" stroke-width="2" marker-end="url(#arrowFinal)"/>
+
+  <!-- HAL 레이어 -->
+  <rect x="30" y="366" width="700" height="54" rx="8" fill="#1A73E8" fill-opacity="0.12" stroke="#1A73E8" stroke-width="2"/>
+  <text x="50" y="386" font-size="12" font-weight="bold" fill="#0D47A1">HAL 레이어</text>
+  <text x="380" y="400" text-anchor="middle" font-size="11" fill="#0D47A1">HAL_SPI_Transmit_DMA / HAL_I2C_Master_* / HAL_RTC_* / HAL_TIM_* / HAL_GPIO_*</text>
+
+  <!-- ↓ -->
+  <line x1="380" y1="420" x2="380" y2="446" stroke="#555" stroke-width="2" marker-end="url(#arrowFinal)"/>
+
+  <!-- 하드웨어 -->
+  <rect x="30" y="446" width="700" height="44" rx="8" fill="#607D8B" fill-opacity="0.18" stroke="#607D8B" stroke-width="2"/>
+  <text x="380" y="473" text-anchor="middle" font-size="12" fill="#37474F">하드웨어: ILI9341(SPI+DMA) | SHT31(I2C) | RTC(LSI) | 28BYJ-48(GPIO) | Button(EXTI)</text>
+
+  <!-- 버전 배지 -->
+  <rect x="620" y="20" width="110" height="30" rx="6" fill="#EA4335"/>
+  <text x="675" y="40" text-anchor="middle" font-size="14" font-weight="bold" fill="white">v1.3 완성</text>
+</svg>

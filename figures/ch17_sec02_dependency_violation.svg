@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 500" font-family="'Noto Sans KR', sans-serif">
+  <rect width="860" height="500" fill="#F8F9FA" rx="12"/>
+  <text x="430" y="36" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A1A2E">레이어 의존성 위반 사례 — Before / After</text>
+
+  <!-- Before (왼쪽) -->
+  <rect x="30" y="55" width="380" height="390" fill="white" stroke="#EA4335" stroke-width="2" rx="8"/>
+  <rect x="30" y="55" width="380" height="32" fill="#EA4335" rx="8"/>
+  <text x="220" y="77" text-anchor="middle" font-size="14" font-weight="bold" fill="white">Before (v1.6 — 위반 존재)</text>
+
+  <!-- App 박스 -->
+  <rect x="60" y="105" width="320" height="45" fill="#FEECE9" stroke="#EA4335" stroke-width="1.5" rx="5"/>
+  <text x="220" y="122" text-anchor="middle" font-size="12" font-weight="bold" fill="#C62828">App 레이어</text>
+  <text x="220" y="140" text-anchor="middle" font-size="10" fill="#555">cli_app.c / protocol_app.c</text>
+
+  <!-- 위반 화살표 1: App → HAL 직접 -->
+  <line x1="220" y1="150" x2="220" y2="245" stroke="#EA4335" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#red-arrow)"/>
+  <rect x="120" y="190" width="200" height="22" fill="#FFCDD2" rx="3"/>
+  <text x="220" y="205" text-anchor="middle" font-size="10" fill="#B71C1C" font-weight="bold">⚠ App → HAL 직접 접근!</text>
+
+  <!-- Driver 박스 -->
+  <rect x="60" y="250" width="320" height="45" fill="#E8F5E9" stroke="#34A853" stroke-width="1.5" rx="5"/>
+  <text x="220" y="267" text-anchor="middle" font-size="12" font-weight="bold" fill="#1B5E20">Driver 레이어</text>
+  <text x="220" y="285" text-anchor="middle" font-size="10" fill="#555">sht31_driver.c / uart_driver.c</text>
+
+  <!-- 위반 화살표 2: Driver → App (역방향) -->
+  <line x1="300" y1="295" x2="300" y2="155" stroke="#FF6F00" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#orange-arrow)"/>
+  <rect x="310" y="215" width="185" height="22" fill="#FFF8E1" rx="3" stroke="#FF6F00"/>
+  <text x="400" y="230" text-anchor="middle" font-size="10" fill="#E65100" font-weight="bold">⚠ 역방향 의존! (역전)</text>
+
+  <!-- HAL 박스 -->
+  <rect x="60" y="350" width="320" height="45" fill="#E3F2FD" stroke="#1A73E8" stroke-width="1.5" rx="5"/>
+  <text x="220" y="367" text-anchor="middle" font-size="12" font-weight="bold" fill="#0D47A1">HAL 레이어</text>
+  <text x="220" y="385" text-anchor="middle" font-size="10" fill="#555">HAL_GPIO_* / HAL_UART_* / HAL_I2C_*</text>
+
+  <text x="220" y="420" text-anchor="middle" font-size="10" fill="#EA4335">① App이 HAL_I2C_Master_Transmit() 직접 호출</text>
+  <text x="220" y="435" text-anchor="middle" font-size="10" fill="#EA4335">② sht31_driver가 uart_driver_send() 호출 (역방향)</text>
+
+  <!-- After (오른쪽) -->
+  <rect x="450" y="55" width="380" height="390" fill="white" stroke="#34A853" stroke-width="2" rx="8"/>
+  <rect x="450" y="55" width="380" height="32" fill="#34A853" rx="8"/>
+  <text x="640" y="77" text-anchor="middle" font-size="14" font-weight="bold" fill="white">After (v2.0 — 단방향 의존)</text>
+
+  <!-- App 박스 -->
+  <rect x="480" y="105" width="320" height="45" fill="#FEECE9" stroke="#EA4335" stroke-width="1.5" rx="5"/>
+  <text x="640" y="122" text-anchor="middle" font-size="12" font-weight="bold" fill="#C62828">App 레이어</text>
+  <text x="640" y="140" text-anchor="middle" font-size="10" fill="#555">cli_app.c → sensor_service.h 만 include</text>
+
+  <!-- 정상 화살표: App → Service -->
+  <line x1="640" y1="150" x2="640" y2="198" stroke="#34A853" stroke-width="2.5" marker-end="url(#green-arrow)"/>
+
+  <!-- Service 박스 (After에만 존재) -->
+  <rect x="480" y="200" width="320" height="45" fill="#FFF8E1" stroke="#FBBC04" stroke-width="1.5" rx="5"/>
+  <text x="640" y="217" text-anchor="middle" font-size="12" font-weight="bold" fill="#F57F17">Service 레이어</text>
+  <text x="640" y="235" text-anchor="middle" font-size="10" fill="#555">sensor_service.c (SHT31 추상화)</text>
+
+  <!-- 정상 화살표: Service → Driver -->
+  <line x1="640" y1="245" x2="640" y2="293" stroke="#34A853" stroke-width="2.5" marker-end="url(#green-arrow)"/>
+
+  <!-- Driver 박스 -->
+  <rect x="480" y="295" width="320" height="45" fill="#E8F5E9" stroke="#34A853" stroke-width="1.5" rx="5"/>
+  <text x="640" y="312" text-anchor="middle" font-size="12" font-weight="bold" fill="#1B5E20">Driver 레이어</text>
+  <text x="640" y="330" text-anchor="middle" font-size="10" fill="#555">sht31_driver.c (I2C만 사용)</text>
+
+  <!-- 정상 화살표: Driver → HAL -->
+  <line x1="640" y1="340" x2="640" y2="388" stroke="#34A853" stroke-width="2.5" marker-end="url(#green-arrow)"/>
+
+  <!-- HAL 박스 -->
+  <rect x="480" y="390" width="320" height="45" fill="#E3F2FD" stroke="#1A73E8" stroke-width="1.5" rx="5"/>
+  <text x="640" y="407" text-anchor="middle" font-size="12" font-weight="bold" fill="#0D47A1">HAL 레이어</text>
+  <text x="640" y="425" text-anchor="middle" font-size="10" fill="#555">HAL_I2C_Master_Transmit() 등</text>
+
+  <!-- 화살표 방향 설명 -->
+  <text x="640" y="462" text-anchor="middle" font-size="10" fill="#2E7D32">✓ 모든 의존성이 위→아래 단방향</text>
+  <text x="640" y="477" text-anchor="middle" font-size="10" fill="#2E7D32">✓ App은 Service 인터페이스만 알면 됨</text>
+
+  <!-- 마커 정의 -->
+  <defs>
+    <marker id="red-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#EA4335"/>
+    </marker>
+    <marker id="orange-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#FF6F00"/>
+    </marker>
+    <marker id="green-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#34A853"/>
+    </marker>
+  </defs>
+</svg>

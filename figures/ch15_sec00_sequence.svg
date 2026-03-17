@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="780" height="500" viewBox="0 0 780 500" xmlns="http://www.w3.org/2000/svg" font-family="'Noto Sans KR', Arial, sans-serif">
+  <rect width="780" height="500" fill="#F8F9FA" rx="8"/>
+  <text x="390" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">Ch15 시퀀스 다이어그램: UART RX → CLI → Service</text>
+
+  <!-- 참여자 헤더 -->
+  <!-- PC Terminal -->
+  <rect x="20" y="45" width="90" height="40" fill="#6C757D" rx="5"/>
+  <text x="65" y="62" text-anchor="middle" font-size="11" font-weight="bold" fill="white">PC</text>
+  <text x="65" y="78" text-anchor="middle" font-size="10" fill="white">Terminal</text>
+
+  <!-- UART HAL -->
+  <rect x="140" y="45" width="90" height="40" fill="#1A73E8" rx="5"/>
+  <text x="185" y="62" text-anchor="middle" font-size="11" font-weight="bold" fill="white">UART</text>
+  <text x="185" y="78" text-anchor="middle" font-size="10" fill="white">HAL+DMA</text>
+
+  <!-- Ring Buffer -->
+  <rect x="260" y="45" width="90" height="40" fill="#34A853" rx="5"/>
+  <text x="305" y="62" text-anchor="middle" font-size="11" font-weight="bold" fill="white">Ring</text>
+  <text x="305" y="78" text-anchor="middle" font-size="10" fill="white">Buffer</text>
+
+  <!-- CLI Parser -->
+  <rect x="380" y="45" width="90" height="40" fill="#EA4335" rx="5"/>
+  <text x="425" y="62" text-anchor="middle" font-size="11" font-weight="bold" fill="white">CLI</text>
+  <text x="425" y="78" text-anchor="middle" font-size="10" fill="white">Parser</text>
+
+  <!-- Command Dispatch -->
+  <rect x="500" y="45" width="90" height="40" fill="#EA4335" rx="5"/>
+  <text x="545" y="62" text-anchor="middle" font-size="11" font-weight="bold" fill="white">Command</text>
+  <text x="545" y="78" text-anchor="middle" font-size="10" fill="white">Dispatch</text>
+
+  <!-- Service -->
+  <rect x="620" y="45" width="90" height="40" fill="#FBBC04" rx="5"/>
+  <text x="665" y="62" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">Service</text>
+  <text x="665" y="78" text-anchor="middle" font-size="10" fill="#333">Layer</text>
+
+  <!-- 생명선 -->
+  <line x1="65" y1="85" x2="65" y2="480" stroke="#6C757D" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="185" y1="85" x2="185" y2="480" stroke="#1A73E8" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="305" y1="85" x2="305" y2="480" stroke="#34A853" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="425" y1="85" x2="425" y2="480" stroke="#EA4335" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="545" y1="85" x2="545" y2="480" stroke="#EA4335" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="665" y1="85" x2="665" y2="480" stroke="#FBBC04" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- 시퀀스 1: 사용자 입력 -->
+  <text x="20" y="115" font-size="10" fill="#555">① 사용자 입력</text>
+  <line x1="65" y1="120" x2="185" y2="120" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="120" y="115" text-anchor="middle" font-size="10" fill="#1A73E8">"time get\r\n"</text>
+
+  <!-- 시퀀스 2: IDLE 인터럽트 발생 -->
+  <text x="20" y="148" font-size="10" fill="#555">② IDLE 인터럽트</text>
+  <line x1="185" y1="152" x2="305" y2="152" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="240" y="147" text-anchor="middle" font-size="10" fill="#34A853">ring_buf_push()</text>
+
+  <!-- 시퀀스 3: CLI_Process 폴링 -->
+  <text x="20" y="180" font-size="10" fill="#555">③ 메인루프 폴링</text>
+  <line x1="425" y1="184" x2="305" y2="184" stroke="#333" stroke-width="1.5" marker-end="url(#arrowLeft)"/>
+  <text x="360" y="179" text-anchor="middle" font-size="10" fill="#34A853">ring_buf_pop()</text>
+
+  <!-- 시퀀스 4: 라인 감지 -->
+  <rect x="390" y="200" width="70" height="28" fill="#EA4335" rx="3" opacity="0.15"/>
+  <text x="425" y="214" text-anchor="middle" font-size="10" fill="#EA4335">'\n' 감지</text>
+  <text x="425" y="224" text-anchor="middle" font-size="9" fill="#EA4335">라인 완성</text>
+
+  <!-- 시퀀스 5: 토큰화 -->
+  <text x="20" y="250" font-size="10" fill="#555">④ 토큰화</text>
+  <rect x="390" y="238" width="70" height="28" fill="#EA4335" rx="3" opacity="0.2"/>
+  <text x="425" y="252" text-anchor="middle" font-size="10" fill="#EA4335">strtok_r()</text>
+  <text x="425" y="262" text-anchor="middle" font-size="9" fill="#EA4335">argc=2, argv[]</text>
+
+  <!-- 시퀀스 6: 커맨드 탐색 -->
+  <text x="20" y="295" font-size="10" fill="#555">⑤ 커맨드 탐색</text>
+  <line x1="425" y1="300" x2="545" y2="300" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="480" y="295" text-anchor="middle" font-size="10" fill="#EA4335">cmd_dispatch()</text>
+
+  <!-- 시퀀스 7: 테이블 조회 -->
+  <rect x="510" y="315" width="70" height="28" fill="#EA4335" rx="3" opacity="0.15"/>
+  <text x="545" y="329" text-anchor="middle" font-size="10" fill="#EA4335">cmd_table[]</text>
+  <text x="545" y="339" text-anchor="middle" font-size="9" fill="#EA4335">strcmp 탐색</text>
+
+  <!-- 시퀀스 8: 핸들러 호출 -->
+  <text x="20" y="368" font-size="10" fill="#555">⑥ 핸들러 호출</text>
+  <line x1="545" y1="373" x2="665" y2="373" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="600" y="368" text-anchor="middle" font-size="10" fill="#FBBC04">handler(argc, argv)</text>
+  <text x="600" y="381" text-anchor="middle" font-size="9" fill="#555">RTC_GetTime() 등</text>
+
+  <!-- 시퀀스 9: 응답 반환 -->
+  <text x="20" y="410" font-size="10" fill="#555">⑦ 응답 출력</text>
+  <line x1="665" y1="415" x2="545" y2="415" stroke="#555" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrowLeft)"/>
+  <text x="600" y="410" text-anchor="middle" font-size="10" fill="#555">결과 문자열</text>
+
+  <line x1="545" y1="435" x2="185" y2="435" stroke="#555" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrowLeft)"/>
+  <text x="360" y="430" text-anchor="middle" font-size="10" fill="#555">UART_Send("\033[32m12:30:00\033[0m\r\n")</text>
+
+  <line x1="185" y1="455" x2="65" y2="455" stroke="#555" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrowLeft)"/>
+  <text x="120" y="450" text-anchor="middle" font-size="10" fill="#555">터미널 출력</text>
+
+  <!-- 화살표 마커 -->
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#333"/>
+    </marker>
+    <marker id="arrowLeft" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto">
+      <path d="M8,0 L8,6 L0,3 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>

@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch17. 소프트웨어 아키텍처 심화 &amp; 전체 통합 — STM32 고급 실무교육</title>
+  <link rel="stylesheet" href="../../templates/book_style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+
+<!-- ===== 챕터 헤더 ===== -->
+<header class="chapter-header">
+  <div class="chapter-meta">Part 5 · Chapter 17 · 프로젝트 <span class="version">v2.0</span></div>
+  <h1>Ch17. 소프트웨어 아키텍처 심화 &amp; 전체 통합</h1>
+  <p class="chapter-summary">
+    Ch01~Ch16에서 직접 만든 코드를 아키텍처 전문가 관점으로 리뷰하고,
+    테이블 기반 FSM·계층적 FSM으로 재설계하여 설계 원칙이 검증된 v2.0으로 완성합니다.
+  </p>
+  <div class="chapter-badge">
+    누적 기능: 전체 시스템 레이어드 아키텍처 정합성 검증 및 리팩토링 완료
+  </div>
+</header>
+
+<!-- ===== 아키텍처 위치 ===== -->
+<section class="architecture-position">
+  <h2>이 챕터의 아키텍처 위치</h2>
+  <p>
+    Ch17은 기능을 추가하는 챕터가 아닙니다.
+    Ch01~Ch16에서 쌓아온 4계층 아키텍처(HAL → Driver → Service → App)를
+    <strong>아키텍처 정합성 관점</strong>으로 재검토하고, 발견된 설계 결함을 수정하는 리팩토링 챕터입니다.
+    최종 결과물인 v2.0은 <em>동일한 기능</em>을 <em>더 나은 설계</em>로 실현합니다.
+  </p>
+  <figure>
+    <img src="../../figures/ch17_sec06_final_architecture.svg" alt="v2.0 최종 시스템 아키텍처">
+    <figcaption>그림 17-1. v2.0 최종 시스템 아키텍처 — 4계층 완성, SRP·DIP·ISP 검증 완료</figcaption>
+  </figure>
+</section>
+
+<!-- ===== 학습 목표 ===== -->
+<section class="learning-objectives">
+  <p>
+    여러분은 Ch01부터 Ch16까지 74시간의 코딩으로 스마트 시계 전체 시스템을 완성했습니다.
+    이제 그 코드를 처음 설계한 아키텍트의 눈으로 다시 바라볼 시간입니다.
+  </p>
+  <h2>학습 목표</h2>
+  <p>이 챕터를 완료하면 다음을 할 수 있습니다.</p>
+  <ul>
+    <li>
+      <strong>[분석]</strong> Ch03 초안에서 v2.0까지 레이어드 아키텍처의 진화 과정을 단계별로 설명하고,
+      각 챕터에서 어떤 컴포넌트가 어느 레이어에 추가되었는지 추적할 수 있다.
+    </li>
+    <li>
+      <strong>[평가]</strong> 기존 코드에서 레이어 의존성 위반(App → HAL 직접 접근, 역방향 의존 등)을
+      식별하고, 올바른 인터페이스 계층을 설계하여 수정할 수 있다.
+    </li>
+    <li>
+      <strong>[창조]</strong> switch-case 방식의 FSM을 테이블 기반 FSM으로 리팩토링하고,
+      기존 엔진 코드를 변경하지 않고 새 상태를 추가할 수 있다.
+    </li>
+    <li>
+      <strong>[이해]</strong> 계층적 FSM(HFSM)의 이벤트 위임 메커니즘, 진입/진출 액션, 초기 자식 상태 개념을
+      설명하고, 2계층 HFSM을 설계할 수 있다.
+    </li>
+    <li>
+      <strong>[분석]</strong> 알람/스톱워치/대시보드 갱신 3종 시나리오를 시퀀스 다이어그램으로 추적하며,
+      SRP·DIP·ISP 설계 원칙이 코드에 어떻게 적용되어 있는지 검증할 수 있다.
+    </li>
+  </ul>
+  <div class="project-milestone">
+    <strong>프로젝트 v2.0</strong>: 이 챕터 완료 후 전체 시스템 코드가 레이어드 아키텍처 설계 원칙에 부합하는
+    상태로 정제됩니다. 기능은 v1.6과 동일하나 유지보수성, 확장성, 코드 품질이 크게 향상됩니다.
+  </div>
+</section>
+
+<!-- ===== 1절: 아키텍처 진화 리뷰 ===== -->
+<section id="sec-01">
+  <h2>1절. 아키텍처 진화 리뷰 — Ch03 v1에서 v2.0까지</h2>
+
+  <p>
+    Ch03에서 레이어드 아키텍처(Layered Architecture)를 처음 설계했을 때, 우리의 초안은 두 개의 레이어만 가지고 있었습니다.
+    HAL 레이어와 그 위에 GPIO/Log 드라이버만 있는 초보적인 구조였죠.
+    그로부터 14개 챕터를 거쳐 이제는 4계층에 18개 컴포넌트가 있는 시스템이 되었습니다.
+    이 여정을 전체적으로 되돌아보는 것이 1절의 목표입니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    건축물이 설계도대로 지어지는 과정을 생각해 보세요.
+    처음에는 설계도(Ch03 아키텍처 초안)만 있었고, 공사가 진행되면서 방이 하나씩 추가되었습니다.
+    Ch17은 공사가 끝난 건물에서 "원래 설계도와 실제 건물이 일치하는가?"를 확인하는
+    <em>준공 검사(사용 승인)</em>와 같습니다.
+    <br><small>※ 이 비유의 한계: 소프트웨어는 준공 후에도 설계를 바꿀 수 있습니다. 하드웨어와 달리 리팩토링이 가능합니다.</small>
+  </div>
+
+  <figure>
+    <img src="../../figures/ch17_sec01_architecture_evolution.svg" alt="아키텍처 진화 타임라인">
+    <figcaption>그림 17-2. Ch03 v1 → v1.0 → v1.6 → v2.0 아키텍처 진화 타임라인</figcaption>
+  </figure>
+
+  <p>
+    타임라인을 보면 아키텍처가 단순히 컴포넌트 수만 늘어난 게 아닙니다.
+    <strong>레이어가 하나씩 추가되는 패턴</strong>을 확인할 수 있습니다.
+  </p>
+  <ul>
+    <li><strong>v0.3 (Ch03)</strong>: HAL + Driver 2계층 — GPIO, Log만 존재</li>
+    <li><strong>v0.4~v0.6 (Ch04~Ch06)</strong>: Driver 레이어 확장 — UART, DMA, 링버퍼</li>
+    <li><strong>v1.0 (Ch10)</strong>: Service 레이어 등장 — clock_service.c (마일스톤 ①)</li>
+    <li><strong>v1.3 (Ch13)</strong>: UI Service, GFX Service 추가 — Display FSM 도입</li>
+    <li><strong>v1.5 (Ch15)</strong>: App 레이어 완성 — CLI, Command Table</li>
+    <li><strong>v1.6 (Ch16)</strong>: Protocol App 추가 → 4계층 전부 채워짐 (마일스톤 ②)</li>
+    <li><strong>v2.0 (Ch17)</strong>: 의존성 정제, FSM 리팩토링, 설계 원칙 검증</li>
+  </ul>
+
+  <p>
+    v2.0이 v1.6과 다른 점은 딱 하나입니다. <em>기능의 추가가 아닌 아키텍처 품질의 향상</em>입니다.
+    같은 동작을 하지만 코드가 더 읽기 쉽고, 수정하기 쉽고, 확장하기 쉬운 상태가 됩니다.
+    이것이 "동작하는 소프트웨어(Working Software)"에서 "좋은 소프트웨어(Good Software)"로 가는 길입니다.
+  </p>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    프로젝트에서 "아키텍처 리뷰 스프린트"를 별도로 배정하는 팀이 있습니다.
+    기능 개발이 일단락된 시점에 설계 검토와 리팩토링 시간을 확보하는 방식인데,
+    Ch17이 정확히 그 역할을 합니다.
+    실무에서는 이를 "기술 부채(Technical Debt) 상환"이라고도 부릅니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    "레이어드 아키텍처에서 레이어를 어떻게 정의하나요?"<br>
+    핵심 키워드: 단방향 의존(상위→하위), 인터페이스를 통한 계층 간 통신,
+    각 레이어의 역할(HAL: 하드웨어 추상화, Driver: 주변장치 제어, Service: 비즈니스 로직, App: 사용자 인터페이스).
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong>
+    <ul>
+      <li>Ch10에서 Service 레이어가 처음 등장한 이유는 무엇인가? (힌트: RTC 시각 → 침 각도 변환 로직)</li>
+      <li>v1.6이 "마일스톤 ②"인 이유는 무엇인가?</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 2절: 레이어 의존성 위반 패턴 ===== -->
+<section id="sec-02">
+  <h2>2절. 레이어 의존성 위반 패턴 식별 및 수정</h2>
+
+  <p>
+    14개 챕터를 거치며 코드를 추가하다 보면, 의도치 않게 레이어 경계를 넘는 코드가 생겨납니다.
+    특히 빠른 구현이 필요할 때 "일단 동작하게 만들고" 나중에 정리하려다 그대로 남는 경우가 많습니다.
+    2절에서는 우리 프로젝트에서 발생할 수 있는 대표적인 의존성 위반 패턴과 수정 방법을 살펴봅니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch17_sec02_dependency_violation.svg" alt="의존성 위반 Before/After">
+    <figcaption>그림 17-3. 레이어 의존성 위반 사례 — Before(위반) vs After(수정)</figcaption>
+  </figure>
+
+  <h3>위반 패턴 1: App 레이어가 HAL을 직접 호출</h3>
+
+  <p>
+    <strong>문제 상황</strong>: cli_app.c에서 온도 알람을 처리하면서
+    <code>HAL_I2C_Master_Transmit()</code>을 직접 호출하는 코드가 있다고 가정합시다.
+    App 레이어에서 HAL 레이어로 2계층을 건너뛰는 직접 접근은 레이어드 아키텍처의 핵심 원칙인
+    <strong>단방향 단계적 의존</strong>을 위반합니다.
+  </p>
+
+  <pre><code class="language-c">/* ❌ 위반 코드 — cli_app.c */
+/* App이 HAL을 직접 호출: 계층 위반 */
+void cmd_sensor_read(void)
+{
+    uint8_t buf[6];
+    /* HAL을 직접 호출하면 테스트, 교체, 이식이 어려워짐 */
+    HAL_I2C_Master_Transmit(&hi2c1, SHT31_ADDR, cmd, 2, 100);
+    HAL_I2C_Master_Receive(&hi2c1, SHT31_ADDR, buf, 6, 100);
+    /* ... */
+}
+
+/* ✅ 수정 코드 — cli_app.c (v2.0) */
+/* App은 Service 인터페이스만 호출 (DIP 준수) */
+void cmd_sensor_read(void)
+{
+    float temp, humi;
+    /* sensor_service.h의 인터페이스만 사용 */
+    HAL_StatusTypeDef ret = sensor_svc_get_latest(&temp, &humi);
+    if (ret != HAL_OK) {
+        LOG_E("cmd_sensor_read: 센서 읽기 실패");
+        return;
+    }
+    LOG_I("cmd_sensor_read: 온도=%.1f°C, 습도=%.1f%%", temp, humi);
+}</code></pre>
+
+  <h3>위반 패턴 2: Driver 레이어가 다른 Driver를 직접 참조</h3>
+
+  <p>
+    <strong>문제 상황</strong>: sht31_driver.c에서 온도 이상 감지 시
+    <code>uart_driver_send()</code>를 직접 호출하는 코드.
+    Driver 레이어끼리의 횡방향(Horizontal) 의존은 순환 의존(Circular Dependency)을 유발할 수 있습니다.
+  </p>
+
+  <pre><code class="language-c">/* ❌ 위반 코드 — sht31_driver.c */
+/* Driver가 다른 Driver를 직접 호출 (횡방향 의존) */
+void sht31_process_data(float temp, float humi)
+{
+    if (temp > 30.0f) {
+        /* sht31_driver가 uart_driver를 알면 안 됨! */
+        uart_driver_send("TEMP_HIGH\r\n", 10);
+    }
+}
+
+/* ✅ 수정 코드 — sht31_driver.c (v2.0) */
+/* Driver는 콜백(Callback)으로 상위 레이어에 알림 */
+static sht31_alarm_cb_t g_alarm_cb = NULL;
+
+void sht31_register_alarm_cb(sht31_alarm_cb_t cb)
+{
+    g_alarm_cb = cb;
+}
+
+void sht31_process_data(float temp, float humi)
+{
+    LOG_D("sht31_process_data: 온도=%.1f, 습도=%.1f", temp, humi);
+    if (temp > 30.0f && g_alarm_cb != NULL) {
+        LOG_W("sht31_process_data: 온도 임계값 초과 → 알람 콜백 호출");
+        g_alarm_cb(SHT31_ALARM_TEMP_HIGH, temp);
+    }
+}</code></pre>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> "의존성 역전(DIP)과 인터페이스 분리(ISP)가 결국 같은 말 아닌가요?"<br>
+    <strong>A.</strong> 적용 대상이 다릅니다.
+    DIP(의존성 역전 원칙)는 "<em>누가 누구에게 의존하는가</em>"의 방향을 다룹니다.
+    "App은 sht31_driver.h를 직접 include하지 말고 sensor_service.h를 include해야 한다"는 DIP 적용입니다.
+    ISP(인터페이스 분리 원칙)는 "<em>인터페이스에 필요하지 않은 함수를 포함시키지 마라</em>"입니다.
+    "sensor_service.h에 SHT31의 내부 CRC 함수를 노출하지 마라"는 ISP 적용입니다.
+    DIP는 의존 방향, ISP는 인터페이스 내용의 원칙입니다.
+  </aside>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    의존성 위반을 자동으로 검출하는 도구가 있습니다.
+    PC 환경에서는 <code>include-what-you-use</code>, <code>cppcheck</code>를 사용하고,
+    임베디드에서는 링커 맵 파일(*.map)에서 모듈 간 심볼 참조를 분석하는 방법을 사용합니다.
+    MISRA-C의 "모든 헤더 include는 정당화되어야 한다" 규칙도 같은 맥락입니다.
+  </aside>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    실습 시간에 수강생의 실제 코드를 프로젝터에 띄우고 "이 include가 레이어 경계를 넘지 않는지"를
+    함께 확인하는 방식이 효과적입니다.
+    이때 단순히 잘못을 지적하기보다 "왜 이 include가 생겼을까?"를 먼저 질문하면
+    심리적 안전감을 유지하며 학습 효과를 높일 수 있습니다.
+  </aside>
+</section>
+
+<!-- ===== 3절: 테이블 기반 FSM ===== -->
+<section id="sec-03">
+  <h2>3절. 테이블 기반 FSM 구현 — DISPLAY FSM 리팩토링</h2>
+
+  <p>
+    Ch13에서 DISPLAY FSM을 처음 만들 때는 switch-case 방식을 사용했습니다.
+    TIME_VIEW, SENSOR_VIEW, STOPWATCH_VIEW 세 상태를 중첩된 switch-case로 구현했는데,
+    ch17에서는 ALARM_VIEW라는 새 상태를 추가해야 합니다.
+    switch-case 방식이라면 기존 switch 블록 전체를 수정해야 하지만,
+    <strong>테이블 기반 FSM(Table-Driven FSM)</strong>에서는 테이블에 행 몇 줄만 추가하면 됩니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    기차역의 시간표를 생각해 보세요.
+    switch-case FSM은 "출발지가 서울이고 목적지가 부산이면..."처럼
+    모든 경우를 if-else로 나열한 운행 지침서입니다.
+    테이블 기반 FSM은 시간표 자체입니다 — 새 노선(상태)을 추가할 때 표에 행 하나를 추가하면 끝이고,
+    기관사(fsm_run 엔진)는 동일하게 시간표를 읽습니다.
+    <br><small>※ 이 비유의 한계: 기차 시간표는 조건(guard) 함수가 없지만, FSM 테이블은 guard 함수로 동적 조건을 표현할 수 있습니다.</small>
+  </div>
+
+  <figure>
+    <img src="../../figures/ch17_sec03_table_fsm.svg" alt="테이블 기반 FSM 구조">
+    <figcaption>그림 17-4. switch-case FSM vs 테이블 기반 FSM 비교</figcaption>
+  </figure>
+
+  <h3>전이 테이블 구조체</h3>
+
+  <pre><code class="language-c">/* ch17_table_fsm.h — 전이 테이블 한 행(Row) */
+
+typedef struct {
+    display_state_t  current_state;        /* 현재 상태 */
+    display_event_t  event;                /* 이벤트 */
+    bool             (*guard)(void);       /* 조건 함수 (NULL = 무조건 전이) */
+    void             (*action)(void);      /* 액션 함수 포인터 */
+    display_state_t  next_state;           /* 다음 상태 */
+} fsm_transition_t;</code></pre>
+
+  <h3>전이 테이블 정의 (DISPLAY FSM)</h3>
+
+  <pre><code class="language-c">/* ch17_table_fsm.c — 전이 테이블 (v2.0: ALARM_VIEW 추가) */
+
+static const fsm_transition_t g_disp_table[] = {
+    /* 현재 상태              이벤트               조건              액션              다음 상태 */
+    { DISP_STATE_TIME_VIEW,   DISP_EVT_BTN_SHORT,  NULL,             action_show_sensor,    DISP_STATE_SENSOR_VIEW      },
+    { DISP_STATE_TIME_VIEW,   DISP_EVT_BTN_LONG,   NULL,             action_show_stopwatch, DISP_STATE_STOPWATCH_VIEW   },
+    { DISP_STATE_TIME_VIEW,   DISP_EVT_ALARM_TRIGGER, guard_alarm_active, action_show_alarm, DISP_STATE_ALARM_VIEW      },
+    { DISP_STATE_SENSOR_VIEW, DISP_EVT_BTN_SHORT,  NULL,             action_show_stopwatch, DISP_STATE_STOPWATCH_VIEW   },
+    /* ... 기타 행 ... */
+
+    /* ▼ v2.0 신규 추가 — 엔진(fsm_run) 수정 없음 */
+    { DISP_STATE_ALARM_VIEW,  DISP_EVT_ALARM_ACK,  NULL,             action_show_time,      DISP_STATE_TIME_VIEW        },
+    { DISP_STATE_ALARM_VIEW,  DISP_EVT_BTN_LONG,   NULL,             action_show_time,      DISP_STATE_TIME_VIEW        },
+};</code></pre>
+
+  <h3>FSM 엔진 — fsm_run()</h3>
+
+  <pre><code class="language-c">/* ch17_table_fsm.c — FSM 엔진 (테이블 크기에 관계없이 동일 코드) */
+
+bool fsm_run(fsm_instance_t *fsm, display_event_t event)
+{
+    LOG_D("fsm_run: 현재=%d, 이벤트=%d", (int)fsm->state, (int)event);
+
+    for (size_t i = 0; i < fsm->table_size; i++) {
+        const fsm_transition_t *row = &fsm->table[i];
+
+        /* 현재 상태 + 이벤트 매칭 */
+        if (row->current_state != fsm->state) continue;
+        if (row->event         != event)       continue;
+
+        /* guard 검사: NULL이면 무조건 통과, non-NULL이면 true일 때만 통과 */
+        if (row->guard != NULL && !row->guard()) {
+            LOG_D("fsm_run: guard 불충족 — 다음 행 확인");
+            continue;
+        }
+
+        /* 액션 실행 + 상태 전이 */
+        display_state_t prev = fsm->state;
+        if (row->action != NULL) row->action();
+        fsm->state = row->next_state;
+
+        LOG_I("fsm_run: 전이 %d -> %d", (int)prev, (int)fsm->state);
+        return true;
+    }
+
+    LOG_D("fsm_run: 매칭 없음 — 상태 유지");
+    return false;
+}</code></pre>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    테이블 기반 FSM에서 guard 함수가 <code>NULL</code>인 경우와 non-<code>NULL</code>인 경우의
+    처리 로직을 잘 살펴보세요.
+    <code>if (guard == NULL || guard())</code> 패턴이 핵심입니다.
+    "guard가 NULL이면 무조건 전이, 있으면 조건 통과 시에만 전이"가 원칙입니다.
+    여러 guard 함수를 AND/OR 조합하려면 guard 함수 내에서 조합하거나 테이블에 행을 여러 개 추가합니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    "FSM 구현 방식의 차이와 각각의 장단점을 설명해 보세요."<br>
+    switch-case: 구현 간단, 상태 추가 시 기존 코드 수정 필요 (OCP 위반).
+    테이블 기반: 상태/이벤트 추가 = 테이블 행 추가만으로 완결 (OCP: 개방 폐쇄 원칙, Open-Closed Principle — 확장에는 열려 있고 수정에는 닫혀 있어야 한다), 엔진 재사용 가능.
+    HFSM: 공통 동작을 부모 상태로 추출하여 중복 제거, 이벤트 위임으로 계층적 처리.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong>
+    <ul>
+      <li>테이블에서 같은 (current_state, event) 조합의 행이 2개 있으면 어떻게 되나? (힌트: guard 함수)</li>
+      <li>action 함수가 NULL인 경우는 어떤 상황인가? (예: 로그만 남기고 화면은 바꾸지 않는 전이)</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 4절: 계층적 FSM (HFSM) ===== -->
+<section id="sec-04">
+  <h2>4절. 계층적 FSM (HFSM) — 공통 동작의 부모 상태 추출</h2>
+
+  <aside class="tip">
+    💡 <strong>이 절을 읽기 전에</strong><br>
+    HFSM은 임베디드에서 자주 쓰이는 심화 패턴이지만, 처음에는 개념만 이해해도 충분합니다.
+    3절의 테이블 기반 FSM을 먼저 완전히 익힌 뒤 코드가 커질 때 HFSM을 적용하면 됩니다.
+    이 절에서 모든 것이 한 번에 이해되지 않아도 정상입니다.
+  </aside>
+
+  <p>
+    3절의 테이블 기반 FSM을 보면 한 가지 패턴이 눈에 띕니다.
+    TIME_VIEW, SENSOR_VIEW, STOPWATCH_VIEW 세 상태 모두 ALARM_TRIGGER 이벤트를 처리하는
+    거의 동일한 행이 테이블에 반복됩니다.
+    만약 새 상태가 4개, 5개로 늘어난다면 이 중복은 점점 커집니다.
+    <strong>계층적 FSM(HFSM: Hierarchical State Machine)</strong>은 이 문제를 부모 상태(Parent State)로 해결합니다.
+  </p>
+
+  <div class="analogy">
+    <strong>비유로 이해하기</strong><br>
+    회사 조직도를 생각해 보세요. 팀원 개개인(자식 상태)이 처리하지 못하는 문제는
+    팀장(부모 상태)이 처리합니다.
+    "오늘 팀 회식"(TIMEOUT 이벤트)은 팀장이 결정하고, 팀원 모두에게 동일하게 적용됩니다.
+    특정 팀원이 "저는 회식 안 갑니다"를 처리하면(자식이 이벤트 처리) 팀장에게 올라가지 않습니다.
+    <br><small>※ 이 비유의 한계: 실제 HFSM에서 자식이 이벤트를 처리하면 부모가 실행되지 않지만,
+    회사에서는 팀원과 팀장이 동시에 관여하는 경우도 있습니다.</small>
+  </div>
+
+  <figure>
+    <img src="../../figures/ch17_sec04_hfsm.svg" alt="HFSM 구조 다이어그램">
+    <figcaption>그림 17-5. DISPLAY HFSM — ACTIVE 부모 상태 + 3개 자식 상태</figcaption>
+  </figure>
+
+  <h3>HFSM 핵심 메커니즘 3가지</h3>
+
+  <p><strong>① 이벤트 위임(Event Delegation)</strong>: 자식 상태가 이벤트를 처리하지 못하면 부모 상태로 위임합니다.</p>
+
+  <pre><code class="language-c">/* ch17_hfsm.c — 이벤트 위임 루프 */
+
+void hfsm_dispatch(hfsm_instance_t *hfsm, hfsm_event_t evt)
+{
+    hfsm_state_t    *s    = hfsm->state_table[hfsm->current];
+    hfsm_state_id_t  next = hfsm->current;
+    bool             handled = false;
+
+    /* 현재 자식에서 시작 → 처리 못하면 부모로 올라감 */
+    while (s != NULL) {
+        handled = s->handle_event(evt, &next);
+        if (handled) break;
+        LOG_D("hfsm_dispatch: %d 처리 불가 → 부모 위임", (int)s->id);
+        s = s->parent;  /* 부모로 이동 */
+    }
+}</code></pre>
+
+  <p><strong>② 진입/진출 액션(Entry/Exit Action)</strong>: 상태 전이 시 자동으로 실행됩니다.</p>
+
+  <pre><code class="language-c">/* ch17_hfsm.c — 부모 상태의 진입/진출 액션 */
+
+/* ACTIVE 진입 액션: TIME/SENSOR/STOPWATCH 어디로 들어가든 항상 실행 */
+static void entry_active(void)
+{
+    LOG_I("entry_active: LCD 백라이트 ON");
+    ui_set_backlight(true);  /* 부모 진입 시 공통 처리 */
+}
+
+/* ACTIVE 진출 액션: IDLE로 나갈 때 항상 실행 */
+static void exit_active(void)
+{
+    LOG_I("exit_active: LCD 백라이트 OFF");
+    ui_set_backlight(false);
+}</code></pre>
+
+  <p><strong>③ 초기 자식 상태(Initial Substate)</strong>: ACTIVE 진입 시 항상 TIME_VIEW부터 시작합니다.</p>
+
+  <pre><code class="language-c">/* ch17_hfsm.c — ACTIVE 상태 정의에서 초기 자식 상태 지정 */
+
+static hfsm_state_t s_active = {
+    HFSM_STATE_ACTIVE,
+    NULL,           /* 부모: root (없음) */
+    entry_active,   /* 진입 액션 */
+    exit_active,    /* 진출 액션 */
+    handle_active,  /* 이벤트 핸들러 (TIMEOUT 처리) */
+    HFSM_STATE_TIME_VIEW   /* ← 초기 자식 상태 */
+};
+
+/* TIMEOUT 이벤트: 모든 자식 상태에서 공통 처리 */
+static bool handle_active(hfsm_event_t evt, hfsm_state_id_t *next)
+{
+    if (evt == HFSM_EVT_TIMEOUT) {
+        LOG_W("handle_active: TIMEOUT → IDLE 전이 (백라이트 꺼짐)");
+        *next = HFSM_STATE_IDLE;
+        return true;  /* 처리 완료 — 자식으로 전파 안 함 */
+    }
+    return false;
+}</code></pre>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> "HFSM에서 ACTIVE → IDLE 전이 시 exit_active()가 호출되는데,
+    자식 상태의 exit 액션은 어떻게 처리되나요?"<br>
+    <strong>A.</strong> 정확한 질문입니다.
+    자식 상태의 exit 먼저, 부모 상태의 exit 나중에 실행됩니다.
+    예를 들어 STOPWATCH_VIEW → IDLE 전이 시:
+    (1) exit_stopwatch_view() → 타이머 정지,
+    (2) exit_active() → 백라이트 OFF
+    순서로 실행됩니다. 이를 "중첩된 exit 시퀀스"라고 합니다.
+    전체 콜 스택을 추적하면 다음과 같습니다:
+    <pre><code>STOPWATCH_VIEW → IDLE 전이 시 콜 스택:
+1. hfsm_dispatch(HFSM_EVT_TIMEOUT)
+2.   handle_stopwatch_view(TIMEOUT) → false  [자식: 처리 불가, 부모 위임]
+3.   handle_active(TIMEOUT) → true, next=IDLE [부모: TIMEOUT 처리]
+4.   exit_stopwatch_view()                     [자식 exit]
+5.   exit_active()                             [부모 exit → 백라이트 OFF]
+6.   entry_idle()                              [다음 상태 entry]</code></pre>
+  </aside>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁</strong><br>
+    HFSM을 처음 설명할 때는 화이트보드에 직접 계층 구조(IDLE / ACTIVE[TIME, SENSOR, STOPWATCH])를
+    그린 뒤 TIMEOUT 이벤트 화살표를 ACTIVE에만 그립니다.
+    "이 화살표 하나로 3개 자식 상태 모두에 적용"된다는 것을 시각적으로 보여주면
+    이벤트 위임 개념이 즉시 이해됩니다.
+  </aside>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    HFSM은 Qt의 QStateMachine, SCXML(State Chart XML) 등에서 표준으로 사용되는 패턴입니다.
+    임베디드 세계에서도 Miro Samek의 <em>Practical UML Statecharts in C/C++</em>가 이 패턴의 바이블입니다.
+    QM(QM Modeler) 도구를 사용하면 UML 상태 다이어그램에서 HFSM C 코드를 자동 생성할 수 있습니다.
+  </aside>
+</section>
+
+<!-- ===== 5절: 전체 시나리오 시퀀스 다이어그램 ===== -->
+<section id="sec-05">
+  <h2>5절. 전체 시나리오 3종 시퀀스 다이어그램 분석</h2>
+
+  <p>
+    지금까지 개별 컴포넌트의 설계를 살펴봤다면, 이제는 전체 시스템이 실제로 어떻게
+    협력하는지를 시퀀스 다이어그램(Sequence Diagram)으로 확인합니다.
+    세 가지 시나리오는 각각 다른 레이어 조합을 강조합니다:
+    알람은 Driver→Service→App, 스톱워치는 App→Driver, 대시보드는 전 레이어 협력입니다.
+  </p>
+
+  <h3>시나리오 1: 알람 발생 시퀀스</h3>
+  <p>
+    RTC AlarmA 인터럽트가 발생하면, 인터럽트 핸들러에서 시작하여
+    알람 FSM 전이, CLI 알람 메시지 출력, LCD 알람 화면 표시, 스텝모터 진동까지
+    <strong>모든 레이어가 순서대로 협력</strong>합니다.
+  </p>
+
+  <figure>
+    <img src="../../figures/ch17_sec05_alarm_sequence.svg" alt="알람 시나리오 시퀀스 다이어그램">
+    <figcaption>그림 17-6. 시나리오 1 — 알람 발생 시퀀스 다이어그램</figcaption>
+  </figure>
+
+  <p>
+    이 시퀀스에서 주목할 점은 alarm_service(Service 레이어)가 <strong>중재자(Mediator)</strong> 역할을 한다는 것입니다.
+    App(cli_app)과 Driver(stepper_drv, uart)는 alarm_service를 통해서만 상호작용합니다.
+    App이 stepper_drv를 직접 호출하지 않고, alarm_service가 "알람 발생 시 모터 울리기"를 담당합니다.
+    이것이 <strong>SRP(단일 책임 원칙)</strong>의 실제 적용 예입니다.
+  </p>
+
+  <h3>시나리오 2: 스톱워치 제어 시퀀스</h3>
+
+  <figure>
+    <img src="../../figures/ch17_sec05_stopwatch_sequence.svg" alt="스톱워치 시나리오 시퀀스 다이어그램">
+    <figcaption>그림 17-7. 시나리오 2 — 스톱워치 IDLE→RUNNING→PAUSED 시퀀스</figcaption>
+  </figure>
+
+  <p>
+    스톱워치 시나리오에서는 <strong>FSM 전이가 실제 하드웨어 동작을 유발</strong>하는 패턴을 볼 수 있습니다.
+    IDLE→RUNNING 전이 시 TIM2를 시작하고, RUNNING→PAUSED 전이 시 TIM2를 멈춥니다.
+    FSM의 "액션 함수"가 하드웨어 제어와 UI 갱신을 동시에 담당하는 구조입니다.
+  </p>
+
+  <h3>시나리오 3: 대시보드 갱신 시퀀스</h3>
+
+  <figure>
+    <img src="../../figures/ch17_sec05_dashboard_sequence.svg" alt="대시보드 갱신 시나리오 시퀀스 다이어그램">
+    <figcaption>그림 17-8. 시나리오 3 — 1초 주기 대시보드 갱신 (LCD + PC 동기화)</figcaption>
+  </figure>
+
+  <p>
+    대시보드 갱신 시나리오는 전체 시스템의 정기적 협력 패턴을 보여줍니다.
+    TIM2 1초 UEV → RTC 시각 읽기 → 센서 데이터 가져오기 → LCD 갱신 → UART 프레임 전송까지
+    <strong>4개 레이어 전체가 순차적으로 참여</strong>합니다.
+    여기서 sensor_service는 DMA 완료 콜백으로 이미 캐시된 데이터를 즉시 반환하기 때문에
+    메인 루프 지연이 없다는 점도 중요합니다.
+  </p>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    시퀀스 다이어그램은 "누가 누구에게 언제 무엇을 요청하는가"를 파악하는 데 탁월합니다.
+    버그가 발생했을 때 이 다이어그램을 보며 "이 시점에서 이 컴포넌트의 상태는 무엇인가?"를
+    추적하면 원인을 빠르게 좁힐 수 있습니다.
+    실무에서 시퀀스 다이어그램은 코드 리뷰와 온보딩 문서로 많이 사용됩니다.
+  </aside>
+
+  <aside class="metacognition">
+    🔍 <strong>스스로 점검</strong>
+    <ul>
+      <li>알람 시나리오에서 alarm_service가 Motor Driver를 직접 호출하는 것은 레이어 위반인가? (힌트: Service → Driver 방향)</li>
+      <li>대시보드 갱신 시 LCD와 UART가 동시에 DMA를 사용한다면 DMA 충돌이 발생할 수 있는가? (힌트: Ch14 다중 DMA 우선순위)</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ===== 6절: 마스터 Pinout + 설계 원칙 최종 점검 ===== -->
+<section id="sec-06">
+  <h2>6절. 마스터 Pinout 테이블 &amp; 설계 원칙 최종 점검</h2>
+
+  <p>
+    v2.0 완성의 마지막 단계는 두 가지입니다.
+    첫째, 전체 시스템의 핀 배치를 한 곳에 정리하는 <strong>마스터 Pinout 테이블</strong> 작성.
+    둘째, SRP·DIP·ISP 세 가지 설계 원칙이 실제로 지켜지고 있는지 체크리스트로 검증.
+  </p>
+
+  <h3>마스터 Pinout 테이블 — NUCLEO-F411RE</h3>
+
+  <table class="pinout-table">
+    <thead>
+      <tr>
+        <th>핀 번호</th>
+        <th>신호명</th>
+        <th>방향</th>
+        <th>연결 모듈</th>
+        <th>담당 Driver</th>
+        <th>비고</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>PA2</td><td>USART2_TX</td><td>OUT</td><td>PC (USB-UART 내장)</td><td>uart_driver.c</td><td>DMA1 Stream6 Ch4</td></tr>
+      <tr><td>PA3</td><td>USART2_RX</td><td>IN</td><td>PC (USB-UART 내장)</td><td>uart_driver.c</td><td>DMA1 Stream5 Ch4</td></tr>
+      <tr><td>PC13</td><td>GPIO_EXTI</td><td>IN</td><td>USER Button (B1)</td><td>gpio_driver.c</td><td>EXTI13, 하강 엣지</td></tr>
+      <tr><td>PA5</td><td>GPIO_OUT</td><td>OUT</td><td>LED LD2 (녹색)</td><td>gpio_driver.c</td><td>Push-Pull</td></tr>
+      <tr><td>PA8</td><td>TIM1_CH1</td><td>OUT</td><td>Complementary PWM</td><td>tim_driver.c</td><td>TIM1 Advanced</td></tr>
+      <tr><td>PB6</td><td>I2C1_SCL</td><td>OUT</td><td>SHT31 모듈</td><td>i2c_driver.c</td><td>DMA1 Stream0/1 Ch1</td></tr>
+      <tr><td>PB7</td><td>I2C1_SDA</td><td>IN/OUT</td><td>SHT31 모듈</td><td>i2c_driver.c</td><td>오픈 드레인, 4.7kΩ 풀업</td></tr>
+      <tr><td>PA5</td><td>SPI1_SCK</td><td>OUT</td><td>ILI9341 LCD</td><td>spi_driver.c</td><td>⚠ LED와 핀 충돌 주의</td></tr>
+      <tr><td>PA6</td><td>SPI1_MISO</td><td>IN</td><td>ILI9341 LCD</td><td>spi_driver.c</td><td>DMA2 Stream2 Ch3</td></tr>
+      <tr><td>PA7</td><td>SPI1_MOSI</td><td>OUT</td><td>ILI9341 LCD</td><td>spi_driver.c</td><td>DMA2 Stream3 Ch3</td></tr>
+      <tr><td>PB6</td><td>GPIO_OUT</td><td>OUT</td><td>LCD CS (Chip Select)</td><td>spi_driver.c</td><td>수동 제어 (NSS SW)</td></tr>
+      <tr><td>PA9</td><td>GPIO_OUT</td><td>OUT</td><td>LCD D/C (Data/Command)</td><td>spi_driver.c</td><td>High=Data, Low=Cmd</td></tr>
+      <tr><td>PA10</td><td>GPIO_OUT</td><td>OUT</td><td>LCD RST (Reset)</td><td>spi_driver.c</td><td>Active Low</td></tr>
+      <tr><td>PB10~PB13</td><td>GPIO_OUT×4</td><td>OUT</td><td>ULN2003 IN1~IN4</td><td>stepper_drv.c</td><td>28BYJ-48 여자 시퀀스</td></tr>
+      <tr><td>PC14/PC15</td><td>OSC32_IN/OUT</td><td>—</td><td>LSE 크리스탈 (선택)</td><td>rtc_driver.c</td><td>SB48/SB49 확인 필수</td></tr>
+    </tbody>
+  </table>
+
+  <aside class="tip">
+    💡 <strong>실무 팁 — 핀 충돌 주의!</strong><br>
+    PA5는 SPI1_SCK와 LED LD2가 충돌합니다. CubeMX에서 SPI1을 활성화하면 LED가 동작하지 않습니다.
+    두 기능을 동시에 쓰려면 별도 GPIO 핀을 LED에 연결하거나, LCD 초기화 이전에만 LED를 사용하도록 설계합니다.
+    실제 프로젝트에서는 Pinout 테이블을 프로젝트 시작 전에 작성하여 이런 충돌을 예방합니다.
+  </aside>
+
+  <h3>설계 원칙 최종 체크리스트</h3>
+
+  <h4>SRP (단일 책임 원칙 — Single Responsibility Principle)</h4>
+  <p>하나의 모듈은 하나의 책임만 가진다. 변경 이유가 하나여야 한다.</p>
+  <ul>
+    <li>✅ <code>sht31_driver.c</code> — SHT31 통신 전용, 알람 로직 없음</li>
+    <li>✅ <code>sensor_service.c</code> — 센서 추상화 + 임계값 알람 로직 전담</li>
+    <li>✅ <code>uart_driver.c</code> — UART 송수신 전용, 프레임 파싱 없음</li>
+    <li>✅ <code>protocol_app.c</code> — 프레임 직렬화/역직렬화 전담</li>
+  </ul>
+
+  <h4>DIP (의존성 역전 원칙 — Dependency Inversion Principle)</h4>
+  <p>상위 모듈이 하위 모듈의 구현체가 아닌 인터페이스에 의존한다.</p>
+  <ul>
+    <li>✅ <code>cli_app.c</code>는 <code>sensor_service.h</code>만 include (sht31_driver.h 직접 include 금지)</li>
+    <li>✅ <code>main_app.c</code>는 <code>rtc_driver.h</code>가 아닌 <code>clock_service.h</code>를 통해 시각 조회</li>
+    <li>✅ <code>protocol_app.c</code>는 <code>uart_driver.h</code>의 추상 send 함수만 사용</li>
+  </ul>
+
+  <h4>ISP (인터페이스 분리 원칙 — Interface Segregation Principle)</h4>
+  <p>클라이언트가 사용하지 않는 함수를 포함하는 인터페이스에 의존하지 않는다.</p>
+  <ul>
+    <li>✅ <code>sensor_service.h</code>에는 <code>sensor_svc_get_latest()</code>와 <code>sensor_svc_set_threshold()</code>만 노출 — CRC-8 내부 함수 비공개</li>
+    <li>✅ <code>clock_service.h</code>에는 시각 관련 함수만 — 스텝모터 각도 계산은 service 내부 구현</li>
+    <li>✅ <code>gfx_service.h</code>에는 도형/텍스트 그리기 함수만 — LCD 초기화 시퀀스 비공개</li>
+  </ul>
+
+  <pre><code class="language-c">/* ch17_design_check.c — 설계 원칙 런타임 검증 (디버그 빌드 전용) */
+
+#if defined(DEBUG) && defined(ARCH_CHECK)
+
+/**
+ * @brief  아키텍처 의존성 자가 진단 (빌드 타임 확인)
+ *
+ * 이 함수는 컴파일만 되면 됩니다.
+ * 만약 아래 include가 컴파일 에러라면 계층 위반입니다.
+ */
+void arch_dependency_check(void)
+{
+    /* ✅ App → Service (올바른 방향) */
+    #include "sensor_service.h"    /* sensor_svc_get_latest() */
+    #include "clock_service.h"     /* clock_svc_get_time()   */
+    #include "ui_service.h"        /* ui_show_time_view()    */
+
+    /* ❌ App → Driver 직접 의존은 이 파일에서 금지
+     * #include "sht31_driver.h"   — ISP/DIP 위반
+     * #include "ili9341_driver.h" — ISP/DIP 위반
+     */
+
+    LOG_I("arch_check: 의존성 검증 완료 — 위반 없음");
+}
+
+#endif /* DEBUG && ARCH_CHECK */</code></pre>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> "SRP를 지키면 파일이 너무 많아지지 않나요? 관리가 더 어려워지는 것 아닌가요?"<br>
+    <strong>A.</strong> 파일이 많아지는 것은 구조가 명확하다는 증거입니다.
+    스파게티 코드 1000줄짜리 파일 1개 vs 50줄짜리 파일 20개를 비교하면,
+    버그 발생 시 20개 중 어느 파일인지 이름만 보고 찾을 수 있습니다.
+    임베디드에서 파일이 많아져도 링커가 사용된 함수만 Flash에 배치하므로
+    런타임 오버헤드는 없습니다.
+  </aside>
+
+  <aside class="interview">
+    🎯 <strong>면접 포인트</strong><br>
+    "SOLID 원칙 중 임베디드 C에 가장 직접적으로 적용되는 것은 무엇인가요?"<br>
+    SRP: 모듈별 단일 책임, 헤더 파일 인터페이스 설계.
+    DIP: Service 인터페이스를 통한 계층 격리, 콜백 기반 역방향 알림.
+    OCP: 테이블 기반 FSM으로 코드 수정 없이 상태 추가.
+    임베디드에서 OOP의 상속/다형성이 없더라도 함수 포인터 + 구조체로 이 원칙들을 구현할 수 있습니다.
+  </aside>
+</section>
+
+<!-- ===== 실습 ===== -->
+<section id="lab">
+  <h2>실습: DISPLAY FSM switch-case → 테이블 기반 리팩토링</h2>
+  <p><strong>목표</strong>: Ch13에서 작성한 switch-case DISPLAY FSM을 테이블 기반 FSM으로 리팩토링하고, ALARM_VIEW 상태를 추가합니다.</p>
+  <p><strong>환경</strong>: STM32CubeIDE, NUCLEO-F411RE, ILI9341 LCD</p>
+
+  <h3>Step 1. ch17_table_fsm.h 헤더 준비</h3>
+  <p>
+    <code>code_examples/ch17_table_fsm.h</code>를 프로젝트에 복사합니다.
+    <code>display_state_t</code>에 <code>DISP_STATE_ALARM_VIEW</code>를 추가합니다.
+  </p>
+
+  <h3>Step 2. 전이 테이블 작성</h3>
+  <pre><code class="language-c">/* ui_service.c — 전이 테이블 + FSM 초기화 */
+#include "ch17_table_fsm.h"
+
+static const fsm_transition_t g_disp_table[] = {
+    { DISP_STATE_TIME_VIEW,   DISP_EVT_BTN_SHORT,     NULL,               action_show_sensor,    DISP_STATE_SENSOR_VIEW      },
+    { DISP_STATE_TIME_VIEW,   DISP_EVT_BTN_LONG,      NULL,               action_show_stopwatch, DISP_STATE_STOPWATCH_VIEW   },
+    { DISP_STATE_TIME_VIEW,   DISP_EVT_ALARM_TRIGGER, guard_alarm_active, action_show_alarm,     DISP_STATE_ALARM_VIEW       },
+    { DISP_STATE_SENSOR_VIEW, DISP_EVT_BTN_SHORT,     NULL,               action_show_stopwatch, DISP_STATE_STOPWATCH_VIEW   },
+    { DISP_STATE_SENSOR_VIEW, DISP_EVT_BTN_LONG,      NULL,               action_show_time,      DISP_STATE_TIME_VIEW        },
+    { DISP_STATE_STOPWATCH_VIEW, DISP_EVT_BTN_SHORT,  NULL,               action_show_time,      DISP_STATE_TIME_VIEW        },
+    { DISP_STATE_ALARM_VIEW,  DISP_EVT_ALARM_ACK,     NULL,               action_show_time,      DISP_STATE_TIME_VIEW        },
+};
+#define TABLE_SIZE (sizeof(g_disp_table)/sizeof(g_disp_table[0]))</code></pre>
+
+  <h3>Step 3. 동작 확인</h3>
+  <p><strong>예상 결과</strong>: RTC 알람 발생 시 LCD가 ALARM_VIEW로 자동 전환, 버튼 길게 누르면 TIME_VIEW로 복귀.</p>
+  <pre><code>[INFO ] fsm_init: DISPLAY FSM 초기화 완료 — 상태=TIME_VIEW
+[INFO ] fsm_run: 전이 0 -> 3 (이벤트=2)   /* TIME_VIEW → ALARM_VIEW */
+[WARN ] action_show_alarm: ALARM_VIEW 화면 전환 — 알람 발생!
+[INFO ] fsm_run: 전이 3 -> 0 (이벤트=3)   /* ALARM_VIEW → TIME_VIEW */</code></pre>
+
+  <aside class="tip">
+    💡 <strong>실습이 안 될 때</strong><br>
+    "guard 함수가 항상 false를 반환한다" — <code>alarm_service_is_triggered()</code> 구현을 확인하세요.
+    테스트용으로 <code>guard_alarm_active()</code>를 <code>NULL</code>로 바꾸면 조건 없이 전이됩니다.
+    이것은 흔한 디버깅 패턴입니다.
+  </aside>
+</section>
+
+<!-- ===== 핵심 정리 ===== -->
+<section class="chapter-summary-section">
+  <h2>핵심 정리</h2>
+  <ul>
+    <li><strong>아키텍처 진화</strong>: Ch03 v1 초안에서 v2.0까지 2계층 → 4계층, 컴포넌트 2개 → 18개로 성장. v2.0은 기능 추가 없이 설계 품질만 향상.</li>
+    <li><strong>의존성 위반</strong>: App→HAL 직접 접근, Driver→Driver 횡방향 의존이 대표적 패턴. 콜백과 Service 인터페이스로 해결.</li>
+    <li><strong>테이블 기반 FSM</strong>: 전이 규칙을 데이터(테이블)로 분리. 새 상태 추가 = 테이블 행 추가만으로 완결 (OCP: 개방 폐쇄 원칙, Open-Closed Principle 준수). guard 함수로 동적 조건 표현.</li>
+    <li><strong>HFSM</strong>: 부모 상태가 공통 이벤트 처리. 이벤트 위임 루프(자식→부모). 진입/진출 액션으로 상태 경계의 부수 효과 자동화.</li>
+    <li><strong>설계 원칙</strong>: SRP(1모듈=1책임), DIP(인터페이스에 의존), ISP(필요한 함수만 공개). 임베디드 C에서 함수 포인터+구조체로 구현 가능.</li>
+  </ul>
+
+  <h3>아키텍처 업데이트</h3>
+  <p>Ch17 완료 후 전체 시스템이 v2.0으로 업그레이드되었습니다. 의존성 위반 0건, 테이블 기반 FSM 적용, HFSM 설계 검증 완료.</p>
+  <figure>
+    <img src="../../figures/ch17_sec06_final_architecture.svg" alt="v2.0 최종 아키텍처">
+    <figcaption>그림 17-최종. v2.0 아키텍처 — 4계층 완성, SRP·DIP·ISP 검증 완료</figcaption>
+  </figure>
+</section>
+
+<!-- ===== 연습문제 ===== -->
+<section class="exercises">
+  <h2>연습문제</h2>
+
+  <div class="exercise">
+    <span class="level">기억</span>
+    <strong>1.</strong>
+    테이블 기반 FSM에서 guard 함수가 <code>NULL</code>인 경우와 non-<code>NULL</code>인 경우 각각의 동작을 설명하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">이해</span>
+    <strong>2.</strong>
+    HFSM에서 STOPWATCH_VIEW 상태 중 TIMEOUT 이벤트가 발생하면 어떤 순서로 함수가 호출되는지
+    call stack을 단계별로 서술하시오. (handle_stopwatch_view → handle_active → exit 순서 포함)
+  </div>
+
+  <div class="exercise">
+    <span class="level">적용</span>
+    <strong>3.</strong>
+    현재 DISPLAY FSM 테이블에 "SETTINGS_VIEW" 상태를 추가하시오.
+    BTN_LONG 이벤트로 SETTINGS_VIEW에 진입하고, BTN_LONG으로 TIME_VIEW로 복귀합니다.
+    테이블에 추가되어야 할 행(fsm_transition_t)과 액션 함수를 구현하시오.
+  </div>
+
+  <div class="exercise">
+    <span class="level">분석</span>
+    <strong>4.</strong>
+    다음 코드에서 레이어 의존성 위반을 찾고, 올바른 수정 방법을 제시하시오.
+    <pre><code class="language-c">/* alarm_service.c */
+void alarm_svc_notify(void)
+{
+    /* 온도 초과 알람 알림 */
+    extern UART_HandleTypeDef huart2;  /* 직접 HAL 핸들 참조 */
+    HAL_UART_Transmit(&huart2, "ALARM\r\n", 7, 100);
+}</code></pre>
+  </div>
+</section>
+
+<!-- ===== 다음 챕터 예고 ===== -->
+<section class="next-chapter">
+  <h2>다음 챕터 예고</h2>
+  <p>
+    현재 프로젝트는 <strong>v2.0</strong> 상태로,
+    4계층 레이어드 아키텍처 정합성 검증 완료, 테이블 기반 FSM + HFSM 적용,
+    설계 원칙 SRP·DIP·ISP 검증까지 완료되었습니다.
+  </p>
+  <p>
+    다음 <strong>Ch18. 디버깅 스킬 심화</strong>에서는
+    HardFault 핸들러 해석, 로직 애널라이저 파형 분석, ITM/SWO 고급 활용 등
+    실무 디버깅 기법을 적용하여 프로젝트를 <strong>v2.1</strong>로 업그레이드합니다.
+  </p>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="700" height="360" viewBox="0 0 700 360" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      text { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
+    </style>
+  </defs>
+
+  <rect width="700" height="360" fill="#F8F9FA" rx="8"/>
+  <text x="350" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">비트맵 폰트 렌더링 원리 — 글자 'A' (8×16 픽셀)</text>
+
+  <!-- 왼쪽: 비트맵 그리드 -->
+  <text x="120" y="60" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">픽셀 그리드 (8×16)</text>
+  <!-- 그리드 그리기 (8열 × 16행) -->
+  <!-- 행 0 -->
+  <rect x="40" y="68" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="56" y="68" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="72" y="68" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="88" y="68" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="104" y="68" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="120" y="68" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="136" y="68" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="152" y="68" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <!-- 행 1 -->
+  <rect x="40" y="84" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="56" y="84" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="72" y="84" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="88" y="84" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="104" y="84" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="120" y="84" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="136" y="84" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="152" y="84" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <!-- 행 2 -->
+  <rect x="40" y="100" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="56" y="100" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="72" y="100" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="88" y="100" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="104" y="100" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="120" y="100" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="136" y="100" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="152" y="100" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <!-- 행 3 -->
+  <rect x="40" y="116" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="56" y="116" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="72" y="116" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="88" y="116" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="104" y="116" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="120" y="116" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="136" y="116" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="152" y="116" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <!-- 행 4 -->
+  <rect x="40" y="132" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="56" y="132" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="72" y="132" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="88" y="132" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="104" y="132" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="120" y="132" width="16" height="16" fill="#1A73E8" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="136" y="132" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <rect x="152" y="132" width="16" height="16" fill="white" stroke="#CCC" stroke-width="0.5"/>
+  <!-- 행 5~15 (간략화) -->
+  <rect x="40" y="148" width="128" height="112" fill="#F5F5F5" stroke="#CCC" stroke-width="0.5"/>
+  <text x="104" y="210" text-anchor="middle" font-size="11" fill="#999">... (나머지 11행)</text>
+  <!-- 그리드 라인만 표시 -->
+  <line x1="40" y1="164" x2="168" y2="164" stroke="#CCC" stroke-width="0.5"/>
+  <line x1="40" y1="180" x2="168" y2="180" stroke="#CCC" stroke-width="0.5"/>
+
+  <!-- 오른쪽: 바이트 데이터 -->
+  <text x="340" y="60" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">C 배열 표현</text>
+
+  <rect x="210" y="68" width="270" height="200" rx="4" fill="#1E1E1E"/>
+  <text x="220" y="90" font-size="11" fill="#9CDCFE" font-family="Consolas, monospace">/* 8x16 비트맵 폰트: 문자 'A' */</text>
+  <text x="220" y="108" font-size="11" fill="#4EC9B0" font-family="Consolas, monospace">const uint8_t Font8x16_A[] = {</text>
+  <text x="230" y="126" font-size="11" fill="#CE9178" font-family="Consolas, monospace">0x08, /* 00001000 ← 행0 */</text>
+  <text x="230" y="142" font-size="11" fill="#CE9178" font-family="Consolas, monospace">0x1C, /* 00011100 ← 행1 */</text>
+  <text x="230" y="158" font-size="11" fill="#CE9178" font-family="Consolas, monospace">0x36, /* 00110110 ← 행2 */</text>
+  <text x="230" y="174" font-size="11" fill="#CE9178" font-family="Consolas, monospace">0x63, /* 01100011 ← 행3 */</text>
+  <text x="230" y="190" font-size="11" fill="#CE9178" font-family="Consolas, monospace">0x7F, /* 01111111 ← 행4 가로선 */</text>
+  <text x="230" y="206" font-size="11" fill="#CE9178" font-family="Consolas, monospace">0x63, /* 01100011 ← ... */</text>
+  <text x="230" y="222" font-size="11" fill="#9CDCFE" font-family="Consolas, monospace">    /* ... 나머지 10바이트 */</text>
+  <text x="220" y="256" font-size="11" fill="#4EC9B0" font-family="Consolas, monospace">};</text>
+
+  <!-- 비트-픽셀 연결 화살표 설명 -->
+  <text x="120" y="148" font-size="9" fill="#1A73E8" text-anchor="middle">← 0x7F</text>
+
+  <!-- 렌더링 알고리즘 -->
+  <rect x="210" y="278" width="460" height="70" rx="4" fill="#263238"/>
+  <text x="220" y="296" font-size="10" fill="#9CDCFE" font-family="Consolas, monospace">/* 렌더링 알고리즘: 비트 단위로 픽셀 그리기 */</text>
+  <text x="220" y="312" font-size="10" fill="#C3E88D" font-family="Consolas, monospace">for (row = 0; row &lt; 16; row++) {</text>
+  <text x="230" y="326" font-size="10" fill="#C3E88D" font-family="Consolas, monospace">  for (col = 0; col &lt; 8; col++) {</text>
+  <text x="240" y="340" font-size="10" fill="#CE9178" font-family="Consolas, monospace">    if (font[row] &amp; (0x80 &gt;&gt; col)) GFX_DrawPixel(x+col, y+row, fg);</text>
+  </text>
+
+  <!-- 요점 박스 -->
+  <rect x="30" y="278" width="168" height="70" rx="4" fill="#E3F2FD"/>
+  <text x="114" y="298" text-anchor="middle" font-size="11" font-weight="bold" fill="#0D47A1">핵심 원리</text>
+  <text x="114" y="316" text-anchor="middle" font-size="10" fill="#0D47A1">각 행 = 1바이트</text>
+  <text x="114" y="332" text-anchor="middle" font-size="10" fill="#0D47A1">1 비트 = 1 픽셀</text>
+  <text x="114" y="348" text-anchor="middle" font-size="10" fill="#0D47A1">MSB = 왼쪽 픽셀</text>
+</svg>
