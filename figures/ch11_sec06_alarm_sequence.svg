@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600">
+  <defs>
+    <style>
+      .actor { fill: #1A73E8; stroke: #000; stroke-width: 1; }
+      .actor-text { font-size: 12px; font-weight: bold; fill: white; text-anchor: middle; }
+      .timeline { stroke: #999; stroke-width: 1; stroke-dasharray: 5,5; }
+      .message-arrow { stroke: #333; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+      .message-text { font-size: 11px; fill: #000; font-family: 'Noto Sans KR', sans-serif; }
+      .title { font-size: 16px; font-weight: bold; fill: #000; }
+      .event-box { fill: #FBBC04; stroke: #EA4335; stroke-width: 2; }
+      .event-text { font-size: 11px; fill: #000; font-family: 'Noto Sans KR', sans-serif; text-anchor: middle; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333" />
+    </marker>
+  </defs>
+
+  <text x="500" y="30" class="title" text-anchor="middle">
+    온도 알람 연동 시퀀스 (Sensor Service + RTC AlarmB)
+  </text>
+
+  <!-- 액터들 -->
+  <g>
+    <rect x="80" y="70" width="100" height="40" class="actor" rx="3"/>
+    <text x="130" y="95" class="actor-text">App</text>
+  </g>
+
+  <g>
+    <rect x="280" y="70" width="100" height="40" class="actor" rx="3"/>
+    <text x="330" y="95" class="actor-text">Sensor FSM</text>
+  </g>
+
+  <g>
+    <rect x="480" y="70" width="100" height="40" class="actor" rx="3"/>
+    <text x="530" y="95" class="actor-text">I2C/SHT31</text>
+  </g>
+
+  <g>
+    <rect x="680" y="70" width="100" height="40" class="actor" rx="3"/>
+    <text x="730" y="95" class="actor-text">RTC Driver</text>
+  </g>
+
+  <g>
+    <rect x="880" y="70" width="100" height="40" class="actor" rx="3"/>
+    <text x="930" y="95" class="actor-text">Hardware</text>
+  </g>
+
+  <!-- 타임라인 -->
+  <line x1="130" y1="110" x2="130" y2="550" class="timeline"/>
+  <line x1="330" y1="110" x2="330" y2="550" class="timeline"/>
+  <line x1="530" y1="110" x2="530" y2="550" class="timeline"/>
+  <line x1="730" y1="110" x2="730" y2="550" class="timeline"/>
+  <line x1="930" y1="110" x2="930" y2="550" class="timeline"/>
+
+  <!-- 메시지들 -->
+
+  <!-- 1. start_measurement -->
+  <path d="M 130 150 L 330 150" class="message-arrow"/>
+  <text x="220" y="140" class="message-text">sensor_start_measurement()</text>
+
+  <!-- 2. trigger measurement -->
+  <path d="M 330 180 L 530 180" class="message-arrow"/>
+  <text x="420" y="170" class="message-text">sht31_trigger()</text>
+
+  <!-- 3. I2C 명령 -->
+  <path d="M 530 210 L 930 210" class="message-arrow"/>
+  <text x="720" y="200" class="message-text">I2C 0x24,0x00</text>
+
+  <!-- 4. 센서 측정 (시간 경과) -->
+  <g>
+    <rect x="900" y="240" width="60" height="60" class="event-box" rx="3"/>
+    <text x="930" y="260" class="event-text">센서</text>
+    <text x="930" y="280" class="event-text">측정</text>
+    <text x="930" y="295" class="event-text">(50ms)</text>
+  </g>
+
+  <!-- 5. process() 호출 (50ms 경과 후) -->
+  <path d="M 130 320 L 330 320" class="message-arrow"/>
+  <text x="210" y="310" class="message-text">sensor_process()</text>
+
+  <!-- 6. 데이터 수신 -->
+  <path d="M 330 350 L 530 350" class="message-arrow"/>
+  <text x="420" y="340" class="message-text">sht31_read()</text>
+
+  <!-- 7. 데이터 반환 -->
+  <path d="M 530 380 L 330 380" class="message-arrow"/>
+  <text x="420" y="375" class="message-text">temp, humid</text>
+
+  <!-- 8. 온도 검사 -->
+  <g>
+    <rect x="290" y="410" width="80" height="40" class="event-box" rx="3"/>
+    <text x="330" y="430" class="event-text">온도 > 30°C?</text>
+    <text x="330" y="445" class="event-text">YES</text>
+  </g>
+
+  <!-- 9. RTC AlarmB 설정 -->
+  <path d="M 330 460 L 730 460" class="message-arrow"/>
+  <text x="530" y="450" class="message-text">rtc_set_alarm_b()</text>
+
+  <!-- 10. 알람 설정 -->
+  <path d="M 730 490 L 930 490" class="message-arrow"/>
+  <text x="820" y="480" class="message-text">AlarmB 설정</text>
+
+  <!-- 11. 알람 발동 -->
+  <g>
+    <rect x="890" y="520" width="80" height="40" class="event-box" rx="3"/>
+    <text x="930" y="540" class="event-text">알람!</text>
+    <text x="930" y="555" class="event-text">LED ON</text>
+  </g>
+
+</svg>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500">
+  <defs>
+    <style>
+      .scl-line { stroke: #1A73E8; stroke-width: 2; }
+      .sda-line { stroke: #34A853; stroke-width: 2; }
+      .time-label { font-size: 12px; fill: #333; font-family: 'Noto Sans KR', sans-serif; }
+      .title { font-size: 16px; font-weight: bold; fill: #000; }
+      .grid-line { stroke: #ccc; stroke-width: 1; }
+      .text-event { font-size: 11px; fill: #000; font-family: 'Noto Sans KR', sans-serif; }
+    </style>
+  </defs>
+
+  <!-- 제목 -->
+  <text x="500" y="25" class="title" text-anchor="middle">
+    I2C 신호 타이밍 다이어그램 — START / 주소 / ACK / 데이터 / STOP
+  </text>
+
+  <!-- Y축 라벨 -->
+  <text x="30" y="90" class="time-label" text-anchor="end">SCL</text>
+  <text x="30" y="150" class="time-label" text-anchor="end">SDA</text>
+
+  <!-- SCL 신호 -->
+  <polyline points="50,100 100,100 100,110 130,110 130,100 160,100 160,110 200,110 200,100 240,100 240,110 280,110 280,100 320,100 320,110 360,110 360,100"
+    class="scl-line" fill="none" stroke-linejoin="round"/>
+
+  <!-- SDA 신호 -->
+  <polyline points="50,160 100,160 105,150 105,140 110,140 130,140 130,160 160,160 160,155 165,155 170,155 170,160 200,160 200,155 205,155 210,155 210,160 240,160 240,155 245,155 250,155 250,160 280,160 280,155 285,155 295,155 295,160 320,160 320,155 325,155 360,155 360,160"
+    class="sda-line" fill="none" stroke-linejoin="round"/>
+
+  <!-- START 조건 (SCL HIGH, SDA HIGH → LOW) -->
+  <g>
+    <line x1="105" y1="140" x2="105" y2="180" stroke="#EA4335" stroke-width="2" stroke-dasharray="5,5"/>
+    <text x="95" y="200" class="text-event" fill="#EA4335" font-weight="bold">START</text>
+    <text x="75" y="220" class="text-event" font-size="10">SCL=1, SDA: 1→0</text>
+  </g>
+
+  <!-- 주소 + R/W 프레임 -->
+  <g>
+    <rect x="130" y="130" width="30" height="40" fill="#FBBC04" opacity="0.3" stroke="#FBBC04"/>
+    <text x="145" y="158" class="text-event" font-size="10" text-anchor="middle">ADDR</text>
+    <text x="145" y="175" class="text-event" font-size="9" text-anchor="middle">+ R/W</text>
+  </g>
+
+  <!-- ACK (마스터가 수신, 슬레이브가 SDA LOW) -->
+  <g>
+    <line x1="165" y1="155" x2="165" y2="180" stroke="#34A853" stroke-width="2" stroke-dasharray="5,5"/>
+    <text x="150" y="200" class="text-event" fill="#34A853" font-weight="bold">ACK</text>
+    <text x="140" y="220" class="text-event" font-size="10">슬레이브: SDA=0</text>
+  </g>
+
+  <!-- 데이터 프레임 -->
+  <g>
+    <rect x="200" y="130" width="40" height="40" fill="#1A73E8" opacity="0.3" stroke="#1A73E8"/>
+    <text x="220" y="158" class="text-event" font-size="10" text-anchor="middle">DATA</text>
+    <text x="220" y="175" class="text-event" font-size="9" text-anchor="middle">(8bits)</text>
+  </g>
+
+  <!-- ACK (마스터가 전송, 슬레이브가 응답) -->
+  <g>
+    <line x1="245" y1="155" x2="245" y2="180" stroke="#34A853" stroke-width="2" stroke-dasharray="5,5"/>
+    <text x="230" y="200" class="text-event" fill="#34A853" font-weight="bold">ACK</text>
+    <text x="220" y="220" class="text-event" font-size="10">슬레이브 응답</text>
+  </g>
+
+  <!-- STOP 조건 (SCL HIGH, SDA LOW → HIGH) -->
+  <g>
+    <line x1="325" y1="155" x2="325" y2="180" stroke="#EA4335" stroke-width="2" stroke-dasharray="5,5"/>
+    <text x="305" y="200" class="text-event" fill="#EA4335" font-weight="bold">STOP</text>
+    <text x="290" y="220" class="text-event" font-size="10">SCL=1, SDA: 0→1</text>
+  </g>
+
+  <!-- 시간축 -->
+  <line x1="50" y1="250" x2="360" y2="250" stroke="#000" stroke-width="1"/>
+  <text x="50" y="270" class="time-label">시간 →</text>
+
+  <!-- 설명 박스 -->
+  <rect x="50" y="300" width="900" height="180" fill="#F5F5F5" stroke="#999" stroke-width="1" rx="3"/>
+
+  <text x="70" y="325" class="title">I2C 프로토콜 시퀀스</text>
+
+  <text x="70" y="355" class="text-event">① START: SCL이 HIGH인 상태에서 SDA를 HIGH → LOW로 전환 → 마스터가 버스 점유 선언</text>
+  <text x="70" y="375" class="text-event">② ADDR+R/W: 7비트 주소 + 1비트 읽기/쓰기 플래그 (총 8비트, MSB 우선)</text>
+  <text x="70" y="395" class="text-event">③ ACK: 수신자(마스터 또는 슬레이브)가 SDA를 LOW로 당김 (정상 응답)</text>
+  <text x="70" y="415" class="text-event">④ DATA: 8비트 데이터 전송 (MSB → LSB), 각 비트마다 SCL 클록 신호</text>
+  <text x="70" y="435" class="text-event">⑤ STOP: SCL이 HIGH인 상태에서 SDA를 LOW → HIGH로 전환 → 버스 해제</text>
+  <text x="70" y="455" class="text-event">⑥ NACK: 수신자가 SDA를 HIGH로 유지 (통신 실패 신호)</text>
+
+</svg>

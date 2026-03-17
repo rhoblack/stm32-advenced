@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500">
+  <defs>
+    <style>
+      .title { font-size: 16px; font-weight: bold; fill: #000; }
+      .label { font-size: 12px; fill: #333; font-family: 'Noto Sans KR', sans-serif; }
+      .code { font-size: 11px; fill: #000; font-family: 'monospace'; }
+      .formula-box { fill: #E8F4F8; stroke: #1A73E8; stroke-width: 2; }
+      .table-header { fill: #E8E8E8; stroke: #999; stroke-width: 1; }
+      .table-cell { fill: white; stroke: #ccc; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <text x="500" y="30" class="title" text-anchor="middle">
+    온도/습도 계산식 및 범위 테이블
+  </text>
+
+  <!-- 온도 계산식 -->
+  <g>
+    <rect x="50" y="60" width="420" height="120" class="formula-box" rx="3"/>
+    <text x="70" y="85" class="title">온도 계산식</text>
+
+    <text x="70" y="110" class="code">ST = (response[0] << 8) | response[1]</text>
+    <text x="70" y="130" class="code">temp_c = (175.0 / 65535.0) * ST - 45.0</text>
+
+    <text x="70" y="155" class="label">예시: ST = 0x6B85 = 27533</text>
+    <text x="70" y="172" class="label">온도 = (175/65535) × 27533 - 45 ≈ 28.8°C</text>
+  </g>
+
+  <!-- 습도 계산식 -->
+  <g>
+    <rect x="530" y="60" width="420" height="120" class="formula-box" rx="3"/>
+    <text x="550" y="85" class="title">습도 계산식</text>
+
+    <text x="550" y="110" class="code">SRH = (response[3] << 8) | response[4]</text>
+    <text x="550" y="130" class="code">humid_pct = (100.0 / 65535.0) * SRH</text>
+
+    <text x="550" y="155" class="label">예시: SRH = 0x5E00 = 24064</text>
+    <text x="550" y="172" class="label">습도 = (100/65535) × 24064 ≈ 36.7%</text>
+  </g>
+
+  <!-- 범위 테이블 -->
+  <g>
+    <text x="50" y="220" class="title">온도/습도 범위 테이블</text>
+
+    <!-- 헤더 -->
+    <rect x="50" y="235" width="120" height="30" class="table-header"/>
+    <text x="110" y="257" class="label" text-anchor="middle">항목</text>
+
+    <rect x="170" y="235" width="150" height="30" class="table-header"/>
+    <text x="245" y="257" class="label" text-anchor="middle">최소값</text>
+
+    <rect x="320" y="235" width="150" height="30" class="table-header"/>
+    <text x="395" y="257" class="label" text-anchor="middle">최대값</text>
+
+    <rect x="470" y="235" width="150" height="30" class="table-header"/>
+    <text x="545" y="257" class="label" text-anchor="middle">ST/SRH 값</text>
+
+    <rect x="620" y="235" width="230" height="30" class="table-header"/>
+    <text x="735" y="257" class="label" text-anchor="middle">설명</text>
+
+    <!-- 온도 행 -->
+    <rect x="50" y="265" width="120" height="30" class="table-cell"/>
+    <text x="110" y="287" class="label" text-anchor="middle">온도</text>
+
+    <rect x="170" y="265" width="150" height="30" class="table-cell"/>
+    <text x="245" y="287" class="label" text-anchor="middle">-45°C</text>
+
+    <rect x="320" y="265" width="150" height="30" class="table-cell"/>
+    <text x="395" y="287" class="label" text-anchor="middle">+130°C</text>
+
+    <rect x="470" y="265" width="150" height="30" class="table-cell"/>
+    <text x="545" y="287" class="code" text-anchor="middle">0x0000 ~ 0xFFFF</text>
+
+    <rect x="620" y="265" width="230" height="30" class="table-cell"/>
+    <text x="735" y="287" class="label" text-anchor="middle">16비트 선형 매핑</text>
+
+    <!-- 습도 행 -->
+    <rect x="50" y="295" width="120" height="30" class="table-cell"/>
+    <text x="110" y="317" class="label" text-anchor="middle">습도</text>
+
+    <rect x="170" y="295" width="150" height="30" class="table-cell"/>
+    <text x="245" y="317" class="label" text-anchor="middle">0%</text>
+
+    <rect x="320" y="295" width="150" height="30" class="table-cell"/>
+    <text x="395" y="317" class="label" text-anchor="middle">100%</text>
+
+    <rect x="470" y="295" width="150" height="30" class="table-cell"/>
+    <text x="545" y="317" class="code" text-anchor="middle">0x0000 ~ 0xFFFF</text>
+
+    <rect x="620" y="295" width="230" height="30" class="table-cell"/>
+    <text x="735" y="317" class="label" text-anchor="middle">습도 범위 제한 없음</text>
+
+    <!-- 정확도 행 -->
+    <rect x="50" y="325" width="120" height="30" class="table-cell"/>
+    <text x="110" y="347" class="label" text-anchor="middle">정확도</text>
+
+    <rect x="170" y="325" width="150" height="30" class="table-cell"/>
+    <text x="245" y="347" class="label" text-anchor="middle">±0.3°C</text>
+
+    <rect x="320" y="325" width="150" height="30" class="table-cell"/>
+    <text x="395" y="347" class="label" text-anchor="middle">±2%</text>
+
+    <rect x="470" y="325" width="150" height="30" class="table-cell"/>
+    <text x="545" y="347" class="label" text-anchor="middle">데이터시트</text>
+
+    <rect x="620" y="325" width="230" height="30" class="table-cell"/>
+    <text x="735" y="347" class="label" text-anchor="middle">센서 오차 범위</text>
+  </g>
+
+  <!-- 주의사항 -->
+  <rect x="50" y="390" width="900" height="90" fill="#FFF3CD" stroke="#FFC107" stroke-width="1" rx="3"/>
+
+  <text x="70" y="415" class="title" fill="#856404">주의사항</text>
+
+  <text x="70" y="440" class="label">
+    • 계산식은 SHT31 데이터시트에 명시된 정규화 공식입니다.
+  </text>
+
+  <text x="70" y="460" class="label">
+    • CRC 검증이 실패하면, 계산 결과가 정확하지 않을 수 있습니다. 데이터를 버리세요.
+  </text>
+
+</svg>

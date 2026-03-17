@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600">
+  <defs>
+    <style>
+      .state-box { fill: #FBBC04; stroke: #333; stroke-width: 2; }
+      .state-error { fill: #EA4335; stroke: #333; stroke-width: 2; }
+      .state-text { font-size: 12px; font-weight: bold; fill: #000; text-anchor: middle; }
+      .transition-arrow { stroke: #333; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .transition-label { font-size: 11px; fill: #333; font-family: 'Noto Sans KR', sans-serif; }
+      .title { font-size: 18px; font-weight: bold; fill: #000; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333" />
+    </marker>
+  </defs>
+
+  <text x="500" y="30" class="title" text-anchor="middle">
+    Sensor Service FSM (5상태)
+  </text>
+
+  <!-- IDLE 상태 -->
+  <g>
+    <circle cx="150" cy="150" r="60" class="state-box"/>
+    <text x="150" y="155" class="state-text">IDLE</text>
+  </g>
+
+  <!-- MEASURING 상태 -->
+  <g>
+    <circle cx="400" cy="150" r="60" class="state-box"/>
+    <text x="400" y="155" class="state-text">MEASURING</text>
+  </g>
+
+  <!-- DATA_READY 상태 -->
+  <g>
+    <circle cx="650" cy="150" r="60" class="state-box"/>
+    <text x="650" y="155" class="state-text">DATA_READY</text>
+  </g>
+
+  <!-- ALARM 상태 -->
+  <g>
+    <circle cx="400" cy="350" r="60" class="state-box"/>
+    <text x="400" y="355" class="state-text">ALARM</text>
+  </g>
+
+  <!-- ERROR 상태 -->
+  <g>
+    <circle cx="150" cy="350" r="60" class="state-error"/>
+    <text x="150" y="355" class="state-text">ERROR</text>
+  </g>
+
+  <!-- 전환 화살표 -->
+
+  <!-- IDLE → MEASURING -->
+  <path d="M 210 150 L 340 150" class="transition-arrow"/>
+  <text x="275" y="140" class="transition-label">start_measurement()</text>
+
+  <!-- MEASURING → DATA_READY -->
+  <path d="M 460 150 L 590 150" class="transition-arrow"/>
+  <text x="525" y="140" class="transition-label">50ms 경과 + CRC OK</text>
+
+  <!-- MEASURING → ALARM -->
+  <path d="M 380 210 L 410 290" class="transition-arrow"/>
+  <text x="345" y="255" class="transition-label">temp > threshold</text>
+
+  <!-- DATA_READY → IDLE -->
+  <path d="M 620 90 Q 400 50, 180 90" class="transition-arrow"/>
+  <text x="400" y="60" class="transition-label">get_data() 호출</text>
+
+  <!-- ALARM → IDLE -->
+  <path d="M 340 350 L 210 350" class="transition-arrow"/>
+  <text x="275" y="370" class="transition-label">check_alarm() 호출</text>
+
+  <!-- MEASURING → ERROR -->
+  <path d="M 350 200 Q 250 240, 210 290" class="transition-arrow"/>
+  <text x="270" y="250" class="transition-label">I2C 에러 / CRC 실패</text>
+
+  <!-- 설명 박스 -->
+  <rect x="50" y="450" width="900" height="130" fill="#F5F5F5" stroke="#999" stroke-width="1" rx="3"/>
+
+  <text x="70" y="475" class="title">FSM 상태 설명</text>
+
+  <text x="70" y="500" class="transition-label">
+    <tspan x="70">• IDLE</tspan>
+    <tspan x="300">대기 상태, sensor_start_measurement() 호출 대기</tspan>
+  </text>
+
+  <text x="70" y="520" class="transition-label">
+    <tspan x="70">• MEASURING</tspan>
+    <tspan x="300">센서 측정 중, 50ms 경과 확인 후 데이터 수신</tspan>
+  </text>
+
+  <text x="70" y="540" class="transition-label">
+    <tspan x="70">• DATA_READY</tspan>
+    <tspan x="300">데이터 준비 완료, 온도 <= 임계값, get_data() 호출 대기</tspan>
+  </text>
+
+  <text x="70" y="560" class="transition-label">
+    <tspan x="70">• ALARM</tspan>
+    <tspan x="300">온도 > 임계값, check_alarm() 호출 대기, RTC AlarmB 트리거</tspan>
+  </text>
+
+  <text x="70" y="580" class="transition-label">
+    <tspan x="70">• ERROR</tspan>
+    <tspan x="300">I2C 통신 실패 또는 CRC 불일치, 수동 복구 필요</tspan>
+  </text>
+
+</svg>

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400">
+  <defs>
+    <style>
+      .title { font-size: 18px; font-weight: bold; fill: #000; }
+      .label { font-size: 12px; fill: #000; font-family: 'Noto Sans KR', sans-serif; }
+      .byte-label { font-size: 11px; fill: white; font-weight: bold; text-anchor: middle; }
+      .byte-data { font-size: 10px; fill: #333; text-anchor: middle; }
+      .box-temp { fill: #1A73E8; }
+      .box-crc { fill: #EA4335; }
+      .box-humid { fill: #34A853; }
+    </style>
+  </defs>
+
+  <text x="500" y="30" class="title" text-anchor="middle">
+    SHT31 센서 응답 프레임 구조 (6바이트)
+  </text>
+
+  <!-- 바이트 0: 온도 상위 -->
+  <g>
+    <rect x="100" y="80" width="80" height="100" class="box-temp"/>
+    <text x="140" y="110" class="byte-label">[0]</text>
+    <text x="140" y="145" class="byte-data">온도</text>
+    <text x="140" y="160" class="byte-data">상위</text>
+  </g>
+
+  <!-- 바이트 1: 온도 하위 -->
+  <g>
+    <rect x="200" y="80" width="80" height="100" class="box-temp"/>
+    <text x="240" y="110" class="byte-label">[1]</text>
+    <text x="240" y="145" class="byte-data">온도</text>
+    <text x="240" y="160" class="byte-data">하위</text>
+  </g>
+
+  <!-- 바이트 2: 온도 CRC -->
+  <g>
+    <rect x="300" y="80" width="60" height="100" class="box-crc"/>
+    <text x="330" y="110" class="byte-label">[2]</text>
+    <text x="330" y="145" class="byte-data">온도</text>
+    <text x="330" y="160" class="byte-data">CRC</text>
+  </g>
+
+  <!-- 바이트 3: 습도 상위 -->
+  <g>
+    <rect x="420" y="80" width="80" height="100" class="box-humid"/>
+    <text x="460" y="110" class="byte-label">[3]</text>
+    <text x="460" y="145" class="byte-data">습도</text>
+    <text x="460" y="160" class="byte-data">상위</text>
+  </g>
+
+  <!-- 바이트 4: 습도 하위 -->
+  <g>
+    <rect x="520" y="80" width="80" height="100" class="box-humid"/>
+    <text x="560" y="110" class="byte-label">[4]</text>
+    <text x="560" y="145" class="byte-data">습도</text>
+    <text x="560" y="160" class="byte-data">하위</text>
+  </g>
+
+  <!-- 바이트 5: 습도 CRC -->
+  <g>
+    <rect x="620" y="80" width="60" height="100" class="box-crc"/>
+    <text x="650" y="110" class="byte-label">[5]</text>
+    <text x="650" y="145" class="byte-data">습도</text>
+    <text x="650" y="160" class="byte-data">CRC</text>
+  </g>
+
+  <!-- 설명 박스 -->
+  <rect x="50" y="220" width="900" height="160" fill="#F5F5F5" stroke="#999" stroke-width="1" rx="3"/>
+
+  <text x="70" y="245" class="label" font-weight="bold">응답 구조 분석:</text>
+
+  <text x="70" y="270" class="label">• 온도 값: [0] (상위) + [1] (하위) = 16비트 big-endian</text>
+  <text x="70" y="290" class="label">  예시: [0]=0xBE, [1]=0x00 → temp_raw = 0xBE00 = 48640</text>
+
+  <text x="70" y="315" class="label">• 온도 CRC: [2] — 바이트 [0], [1]의 CRC-8 (다항식 0x31)</text>
+  <text x="70" y="330" class="label">  검증: crc8_verify([0], [1], [2])가 0 (OK)이면 데이터 무결성 보장</text>
+
+  <text x="70" y="355" class="label">• 습도 값: [3] (상위) + [4] (하위) = 16비트 big-endian</text>
+  <text x="70" y="370" class="label">• 습도 CRC: [5] — 바이트 [3], [4]의 CRC-8 (동일)</text>
+
+</svg>

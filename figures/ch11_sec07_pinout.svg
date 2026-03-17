@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600">
+  <defs>
+    <style>
+      .title { font-size: 16px; font-weight: bold; fill: #000; }
+      .label { font-size: 12px; fill: #333; font-family: 'Noto Sans KR', sans-serif; }
+      .pin-box { fill: #E8F4F8; stroke: #1A73E8; stroke-width: 1; }
+      .pin-label { font-size: 11px; fill: #000; font-family: 'monospace'; }
+      .pullup { fill: #FBBC04; stroke: #333; stroke-width: 1; }
+      .pullup-label { font-size: 10px; fill: #000; text-anchor: middle; }
+      .connection { stroke: #333; stroke-width: 2; }
+    </style>
+  </defs>
+
+  <text x="500" y="30" class="title" text-anchor="middle">
+    NUCLEO-F411RE I2C2 핀맵 및 풀업 저항 연결
+  </text>
+
+  <!-- MCU -->
+  <g>
+    <rect x="50" y="80" width="200" height="200" fill="#E8E8E8" stroke="#333" stroke-width="2" rx="5"/>
+    <text x="150" y="110" class="title" text-anchor="middle">STM32F411RE</text>
+
+    <!-- PB10 핀 -->
+    <rect x="60" y="140" width="180" height="30" class="pin-box" rx="2"/>
+    <text x="70" y="162" class="pin-label">PB10 (I2C2_SCL)</text>
+
+    <!-- PB3 핀 -->
+    <rect x="60" y="200" width="180" height="30" class="pin-box" rx="2"/>
+    <text x="70" y="222" class="pin-label">PB3 (I2C2_SDA)</text>
+
+    <!-- GND -->
+    <rect x="60" y="260" width="180" height="30" class="pin-box" rx="2"/>
+    <text x="70" y="282" class="pin-label">GND</text>
+  </g>
+
+  <!-- 풀업 저항 -->
+  <g>
+    <text x="350" y="105" class="label" font-weight="bold">풀업 저항 (4.7kΩ × 2)</text>
+
+    <!-- 저항 1: SCL -->
+    <rect x="330" y="145" width="30" height="60" class="pullup" rx="3"/>
+    <text x="345" y="182" class="pullup-label">R1</text>
+    <text x="390" y="165" class="label">4.7kΩ</text>
+
+    <!-- 선: PB10 → 저항 1 상단 -->
+    <line x1="240" y1="155" x2="330" y2="155" class="connection"/>
+    <!-- 선: 저항 1 → 3.3V -->
+    <line x1="345" y1="145" x2="345" y2="120" class="connection"/>
+    <text x="360" y="125" class="label">3.3V</text>
+
+    <!-- 저항 2: SDA -->
+    <rect x="480" y="145" width="30" height="60" class="pullup" rx="3"/>
+    <text x="495" y="182" class="pullup-label">R2</text>
+    <text x="540" y="165" class="label">4.7kΩ</text>
+
+    <!-- 선: PB3 → 저항 2 상단 -->
+    <line x1="240" y1="215" x2="480" y2="215" class="connection"/>
+    <!-- 선: 저항 2 → 3.3V -->
+    <line x1="495" y1="145" x2="495" y2="120" class="connection"/>
+    <text x="510" y="125" class="label">3.3V</text>
+  </g>
+
+  <!-- SHT31 센서 -->
+  <g>
+    <rect x="650" y="80" width="300" height="200" fill="#F0F0F0" stroke="#333" stroke-width="2" rx="5"/>
+    <text x="800" y="110" class="title" text-anchor="middle">SHT31 온습도 센서</text>
+
+    <!-- VCC -->
+    <rect x="660" y="140" width="90" height="30" class="pin-box" rx="2"/>
+    <text x="705" y="162" class="pin-label">VCC (3.3V)</text>
+
+    <!-- GND -->
+    <rect x="760" y="140" width="90" height="30" class="pin-box" rx="2"/>
+    <text x="805" y="162" class="pin-label">GND</text>
+
+    <!-- SCL -->
+    <rect x="860" y="140" width="90" height="30" class="pin-box" rx="2"/>
+    <text x="905" y="162" class="pin-label">SCL</text>
+
+    <!-- SDA -->
+    <rect x="660" y="200" width="90" height="30" class="pin-box" rx="2"/>
+    <text x="705" y="222" class="pin-label">SDA</text>
+
+    <!-- Address -->
+    <rect x="760" y="200" width="90" height="30" class="pin-box" rx="2"/>
+    <text x="805" y="222" class="pin-label">ADDR (GND)</text>
+
+    <!-- Alert -->
+    <rect x="860" y="200" width="90" height="30" class="pin-box" rx="2"/>
+    <text x="905" y="222" class="pin-label">Alert (NC)</text>
+  </g>
+
+  <!-- 연결선 -->
+  <g>
+    <!-- PB10 (SCL) → SHT31 SCL -->
+    <line x1="240" y1="155" x2="860" y2="155" class="connection"/>
+    <text x="550" y="145" class="label">I2C2_SCL</text>
+
+    <!-- PB3 (SDA) → SHT31 SDA -->
+    <line x1="240" y1="215" x2="660" y2="215" class="connection"/>
+    <text x="430" y="235" class="label">I2C2_SDA</text>
+
+    <!-- GND → SHT31 GND -->
+    <line x1="240" y1="275" x2="760" y2="275" class="connection"/>
+    <line x1="760" y1="275" x2="760" y2="230" class="connection"/>
+    <text x="500" y="295" class="label">GND</text>
+
+    <!-- 3.3V → SHT31 VCC -->
+    <line x1="705" y1="120" x2="705" y2="140" class="connection"/>
+    <text x="680" y="130" class="label">3.3V</text>
+  </g>
+
+  <!-- 주의사항 박스 -->
+  <rect x="50" y="330" width="900" height="250" fill="#FFF3CD" stroke="#FFC107" stroke-width="1" rx="3"/>
+
+  <text x="70" y="355" class="title" fill="#856404">I2C2 핀맵 및 주의사항</text>
+
+  <text x="70" y="385" class="label">
+    1. <tspan font-weight="bold">NUCLEO-F411RE 내부 풀업</tspan>: I2C2 (PB10/PB3)는 보드에 내부 풀업이 없으므로, 반드시 외부 풀업 저항 4.7kΩ을 연결해야 합니다.
+  </text>
+
+  <text x="70" y="410" class="label">
+    2. <tspan font-weight="bold">SHT31 I2C 주소</tspan>: 0x44 (ADDR 핀이 GND 연결일 때, 기본값). 다른 핀 연결 시 주소 변경.
+  </text>
+
+  <text x="70" y="435" class="label">
+    3. <tspan font-weight="bold">I2C 속도</tspan>: NUCLEO-F411RE에서는 100kHz (Standard Mode) 권장. CubeMX I2C2 설정에서 확인하세요.
+  </text>
+
+  <text x="70" y="460" class="label">
+    4. <tspan font-weight="bold">SHT31 연결</tspan>: VCC(3.3V), GND, SCL(PB10), SDA(PB3). ADDR을 GND에 연결하면 I2C 주소 0x44.
+  </text>
+
+  <text x="70" y="485" class="label">
+    5. <tspan font-weight="bold">Alert 핀</tspan>: 온도 알람 용도이지만, 이 예제에서는 사용하지 않습니다. NC(연결 안 함) 또는 GND로 둬도 됩니다.
+  </text>
+
+  <text x="70" y="510" class="label">
+    6. <tspan font-weight="bold">케이블 길이</tspan>: 브레드보드에서는 20cm 이하 권장. 길면 노이즈로 인해 I2C 통신 불안정.
+  </text>
+
+  <text x="70" y="535" class="label">
+    7. <tspan font-weight="bold">디버깅</tspan>: 통신 불안정 시, 오실로스코프로 I2C 신호 확인 (SCL/SDA 파형이 명확한지 확인).
+  </text>
+
+</svg>
