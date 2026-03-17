@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="350" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .title { fill: #333; font-size: 16px; font-weight: bold; }
+      .label { fill: #333; font-size: 12px; font-family: 'Noto Sans KR', sans-serif; }
+      .step { fill: #FBBC04; stroke: #333; stroke-width: 1; }
+      .cmd { fill: #4285F4; }
+      .data { fill: #34A853; }
+      .delay { fill: #EA4335; }
+    </style>
+  </defs>
+
+  <text x="450" y="30" class="title" text-anchor="middle">ILI9341 초기화 명령어 시퀀스</text>
+
+  <!-- Timeline header -->
+  <text x="50" y="70" class="label" font-weight="bold">패턴 반복 (25~35개 명령어):</text>
+
+  <!-- Step 1: D/C = 0 -->
+  <g>
+    <rect x="50" y="90" width="100" height="40" class="cmd"/>
+    <text x="100" y="105" class="label" text-anchor="middle" fill="white" font-weight="bold">Step 1</text>
+    <text x="100" y="120" class="label" text-anchor="middle" fill="white" font-size="11">D/C = 0</text>
+    <text x="100" y="135" class="label" text-anchor="middle" font-size="10">(명령어)</text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 155 110 L 180 110" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- Step 2: Send CMD -->
+  <g>
+    <rect x="185" y="90" width="100" height="40" class="cmd"/>
+    <text x="235" y="105" class="label" text-anchor="middle" fill="white" font-weight="bold">Step 2</text>
+    <text x="235" y="120" class="label" text-anchor="middle" fill="white" font-size="11">SPI TX</text>
+    <text x="235" y="135" class="label" text-anchor="middle" font-size="10" fill="white">Cmd(0xCB)</text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 290 110 L 315 110" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- Step 3: D/C = 1 -->
+  <g>
+    <rect x="320" y="90" width="100" height="40" class="data"/>
+    <text x="370" y="105" class="label" text-anchor="middle" fill="white" font-weight="bold">Step 3</text>
+    <text x="370" y="120" class="label" text-anchor="middle" fill="white" font-size="11">D/C = 1</text>
+    <text x="370" y="135" class="label" text-anchor="middle" font-size="10" fill="white">(데이터)</text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 425 110 L 450 110" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- Step 4: Send DATA -->
+  <g>
+    <rect x="455" y="90" width="100" height="40" class="data"/>
+    <text x="505" y="105" class="label" text-anchor="middle" fill="white" font-weight="bold">Step 4</text>
+    <text x="505" y="120" class="label" text-anchor="middle" fill="white" font-size="11">SPI TX</text>
+    <text x="505" y="135" class="label" text-anchor="middle" font-size="10" fill="white">Data(3~5B)</text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 560 110 L 585 110" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- Step 5: Delay -->
+  <g>
+    <rect x="590" y="90" width="100" height="40" class="delay"/>
+    <text x="640" y="105" class="label" text-anchor="middle" fill="white" font-weight="bold">Step 5</text>
+    <text x="640" y="120" class="label" text-anchor="middle" fill="white" font-size="11">Delay</text>
+    <text x="640" y="135" class="label" text-anchor="middle" font-size="10" fill="white">1~5ms</text>
+  </g>
+
+  <!-- Arrow to repeat -->
+  <path d="M 640 135 L 640 170 L 100 170 L 100 135" stroke="#666" stroke-width="2" fill="none" marker-end="url(#arrow)" stroke-dasharray="5,5"/>
+  <text x="380" y="185" class="label" text-anchor="middle" font-size="11">반복... (25~35개 명령어)</text>
+
+  <!-- Example -->
+  <g>
+    <text x="50" y="240" class="label" font-weight="bold">예: Power Control A (0xCB)</text>
+    
+    <rect x="50" y="250" width="150" height="80" fill="none" stroke="#ddd" stroke-width="1"/>
+    <text x="60" y="268" class="label">D/C = 0</text>
+    <text x="60" y="288" class="label">Send: 0xCB</text>
+    <text x="60" y="308" class="label">D/C = 1</text>
+    <text x="60" y="328" class="label">Send: 0x39, 0x2C, 0x00,</text>
+
+    <rect x="210" y="250" width="150" height="80" fill="none" stroke="#ddd" stroke-width="1"/>
+    <text x="220" y="268" class="label">       0x34, 0x02</text>
+    <text x="220" y="288" class="label">Delay 5ms</text>
+    <text x="220" y="308" class="label"></text>
+    <text x="220" y="328" class="label">다음 명령어로...</text>
+  </g>
+
+  <!-- Key points -->
+  <g>
+    <text x="450" y="250" class="label" font-weight="bold">⚠️ 중요 포인트:</text>
+    <text x="450" y="270" class="label">✓ 순서 변경 금지</text>
+    <text x="450" y="290" class="label">✓ 파라미터값 변경 금지</text>
+    <text x="450" y="310" class="label">✓ 각 명령어 사이</text>
+    <text x="450" y="330" class="label">  1~5ms 딜레이 필수</text>
+  </g>
+
+  <!-- Marker definition -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333"/>
+    </marker>
+  </defs>
+</svg>

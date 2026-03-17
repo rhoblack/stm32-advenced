@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .i2c { fill: #34A853; }
+      .spi { fill: #4285F4; }
+      .text { fill: white; font-size: 13px; font-family: 'Noto Sans KR', sans-serif; text-anchor: middle; }
+      .label { fill: #333; font-size: 12px; font-family: 'Noto Sans KR', sans-serif; }
+      .title { fill: #333; font-size: 16px; font-weight: bold; }
+    </style>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="30" class="title" text-anchor="middle">I2C vs SPI: 통신 방식 비교</text>
+
+  <!-- I2C Box -->
+  <rect x="50" y="70" width="330" height="300" class="i2c" rx="5"/>
+  <text x="215" y="100" class="text" font-size="16">I2C (센서용)</text>
+
+  <text x="60" y="130" class="label" font-weight="bold">특징:</text>
+  <text x="70" y="150" class="label">• 속도: 100~400 kbps</text>
+  <text x="70" y="170" class="label">• 핀: 2개 (SDA, SCL)</text>
+  <text x="70" y="190" class="label">• 용도: 센서, 저속</text>
+  <text x="70" y="210" class="label">• 통신: 마스터↔슬레이브</text>
+  <text x="70" y="230" class="label">• ACK 신호 필요</text>
+
+  <text x="60" y="260" class="label" font-weight="bold">예: SHT31 온습도센서</text>
+  <text x="70" y="280" class="label">온습도 = 2바이트</text>
+  <text x="70" y="300" class="label">느린 속도 → 문제없음</text>
+  <text x="70" y="320" class="label">전력 효율 중요</text>
+
+  <!-- SPI Box -->
+  <rect x="420" y="70" width="330" height="300" class="spi" rx="5"/>
+  <text x="585" y="100" class="text" font-size="16">SPI (LCD용)</text>
+
+  <text x="430" y="130" class="label" font-weight="bold">특징:</text>
+  <text x="440" y="150" class="label">• 속도: 1~42 Mbps ⚡</text>
+  <text x="440" y="170" class="label">• 핀: 4개+ (SCLK/MOSI/CS)</text>
+  <text x="440" y="190" class="label">• 용도: LCD, 고속</text>
+  <text x="440" y="210" class="label">• 통신: 마스터→슬레이브</text>
+  <text x="440" y="230" class="label">• ACK 불필요 (빠름)</text>
+
+  <text x="430" y="260" class="label" font-weight="bold">예: ILI9341 LCD</text>
+  <text x="440" y="280" class="label">화면 갱신 = 153,600바이트</text>
+  <text x="440" y="300" class="label">빠른 속도 필수</text>
+  <text x="440" y="320" class="label">DMA 활용 가능</text>
+
+  <!-- Comparison line at bottom -->
+  <line x1="50" y1="380" x2="750" y2="380" stroke="#666" stroke-width="1"/>
+  <text x="215" y="395" class="label" text-anchor="middle">선택 기준: 속도가 중요 → SPI | 전력/간단함이 중요 → I2C</text>
+</svg>

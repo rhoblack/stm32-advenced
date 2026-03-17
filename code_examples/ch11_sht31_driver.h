@@ -12,9 +12,17 @@
 #include <stdint.h>
 
 /* SHT31 정의 */
-#define SHT31_ADDR      0x44       // I2C 주소
+#define SHT31_ADDR      0x44       // I2C 주소 (7비트)
 #define SHT31_MEAS_CMD  {0x24, 0x00}  // 측정 명령
 #define SHT31_RESP_LEN  6          // 응답 길이 (온도2 + CRC1 + 습도2 + CRC1)
+
+/* SHT31 응답 프레임 인덱스 (6바이트: [온도H][온도L][온도CRC][습도H][습도L][습도CRC]) */
+#define SHT31_TEMP_H_IDX    0      // 온도 상위 바이트 인덱스
+#define SHT31_TEMP_L_IDX    1      // 온도 하위 바이트 인덱스
+#define SHT31_TEMP_CRC_IDX  2      // 온도 CRC 인덱스
+#define SHT31_HUM_H_IDX     3      // 습도 상위 바이트 인덱스
+#define SHT31_HUM_L_IDX     4      // 습도 하위 바이트 인덱스
+#define SHT31_HUM_CRC_IDX   5      // 습도 CRC 인덱스
 
 /* SHT31 상태 코드 */
 typedef int32_t sht31_status_t;

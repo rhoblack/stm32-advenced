@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .state-circle { fill: #E8F5E9; stroke: #34A853; stroke-width: 2; }
+      .state-text { font-size: 14px; font-weight: bold; text-anchor: middle; }
+      .transition-arrow { stroke: #333; stroke-width: 2; marker-end: url(#arrowhead); }
+      .transition-label { font-size: 11px; fill: #333; }
+      .title { font-size: 18px; font-weight: bold; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333" />
+    </marker>
+  </defs>
+
+  <!-- 제목 -->
+  <text x="400" y="30" class="title" text-anchor="middle" fill="#1A1A2E">
+    Motor FSM: 4개 상태와 전이
+  </text>
+  <text x="400" y="55" class="transition-label" text-anchor="middle" fill="#666">
+    Ch08 Stopwatch FSM과 유사한 패턴
+  </text>
+
+  <!-- IDLE 상태 -->
+  <circle cx="100" cy="200" r="60" class="state-circle"/>
+  <text x="100" y="200" class="state-text" fill="#34A853">IDLE</text>
+  <text x="100" y="220" class="transition-label" text-anchor="middle">(대기)</text>
+
+  <!-- MOVING 상태 -->
+  <circle cx="400" cy="150" r="60" class="state-circle"/>
+  <text x="400" y="150" class="state-text" fill="#34A853">MOVING</text>
+  <text x="400" y="170" class="transition-label" text-anchor="middle">(이동 중)</text>
+
+  <!-- HOMING 상태 -->
+  <circle cx="400" cy="310" r="60" class="state-circle"/>
+  <text x="400" y="310" class="state-text" fill="#34A853">HOMING</text>
+  <text x="400" y="330" class="transition-label" text-anchor="middle">(홈 복귀)</text>
+
+  <!-- ERROR 상태 -->
+  <circle cx="700" cy="200" r="60" class="state-circle" fill="#FFEBEE" stroke="#EA4335" stroke-width="2"/>
+  <text x="700" y="200" class="state-text" fill="#EA4335">ERROR</text>
+  <text x="700" y="220" class="transition-label" text-anchor="middle">(에러)</text>
+
+  <!-- 초기 상태 표시 -->
+  <path d="M 40 200 L 40 200" stroke="#34A853" stroke-width="3" fill="none"/>
+  <text x="30" y="190" class="transition-label" fill="#34A853">초기</text>
+
+  <!-- 전이 1: IDLE → MOVING -->
+  <path d="M 160 170 Q 280 100 340 140" class="transition-arrow" fill="none"/>
+  <text x="240" y="95" class="transition-label">move_to(target)</text>
+
+  <!-- 전이 2: MOVING → IDLE -->
+  <path d="M 340 140 Q 280 200 160 230" class="transition-arrow" fill="none"/>
+  <text x="240" y="210" class="transition-label">도착</text>
+
+  <!-- 전이 3: IDLE → HOMING -->
+  <path d="M 160 230 Q 280 270 340 290" class="transition-arrow" fill="none"/>
+  <text x="240" y="280" class="transition-label">home()</text>
+
+  <!-- 전이 4: HOMING → IDLE -->
+  <path d="M 340 290 Q 280 240 160 210" class="transition-arrow" fill="none"/>
+  <text x="240" y="270" class="transition-label">홈 도착</text>
+
+  <!-- 전이 5: IDLE → ERROR (오류 조건) -->
+  <path d="M 160 210 L 640 210" class="transition-arrow" stroke="#EA4335" fill="none"/>
+  <text x="390" y="200" class="transition-label" fill="#EA4335">에러 감지</text>
+
+  <!-- 전이 6: ERROR → IDLE (복구) -->
+  <path d="M 640 190 L 160 190" class="transition-arrow" stroke="#34A853" fill="none" stroke-dasharray="5,5"/>
+  <text x="390" y="180" class="transition-label" fill="#34A853">복구/재시작</text>
+
+  <!-- 표: 상태 설명 -->
+  <rect x="50" y="400" width="700" height="80" fill="#F5F5F5" stroke="#CCC" stroke-width="1" rx="5"/>
+
+  <text x="60" y="420" class="transition-label" font-weight="bold">IDLE:</text>
+  <text x="120" y="420" class="transition-label">전력 OFF, 명령 대기</text>
+
+  <text x="60" y="440" class="transition-label" font-weight="bold">MOVING:</text>
+  <text x="140" y="440" class="transition-label">목표 위치로 이동 중</text>
+
+  <text x="60" y="460" class="transition-label" font-weight="bold">HOMING:</text>
+  <text x="140" y="460" class="transition-label">0° (12시 위치)로 복귀 중</text>
+
+  <text x="480" y="420" class="transition-label" font-weight="bold">ERROR:</text>
+  <text x="550" y="420" class="transition-label">RTC 오류 또는 하드웨어 오류</text>
+
+  <text x="480" y="460" class="transition-label" font-weight="bold">특징:</text>
+  <text x="550" y="460" class="transition-label">Ch08 FSM 패턴과 동일하게 설계</text>
+</svg>

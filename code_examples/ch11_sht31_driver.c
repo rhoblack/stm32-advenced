@@ -9,6 +9,9 @@
 #include "main.h"
 #include "log.h"
 
+/* I2C 타임아웃 상수 (전체 모듈에서 일관성 유지) */
+#define SHT31_I2C_TIMEOUT_MS 1000
+
 /**
  * @brief SHT31 초기화
  */
@@ -19,7 +22,7 @@ sht31_status_t sht31_init(void)
     LOG_I("sht31_init: SHT31 센서 초기화 시작");
 
     // 더미 송신으로 센서 응답 확인
-    if (i2c_master_transmit(SHT31_ADDR, cmd, sizeof(cmd), 1000) == I2C_OK) {
+    if (i2c_master_transmit(SHT31_ADDR, cmd, sizeof(cmd), SHT31_I2C_TIMEOUT_MS) == I2C_OK) {
         LOG_I("sht31_init: SHT31 센서 응답 OK");
         return SHT31_OK;
     } else {
@@ -41,7 +44,7 @@ sht31_status_t sht31_read_temp_humid(float *p_temp, float *p_humid)
     LOG_D("sht31_read_temp_humid: 측정 시작");
 
     // Step 1: 측정 명령 송신
-    ret = i2c_master_transmit(SHT31_ADDR, cmd, sizeof(cmd), 1000);
+    ret = i2c_master_transmit(SHT31_ADDR, cmd, sizeof(cmd), SHT31_I2C_TIMEOUT_MS);
     if (ret != I2C_OK) {
         LOG_E("sht31_read_temp_humid: 명령 송신 실패");
         return SHT31_ERROR;
@@ -52,27 +55,27 @@ sht31_status_t sht31_read_temp_humid(float *p_temp, float *p_humid)
     HAL_Delay(50);
 
     // Step 3: 데이터 수신 (6바이트)
-    ret = i2c_master_receive(SHT31_ADDR, response, SHT31_RESP_LEN, 1000);
+    ret = i2c_master_receive(SHT31_ADDR, response, SHT31_RESP_LEN, SHT31_I2C_TIMEOUT_MS);
     if (ret != I2C_OK) {
         LOG_E("sht31_read_temp_humid: 데이터 수신 실패");
         return SHT31_ERROR;
     }
 
-    // Step 4: CRC 검증 (온도)
-    if (crc8_verify_sht31(&response[0], 3) != 0) {
+    // Step 4: CRC 검증 (온도: response[0:2] + CRC)
+    if (crc8_verify_sht31(&response[SHT31_TEMP_H_IDX], 3) != 0) {
         LOG_E("sht31_read_temp_humid: 온도 CRC 불일치");
         return SHT31_CRC_ERR;
     }
 
-    // Step 4: CRC 검증 (습도)
-    if (crc8_verify_sht31(&response[3], 3) != 0) {
+    // Step 4: CRC 검증 (습도: response[3:5] + CRC)
+    if (crc8_verify_sht31(&response[SHT31_HUM_H_IDX], 3) != 0) {
         LOG_E("sht31_read_temp_humid: 습도 CRC 불일치");
         return SHT31_CRC_ERR;
     }
 
     // Step 5: 온습도 계산
-    temp_raw = ((uint16_t)response[0] << 8) | response[1];
-    humid_raw = ((uint16_t)response[3] << 8) | response[4];
+    temp_raw = ((uint16_t)response[SHT31_TEMP_H_IDX] << 8) | response[SHT31_TEMP_L_IDX];
+    humid_raw = ((uint16_t)response[SHT31_HUM_H_IDX] << 8) | response[SHT31_HUM_L_IDX];
 
     *p_temp = (175.0f / 65535.0f) * (float)temp_raw - 45.0f;
     *p_humid = (100.0f / 65535.0f) * (float)humid_raw;
@@ -92,7 +95,7 @@ sht31_status_t sht31_trigger_measurement(void)
 
     LOG_D("sht31_trigger_measurement: 측정 명령 송신");
 
-    if (i2c_master_transmit(SHT31_ADDR, cmd, sizeof(cmd), 1000) == I2C_OK) {
+    if (i2c_master_transmit(SHT31_ADDR, cmd, sizeof(cmd), SHT31_I2C_TIMEOUT_MS) == I2C_OK) {
         return SHT31_OK;
     } else {
         LOG_E("sht31_trigger_measurement: 송신 실패");
@@ -112,27 +115,27 @@ sht31_status_t sht31_read_measurement(float *p_temp, float *p_humid)
     LOG_D("sht31_read_measurement: 데이터 수신");
 
     // Step 1: 데이터 수신
-    ret = i2c_master_receive(SHT31_ADDR, response, SHT31_RESP_LEN, 1000);
+    ret = i2c_master_receive(SHT31_ADDR, response, SHT31_RESP_LEN, SHT31_I2C_TIMEOUT_MS);
     if (ret != I2C_OK) {
         LOG_E("sht31_read_measurement: 수신 실패");
         return SHT31_ERROR;
     }
 
-    // Step 2: CRC 검증 (온도)
-    if (crc8_verify_sht31(&response[0], 3) != 0) {
+    // Step 2: CRC 검증 (온도: response[0:2] + CRC)
+    if (crc8_verify_sht31(&response[SHT31_TEMP_H_IDX], 3) != 0) {
         LOG_E("sht31_read_measurement: 온도 CRC 불일치");
         return SHT31_CRC_ERR;
     }
 
-    // Step 3: CRC 검증 (습도)
-    if (crc8_verify_sht31(&response[3], 3) != 0) {
+    // Step 3: CRC 검증 (습도: response[3:5] + CRC)
+    if (crc8_verify_sht31(&response[SHT31_HUM_H_IDX], 3) != 0) {
         LOG_E("sht31_read_measurement: 습도 CRC 불일치");
         return SHT31_CRC_ERR;
     }
 
     // Step 4: 계산
-    temp_raw = ((uint16_t)response[0] << 8) | response[1];
-    humid_raw = ((uint16_t)response[3] << 8) | response[4];
+    temp_raw = ((uint16_t)response[SHT31_TEMP_H_IDX] << 8) | response[SHT31_TEMP_L_IDX];
+    humid_raw = ((uint16_t)response[SHT31_HUM_H_IDX] << 8) | response[SHT31_HUM_L_IDX];
 
     *p_temp = (175.0f / 65535.0f) * (float)temp_raw - 45.0f;
     *p_humid = (100.0f / 65535.0f) * (float)humid_raw;

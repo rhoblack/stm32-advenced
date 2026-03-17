@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .hal-bg { fill: #E8F0FF; stroke: #1A73E8; stroke-width: 2; }
+      .driver-bg { fill: #E8F5E9; stroke: #34A853; stroke-width: 2; }
+      .app-bg { fill: #FFEBEE; stroke: #EA4335; stroke-width: 2; }
+      .text-title { font-size: 14px; font-weight: bold; }
+      .text-normal { font-size: 11px; }
+      .text-small { font-size: 9px; }
+      .arrow { stroke: #333; stroke-width: 2; marker-end: url(#arrowhead); }
+      .code-box { fill: #1E1E2E; stroke: #666; stroke-width: 1; }
+      .code-text { font-size: 9px; font-family: monospace; fill: #CDD6F4; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333" />
+    </marker>
+  </defs>
+
+  <!-- 제목 -->
+  <text x="450" y="30" class="text-title" text-anchor="middle" fill="#1A1A2E">
+    Driver 레이어의 추상화: 복잡성 감춤, 깔끔한 인터페이스 제공
+  </text>
+
+  <!-- HAL 레이어 -->
+  <rect x="50" y="70" width="250" height="120" class="hal-bg" rx="8"/>
+  <text x="175" y="95" class="text-title" text-anchor="middle" fill="#1A73E8">HAL Layer</text>
+  <text x="175" y="115" class="text-normal" text-anchor="middle">(STM32F4xx)</text>
+
+  <rect x="70" y="125" width="210" height="55" class="code-box" rx="3"/>
+  <text x="75" y="142" class="code-text">HAL_GPIO_WritePin()</text>
+  <text x="75" y="155" class="code-text">HAL_GPIO_ReadPin()</text>
+  <text x="75" y="168" class="code-text">HAL_Delay()</text>
+
+  <!-- Driver 레이어 -->
+  <rect x="400" y="70" width="450" height="120" class="driver-bg" rx="8"/>
+  <text x="625" y="95" class="text-title" text-anchor="middle" fill="#34A853">Driver Layer</text>
+  <text x="625" y="115" class="text-normal" text-anchor="middle">stepper_driver.c</text>
+
+  <rect x="420" y="130" width="410" height="50" class="code-box" rx="3"/>
+  <text x="425" y="147" class="code-text">void stepper_init(void)</text>
+  <text x="425" y="160" class="code-text">void stepper_move_steps(int16_t steps, uint16_t rpm)</text>
+  <text x="425" y="173" class="code-text">uint16_t stepper_get_position(void)</text>
+
+  <!-- 화살표: HAL → Driver -->
+  <path d="M 300 130 L 400 130" class="arrow"/>
+  <text x="340" y="125" class="text-small" fill="#666">사용</text>
+
+  <!-- 중간 설명 박스 -->
+  <rect x="100" y="210" width="700" height="50" fill="#FFF9C4" stroke="#F9A825" stroke-width="1" rx="5"/>
+  <text x="450" y="235" class="text-normal" text-anchor="middle" font-weight="bold" fill="#F57F17">
+    💡 추상화의 이점: HAL의 복잡한 GPIO 시퀀스가 모두 stepper_driver 내부에 숨겨짐
+  </text>
+  <text x="450" y="250" class="text-small" text-anchor="middle" fill="#666">
+    App 계층은 stepper_move_steps(64, 50)만 호출하면 됨. HAL 세부 사항을 몰라도 됨.
+  </text>
+
+  <!-- App 레이어 -->
+  <rect x="50" y="290" width="800" height="100" class="app-bg" rx="8"/>
+  <text x="450" y="315" class="text-title" text-anchor="middle" fill="#EA4335">Application Layer</text>
+  <text x="450" y="335" class="text-normal" text-anchor="middle">main() / clock_service.c</text>
+
+  <rect x="70" y="350" width="760" height="25" class="code-box" rx="3"/>
+  <text x="75" y="363" class="code-text">stepper_move_steps(delta_steps, 50);  // 이것만 호출하면 됨!</text>
+
+  <!-- 화살표: Driver → App -->
+  <path d="M 450 220 L 450 290" class="arrow"/>
+  <text x="470" y="250" class="text-small" fill="#666">제공</text>
+
+  <!-- 복잡성 비교 -->
+  <text x="50" y="430" class="text-title" fill="#1A1A2E">복잡성 비교:</text>
+
+  <!-- 좌측: HAL 직접 사용 (나쁨) -->
+  <rect x="50" y="450" width="380" height="35" fill="#FFEBEE" stroke="#EA4335" stroke-width="1" rx="3"/>
+  <text x="70" y="472" class="text-small" font-weight="bold" fill="#EA4335">❌ HAL 직접 사용 (App에서):</text>
+  <text x="250" y="472" class="text-small" fill="#666">8개 GPIO 핀 제어, 시퀀스 로직, 딜레이...</text>
+
+  <!-- 우측: Driver 사용 (좋음) -->
+  <rect x="470" y="450" width="380" height="35" fill="#E8F5E9" stroke="#34A853" stroke-width="1" rx="3"/>
+  <text x="490" y="472" class="text-small" font-weight="bold" fill="#34A853">✅ Driver 사용 (App에서):</text>
+  <text x="710" y="472" class="text-small" fill="#666">stepper_move_steps(steps, rpm)</text>
+</svg>

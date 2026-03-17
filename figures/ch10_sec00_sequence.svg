@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .actor-box { fill: #E8F5E9; stroke: #34A853; stroke-width: 2; }
+      .text-actor { font-size: 12px; font-weight: bold; text-anchor: middle; }
+      .timeline { stroke: #999; stroke-width: 1; stroke-dasharray: 3,3; }
+      .message-arrow { stroke: #333; stroke-width: 1.5; marker-end: url(#arrowhead); }
+      .message-text { font-size: 11px; fill: #333; }
+      .note-box { fill: #FFF8E1; stroke: #FBBC04; stroke-width: 1; }
+      .note-text { font-size: 10px; }
+      .title { font-size: 16px; font-weight: bold; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333" />
+    </marker>
+  </defs>
+
+  <!-- 제목 -->
+  <text x="500" y="25" class="title" text-anchor="middle" fill="#1A1A2E">
+    RTC 1초 인터럽트 → Clock Service → Motor 구동 (시퀀스)
+  </text>
+
+  <!-- 액터 박스 -->
+  <rect x="50" y="50" width="120" height="50" class="actor-box" rx="5"/>
+  <text x="110" y="85" class="text-actor">RTC 1초 인터럽트</text>
+
+  <rect x="250" y="50" width="120" height="50" class="actor-box" rx="5"/>
+  <text x="310" y="85" class="text-actor">Clock Service</text>
+
+  <rect x="450" y="50" width="120" height="50" class="actor-box" rx="5"/>
+  <text x="510" y="85" class="text-actor">Motor Driver</text>
+
+  <rect x="650" y="50" width="120" height="50" class="actor-box" rx="5"/>
+  <text x="710" y="85" class="text-actor">Motor</text>
+
+  <rect x="850" y="50" width="120" height="50" class="actor-box" rx="5"/>
+  <text x="910" y="85" class="text-actor">Display (향후)</text>
+
+  <!-- 타임라인 -->
+  <line x1="110" y1="100" x2="110" y2="550" class="timeline"/>
+  <line x1="310" y1="100" x2="310" y2="550" class="timeline"/>
+  <line x1="510" y1="100" x2="510" y2="550" class="timeline"/>
+  <line x1="710" y1="100" x2="710" y2="550" class="timeline"/>
+  <line x1="910" y1="100" x2="910" y2="550" class="timeline"/>
+
+  <!-- 1. RTC 인터럽트 발생 -->
+  <rect x="70" y="130" width="80" height="30" fill="#E8F5E9" stroke="#34A853" stroke-width="1" rx="3"/>
+  <text x="110" y="150" class="note-text" text-anchor="middle" font-weight="bold">매초 발생</text>
+
+  <!-- 2. Clock Service 호출 -->
+  <path d="M 130 160 L 290 180" class="message-arrow"/>
+  <text x="180" y="175" class="message-text">clock_service_on_rtc_tick()</text>
+
+  <!-- 3. RTC에서 시각 읽기 -->
+  <rect x="250" y="200" width="120" height="30" fill="#E8F5E9" stroke="#34A853" stroke-width="1" rx="3"/>
+  <text x="310" y="220" class="note-text" text-anchor="middle">시각: 14:30:00</text>
+
+  <!-- 4. 시침 위치 계산 -->
+  <rect x="250" y="250" width="120" height="50" fill="#FFF8E1" stroke="#FBBC04" stroke-width="1" rx="3"/>
+  <text x="310" y="270" class="note-text" text-anchor="middle" font-weight="bold">계산</text>
+  <text x="310" y="285" class="note-text" text-anchor="middle">14:30 → 75°</text>
+  <text x="310" y="298" class="note-text" text-anchor="middle">→ 1024 스텝</text>
+
+  <!-- 5. Motor Driver에 명령 -->
+  <path d="M 330 330 L 490 350" class="message-arrow"/>
+  <text x="390" y="340" class="message-text">stepper_move_steps(delta, 50 RPM)</text>
+
+  <!-- 6. 모터 코일 여자 -->
+  <rect x="450" y="370" width="120" height="60" fill="#E8F5E9" stroke="#34A853" stroke-width="1" rx="3"/>
+  <text x="510" y="390" class="note-text" text-anchor="middle" font-weight="bold">Coil A</text>
+  <text x="510" y="403" class="note-text" text-anchor="middle">→ GPIO_RESET</text>
+  <text x="510" y="418" class="note-text" text-anchor="middle">(시퀀스대로)</text>
+
+  <!-- 7. 물리적 모터 회전 -->
+  <path d="M 570 400 L 690 420" class="message-arrow"/>
+  <text x="610" y="410" class="message-text">구동 신호</text>
+
+  <rect x="650" y="440" width="120" height="50" fill="#E8F5E9" stroke="#34A853" stroke-width="1" rx="3"/>
+  <text x="710" y="465" class="note-text" text-anchor="middle">시침이</text>
+  <text x="710" y="478" class="note-text" text-anchor="middle">정확한 위치에</text>
+
+  <!-- 주석 박스 1 -->
+  <rect x="50" y="510" width="200" height="75" class="note-box" rx="5"/>
+  <text x="60" y="530" class="note-text" font-weight="bold">매초 반복:</text>
+  <text x="60" y="545" class="note-text">• 1초마다 RTC 알람</text>
+  <text x="60" y="560" class="note-text">• 분이 변경되면만</text>
+  <text x="60" y="575" class="note-text">  모터 구동</text>
+
+  <!-- 주석 박스 2 -->
+  <rect x="380" y="510" width="240" height="75" class="note-box" rx="5"/>
+  <text x="390" y="530" class="note-text" font-weight="bold">실시간 동기화:</text>
+  <text x="390" y="545" class="note-text">• RTC 시각과 모터 위치</text>
+  <text x="390" y="560" class="note-text">  항상 일치</text>
+  <text x="390" y="575" class="note-text">• 부드러운 애니메이션</text>
+
+  <!-- 주석 박스 3 -->
+  <rect x="680" y="510" width="170" height="75" class="note-box" rx="5"/>
+  <text x="690" y="530" class="note-text" font-weight="bold">다음 단계:</text>
+  <text x="690" y="545" class="note-text">• 분침 추가</text>
+  <text x="690" y="560" class="note-text">• LCD 디스플레이</text>
+  <text x="690" y="575" class="note-text">• 온습도 표시</text>
+</svg>

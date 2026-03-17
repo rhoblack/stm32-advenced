@@ -22,7 +22,10 @@ typedef int32_t i2c_status_t;
  *
  * 마스터가 슬레이브에게 데이터를 보냅니다.
  *
- * @param dev_addr I2C 슬레이브 주소 (7비트, 예: 0x44)
+ * @param dev_addr I2C 슬레이브 주소 (7비트만! 예: 0x44)
+ *        ⚠️  CRITICAL: 7비트 주소만 전달하세요.
+ *        내부에서 자동으로 8비트로 변환됩니다 (dev_addr << 1).
+ *        오류: 8비트 주소(0x88) 전달 → 0x110 오버플로우 발생!
  * @param data 송신 데이터 포인터
  * @param len 송신 길이 (바이트)
  * @param timeout_ms 타임아웃 (밀리초)
@@ -36,7 +39,10 @@ i2c_status_t i2c_master_transmit(uint16_t dev_addr, const uint8_t *data,
  *
  * 마스터가 슬레이브로부터 데이터를 받습니다.
  *
- * @param dev_addr I2C 슬레이브 주소 (7비트)
+ * @param dev_addr I2C 슬레이브 주소 (7비트만! 예: 0x44)
+ *        ⚠️  CRITICAL: 7비트 주소만 전달하세요.
+ *        내부에서 자동으로 8비트로 변환됩니다 (dev_addr << 1, 비트0에 1 자동 추가).
+ *        오류: 8비트 주소(0x88) 전달 → 0x110 오버플로우 발생!
  * @param data 수신 데이터 버퍼 (미리 할당)
  * @param len 수신 길이 (바이트)
  * @param timeout_ms 타임아웃

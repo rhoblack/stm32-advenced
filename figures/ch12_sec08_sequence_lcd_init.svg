@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .title { fill: #333; font-size: 16px; font-weight: bold; }
+      .label { fill: #333; font-size: 12px; font-family: 'Noto Sans KR', sans-serif; }
+      .box { stroke: #333; stroke-width: 1; }
+      .app-box { fill: #EA4335; }
+      .drv-box { fill: #34A853; }
+      .hal-box { fill: #1A73E8; }
+      .hw-box { fill: #4285F4; }
+      .text { fill: white; font-size: 12px; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <text x="450" y="30" class="title" text-anchor="middle">LCD 초기화 시퀀스 다이어그램</text>
+
+  <!-- Layer headers -->
+  <text x="100" y="70" class="label" font-weight="bold">App</text>
+  <text x="250" y="70" class="label" font-weight="bold">LCD Driver</text>
+  <text x="450" y="70" class="label" font-weight="bold">SPI Driver</text>
+  <text x="650" y="70" class="label" font-weight="bold">HAL</text>
+
+  <!-- Vertical timeline -->
+  <line x1="100" y1="80" x2="100" y2="380" stroke="#ddd" stroke-width="1"/>
+  <line x1="250" y1="80" x2="250" y2="380" stroke="#ddd" stroke-width="1"/>
+  <line x1="450" y1="80" x2="450" y2="380" stroke="#ddd" stroke-width="1"/>
+  <line x1="650" y1="80" x2="650" y2="380" stroke="#ddd" stroke-width="1"/>
+
+  <!-- Step 1: ILI9341_Init() -->
+  <rect x="70" y="90" width="60" height="30" class="app-box box"/>
+  <text x="100" y="110" class="text">Init()</text>
+  <path d="M 100 120 L 100 140" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Step 2: LCD_Reset() -->
+  <rect x="220" y="140" width="60" height="30" class="drv-box box"/>
+  <text x="250" y="160" class="text">Reset</text>
+  <path d="M 250 170 L 250 190" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Step 3: SPI TX (CMD) -->
+  <rect x="420" y="190" width="60" height="30" class="drv-box box"/>
+  <text x="450" y="210" class="text">Cmd</text>
+  <path d="M 450 220 L 450 240" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Step 4: HAL_SPI_Transmit -->
+  <rect x="620" y="240" width="60" height="30" class="hal-box box"/>
+  <text x="650" y="260" class="text" font-size="11">Transmit</text>
+  <path d="M 650 270 L 650 290" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Step 5: Hardware -->
+  <rect x="620" y="290" width="60" height="30" class="hw-box box"/>
+  <text x="650" y="310" class="text" font-size="11">SPI1 TX</text>
+  <path d="M 620 305 L 450 305" stroke="#333" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- Parallel callbacks -->
+  <text x="550" y="330" class="label" font-size="10">완료 콜백</text>
+  <path d="M 450 305 L 450 340" stroke="#666" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Step 6: Delay -->
+  <rect x="420" y="340" width="60" height="30" class="drv-box box"/>
+  <text x="450" y="360" class="text" font-size="11">Delay</text>
+  <path d="M 450 370 L 250 370" stroke="#333" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- Repeat -->
+  <text x="100" y="395" class="label" font-size="10">반복... 다음 명령어</text>
+  <path d="M 250 370 L 100 370 L 100 140" stroke="#666" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Message boxes -->
+  <rect x="50" y="200" width="150" height="30" fill="none" stroke="#ddd" stroke-width="1"/>
+  <text x="55" y="220" class="label" font-size="10">D/C=0, CS=0</text>
+
+  <rect x="50" y="245" width="150" height="30" fill="none" stroke="#ddd" stroke-width="1"/>
+  <text x="55" y="265" class="label" font-size="10">Cmd byte</text>
+
+  <rect x="50" y="290" width="150" height="30" fill="none" stroke="#ddd" stroke-width="1"/>
+  <text x="55" y="310" class="label" font-size="10">D/C=1, Data bytes</text>
+
+  <!-- Marker -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333"/>
+    </marker>
+  </defs>
+</svg>

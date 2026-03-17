@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .title { fill: #333; font-size: 16px; font-weight: bold; }
+      .label { fill: #333; font-size: 12px; font-family: 'Noto Sans KR', sans-serif; }
+      .red-box { fill: #F800; stroke: #333; }
+      .green-box { fill: #07E0; stroke: #333; }
+      .blue-box { fill: #001F; stroke: #333; }
+      .bit-label { font-size: 11px; text-anchor: middle; }
+      .color-sample { stroke: #333; stroke-width: 2; }
+    </style>
+  </defs>
+
+  <text x="450" y="30" class="title" text-anchor="middle">RGB565 색상 포맷 (16비트)</text>
+
+  <!-- Bit structure -->
+  <g>
+    <text x="50" y="70" class="label" font-weight="bold">비트 구조:</text>
+
+    <!-- 16-bit boxes -->
+    <rect x="50" y="85" width="35" height="40" class="red-box"/>
+    <text x="67.5" y="105" class="bit-label" fill="white" font-weight="bold">R</text>
+    <text x="67.5" y="130" class="label" text-anchor="middle">5비트</text>
+
+    <rect x="90" y="85" width="42" height="40" class="green-box"/>
+    <text x="111" y="105" class="bit-label" fill="white" font-weight="bold">G</text>
+    <text x="111" y="130" class="label" text-anchor="middle">6비트</text>
+
+    <rect x="137" y="85" width="35" height="40" class="blue-box"/>
+    <text x="154.5" y="105" class="bit-label" fill="white" font-weight="bold">B</text>
+    <text x="154.5" y="130" class="label" text-anchor="middle">5비트</text>
+
+    <text x="50" y="155" class="label">비트 15~11: R (빨강)</text>
+    <text x="50" y="175" class="label">비트 10~5: G (초록)</text>
+    <text x="50" y="195" class="label">비트 4~0: B (파랑)</text>
+  </g>
+
+  <!-- Calculation example -->
+  <g>
+    <text x="400" y="70" class="label" font-weight="bold">예: 순수 빨강 (255, 0, 0)</text>
+
+    <rect x="400" y="85" width="200" height="120" fill="none" stroke="#ddd" stroke-width="1"/>
+    <text x="410" y="105" class="label">R = 255 >> 3 = 31 (11111)</text>
+    <text x="410" y="125" class="label">G = 0 >> 2 = 0 (000000)</text>
+    <text x="410" y="145" class="label">B = 0 >> 3 = 0 (00000)</text>
+    <text x="410" y="165" class="label" font-weight="bold">결과: 0xF800</text>
+    <text x="410" y="185" class="label" font-size="10">(11111 000000 00000)</text>
+  </g>
+
+  <!-- Color palette -->
+  <text x="50" y="240" class="label" font-weight="bold">기본 색상 팔레트:</text>
+
+  <g>
+    <!-- Row 1 -->
+    <rect x="50" y="260" width="40" height="40" fill="#0000" stroke="#333"/>
+    <text x="120" y="285" class="label">검정: 0x0000</text>
+
+    <rect x="230" y="260" width="40" height="40" fill="#F800" stroke="#333"/>
+    <text x="300" y="285" class="label">빨강: 0xF800</text>
+
+    <rect x="410" y="260" width="40" height="40" fill="#07E0" stroke="#333"/>
+    <text x="480" y="285" class="label">초록: 0x07E0</text>
+
+    <rect x="590" y="260" width="40" height="40" fill="#001F" stroke="#333"/>
+    <text x="660" y="285" class="label">파랑: 0x001F</text>
+
+    <!-- Row 2 -->
+    <rect x="50" y="320" width="40" height="40" fill="#FFFF" stroke="#333"/>
+    <text x="120" y="345" class="label">흰색: 0xFFFF</text>
+
+    <rect x="230" y="320" width="40" height="40" fill="#FFE0" stroke="#333"/>
+    <text x="300" y="345" class="label">노랑: 0xFFE0</text>
+
+    <rect x="410" y="320" width="40" height="40" fill="#07FF" stroke="#333"/>
+    <text x="480" y="345" class="label">시안: 0x07FF</text>
+
+    <rect x="590" y="320" width="40" height="40" fill="#F81F" stroke="#333"/>
+    <text x="660" y="345" class="label">매젠타: 0xF81F</text>
+  </g>
+
+  <!-- Macro definition -->
+  <g>
+    <text x="50" y="390" class="label" font-weight="bold">C 매크로:</text>
+    <text x="100" y="390" class="label" font-family="monospace">
+      #define RGB565(r, g, b) (((r >> 3) &lt;&lt; 11) | ((g >> 2) &lt;&lt; 5) | (b >> 3))
+    </text>
+  </g>
+</svg>

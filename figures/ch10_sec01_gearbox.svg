@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .motor-circle { fill: #FFE0B2; stroke: #FF6F00; stroke-width: 2; }
+      .gear-circle { fill: #C8E6C9; stroke: #388E3C; stroke-width: 2; }
+      .axis { fill: #A1887F; stroke: #5D4037; stroke-width: 2; }
+      .text-title { font-size: 16px; font-weight: bold; }
+      .text-normal { font-size: 12px; }
+      .text-small { font-size: 10px; }
+      .arrow { stroke: #333; stroke-width: 2; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333" />
+    </marker>
+  </defs>
+
+  <!-- 제목 -->
+  <text x="450" y="30" class="text-title" text-anchor="middle" fill="#1A1A2E">
+    28BYJ-48 내부 구조: 기어 감속 (64:1)
+  </text>
+
+  <!-- 작은 모터 -->
+  <circle cx="120" cy="200" r="40" class="motor-circle"/>
+  <text x="120" y="210" class="text-small" text-anchor="middle" font-weight="bold">모터</text>
+  <text x="120" y="225" class="text-small" text-anchor="middle">1.8°/step</text>
+  <text x="120" y="240" class="text-small" text-anchor="middle" fill="#FF6F00">고속 회전</text>
+
+  <!-- 화살표 -->
+  <path d="M 160 200 L 220 200" class="arrow"/>
+  <text x="190" y="195" class="text-small" fill="#FF6F00">구동</text>
+
+  <!-- 기어 체계 -->
+  <g>
+    <!-- 입력 기어 (작음) -->
+    <circle cx="270" cy="200" r="25" class="gear-circle"/>
+    <text x="270" y="205" class="text-normal" text-anchor="middle" font-weight="bold">16T</text>
+
+    <!-- 출력 기어 (큼) -->
+    <circle cx="340" cy="200" r="50" class="gear-circle"/>
+    <text x="340" y="200" class="text-small" text-anchor="middle">64T</text>
+    <text x="340" y="218" class="text-small" text-anchor="middle">(감속)</text>
+  </g>
+
+  <!-- 화살표 -->
+  <path d="M 390 200 L 450 200" class="arrow"/>
+  <text x="420" y="195" class="text-small" fill="#388E3C">감속 회전</text>
+
+  <!-- 출력축 -->
+  <circle cx="520" cy="200" r="15" class="axis"/>
+  <text x="520" y="208" class="text-normal" text-anchor="middle" font-weight="bold">출력</text>
+
+  <!-- 시간축 아래 설명 -->
+  <text x="120" y="310" class="text-normal" text-anchor="middle" font-weight="bold">입력:</text>
+  <text x="120" y="330" class="text-small" text-anchor="middle">모터 직접 출력</text>
+  <text x="120" y="345" class="text-small" text-anchor="middle">1회전 = 200스텝</text>
+  <text x="120" y="360" class="text-small" text-anchor="middle">(1.8°)</text>
+
+  <text x="340" y="310" class="text-normal" text-anchor="middle" font-weight="bold">기어비:</text>
+  <text x="340" y="330" class="text-small" text-anchor="middle">64T ÷ 16T = 4</text>
+  <text x="340" y="345" class="text-small" text-anchor="middle">추가 감속</text>
+  <text x="340" y="360" class="text-small" text-anchor="middle">총 64:1</text>
+
+  <text x="520" y="310" class="text-normal" text-anchor="middle" font-weight="bold">최종:</text>
+  <text x="520" y="330" class="text-small" text-anchor="middle">1회전 = 4096스텝</text>
+  <text x="520" y="345" class="text-small" text-anchor="middle">(5.625°/스텝)</text>
+  <text x="520" y="360" class="text-small" text-anchor="middle">저속 고토크</text>
+
+  <!-- 공식 박스 -->
+  <rect x="80" y="410" width="740" height="75" fill="#F0F4FF" stroke="#1A73E8" stroke-width="2" rx="5"/>
+
+  <text x="450" y="435" class="text-normal" text-anchor="middle" font-weight="bold">스트라이드 계산:</text>
+
+  <text x="100" y="460" class="text-small" fill="#333">기본 스텝 각도:</text>
+  <text x="280" y="460" class="text-small" fill="#FF6F00">1.8°</text>
+
+  <text x="400" y="460" class="text-small" fill="#333">기어비:</text>
+  <text x="520" y="460" class="text-small" fill="#388E3C">64:1</text>
+
+  <text x="640" y="460" class="text-small" fill="#333">=</text>
+  <text x="680" y="460" class="text-small" fill="#2E7D32" font-weight="bold">5.625°</text>
+
+  <text x="100" y="478" class="text-small" fill="#666">또는: 360° ÷ 64 스텝 = 5.625°</text>
+</svg>

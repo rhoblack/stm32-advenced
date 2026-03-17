@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 900 700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .hal-bg { fill: #E8F0FF; stroke: #1A73E8; stroke-width: 2; }
+      .driver-bg { fill: #E8F5E9; stroke: #34A853; stroke-width: 2; }
+      .service-bg { fill: #FFF8E1; stroke: #FBBC04; stroke-width: 2; }
+      .app-bg { fill: #FFEBEE; stroke: #EA4335; stroke-width: 2; }
+      .text-title { font-size: 16px; font-weight: bold; }
+      .text-normal { font-size: 11px; }
+      .text-small { font-size: 9px; }
+      .arrow { stroke: #333; stroke-width: 2; marker-end: url(#arrowhead); }
+      .version-badge { fill: #E8F5E9; stroke: #34A853; stroke-width: 1; }
+      .milestone { fill: #C8E6C9; stroke: #2E7D32; stroke-width: 2; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333" />
+    </marker>
+  </defs>
+
+  <!-- 제목 -->
+  <text x="450" y="30" class="text-title" text-anchor="middle" fill="#1A1A2E">
+    v1.0 최종 아키텍처: 첫 완전한 응용 프로젝트 완성
+  </text>
+
+  <!-- v1.0 마일스톤 배지 -->
+  <rect x="750" y="10" width="130" height="40" class="milestone" rx="5"/>
+  <text x="815" y="32" class="text-normal" text-anchor="middle" font-weight="bold" fill="#2E7D32">v1.0 완성</text>
+
+  <!-- HAL 레이어 -->
+  <rect x="50" y="80" width="800" height="110" class="hal-bg" rx="8"/>
+  <text x="70" y="110" class="text-title" fill="#1A73E8">HAL (Hardware Abstraction Layer)</text>
+  <text x="80" y="135" class="text-normal">GPIO (8 pins) · UART (SWO/ITM) · TIM1/TIM2 · RTC (1초 주기) · Clock 100MHz</text>
+  <text x="80" y="152" class="text-small" fill="#666">STM32F411RE (NUCLEO-F411RE) 모든 핵심 주변장치</text>
+
+  <!-- Driver 레이어 -->
+  <rect x="50" y="220" width="800" height="140" class="driver-bg" rx="8"/>
+  <text x="70" y="250" class="text-title" fill="#34A853">Driver Layer</text>
+
+  <!-- Driver 1: GPIO Driver (Ch03) -->
+  <rect x="80" y="270" width="120" height="70" fill="#E8F5E9" stroke="#34A853" stroke-width="1" rx="4"/>
+  <text x="140" y="290" class="text-normal" text-anchor="middle" font-weight="bold">gpio_driver</text>
+  <text x="140" y="305" class="text-small" text-anchor="middle">(Ch03)</text>
+  <text x="140" y="318" class="text-small" text-anchor="middle" fill="#666">LED, 버튼</text>
+
+  <!-- Driver 2: UART Driver (Ch04) -->
+  <rect x="230" y="270" width="120" height="70" fill="#E8F5E9" stroke="#34A853" stroke-width="1" rx="4"/>
+  <text x="290" y="290" class="text-normal" text-anchor="middle" font-weight="bold">uart_driver</text>
+  <text x="290" y="305" class="text-small" text-anchor="middle">(Ch04)</text>
+  <text x="290" y="318" class="text-small" text-anchor="middle" fill="#666">로그 출력</text>
+
+  <!-- Driver 3: TIM Driver (Ch07) -->
+  <rect x="380" y="270" width="120" height="70" fill="#E8F5E9" stroke="#34A853" stroke-width="1" rx="4"/>
+  <text x="440" y="290" class="text-normal" text-anchor="middle" font-weight="bold">tim_driver</text>
+  <text x="440" y="305" class="text-small" text-anchor="middle">(Ch07)</text>
+  <text x="440" y="318" class="text-small" text-anchor="middle" fill="#666">PWM, 신호</text>
+
+  <!-- Driver 4: RTC Driver (Ch09) -->
+  <rect x="530" y="270" width="120" height="70" fill="#E8F5E9" stroke="#34A853" stroke-width="1" rx="4"/>
+  <text x="590" y="290" class="text-normal" text-anchor="middle" font-weight="bold">rtc_driver</text>
+  <text x="590" y="305" class="text-small" text-anchor="middle">(Ch09)</text>
+  <text x="590" y="318" class="text-small" text-anchor="middle" fill="#666">시간 관리</text>
+
+  <!-- Driver 5: Stepper Driver (Ch10) - 새로 추가 -->
+  <rect x="680" y="270" width="130" height="70" fill="#E8F5E9" stroke="#34A853" stroke-width="2" rx="4"/>
+  <text x="745" y="290" class="text-normal" text-anchor="middle" font-weight="bold">stepper_driver</text>
+  <text x="745" y="305" class="text-small" text-anchor="middle">(Ch10) ⭐ NEW</text>
+  <text x="745" y="318" class="text-small" text-anchor="middle" fill="#FF6D00">모터 제어</text>
+
+  <!-- Service 레이어 -->
+  <rect x="50" y="390" width="800" height="140" class="service-bg" rx="8"/>
+  <text x="70" y="420" class="text-title" fill="#FBBC04">Service Layer</text>
+
+  <!-- Service 1: Log Service (Ch02) -->
+  <rect x="80" y="440" width="120" height="70" fill="#FFF8E1" stroke="#FBBC04" stroke-width="1" rx="4"/>
+  <text x="140" y="460" class="text-normal" text-anchor="middle" font-weight="bold">log_service</text>
+  <text x="140" y="475" class="text-small" text-anchor="middle">(Ch02)</text>
+  <text x="140" y="488" class="text-small" text-anchor="middle" fill="#666">로그 관리</text>
+
+  <!-- Service 2: Alarm Service (Ch09) -->
+  <rect x="230" y="440" width="120" height="70" fill="#FFF8E1" stroke="#FBBC04" stroke-width="1" rx="4"/>
+  <text x="290" y="460" class="text-normal" text-anchor="middle" font-weight="bold">alarm_service</text>
+  <text x="290" y="475" class="text-small" text-anchor="middle">(Ch09)</text>
+  <text x="290" y="488" class="text-small" text-anchor="middle" fill="#666">알람 FSM</text>
+
+  <!-- Service 3: Clock Service (Ch10) - 새로 추가 -->
+  <rect x="380" y="440" width="130" height="70" fill="#FFF8E1" stroke="#FBBC04" stroke-width="2" rx="4"/>
+  <text x="445" y="460" class="text-normal" text-anchor="middle" font-weight="bold">clock_service</text>
+  <text x="445" y="475" class="text-small" text-anchor="middle">(Ch10) ⭐ NEW</text>
+  <text x="445" y="488" class="text-small" text-anchor="middle" fill="#FF6D00">RTC+Motor</text>
+
+  <!-- 다음 장을 위한 공간 (향후 Service들) -->
+  <rect x="550" y="440" width="280" height="70" fill="#FFF8E1" stroke="#FBBC04" stroke-width="1" stroke-dasharray="3,3" rx="4"/>
+  <text x="690" y="465" class="text-normal" text-anchor="middle" fill="#999">향후 추가 Services</text>
+  <text x="690" y="485" class="text-small" text-anchor="middle" fill="#999">(sensor_service, display_service, ...)</text>
+
+  <!-- App 레이어 -->
+  <rect x="50" y="560" width="800" height="100" class="app-bg" rx="8"/>
+  <text x="70" y="590" class="text-title" fill="#EA4335">Application Layer</text>
+  <text x="80" y="615" class="text-normal">main() · Smart Clock Application</text>
+  <text x="80" y="632" class="text-small" fill="#666">RTC 시각과 정확히 일치하는 아날로그 시침 + 향후 센서/디스플레이 추가</text>
+
+  <!-- 의존성 화살표 -->
+  <path d="M 140 190 L 140 270" class="arrow" opacity="0.5"/>
+  <path d="M 290 190 L 290 270" class="arrow" opacity="0.5"/>
+  <path d="M 440 190 L 440 270" class="arrow" opacity="0.5"/>
+  <path d="M 590 190 L 590 270" class="arrow" opacity="0.5"/>
+  <path d="M 745 190 L 745 270" class="arrow" opacity="0.5"/>
+
+  <path d="M 140 340 L 140 440" class="arrow" opacity="0.5"/>
+  <path d="M 290 340 L 290 440" class="arrow" opacity="0.5"/>
+  <path d="M 445 340 L 445 440" class="arrow" opacity="0.5"/>
+
+  <path d="M 450 510 L 450 560" class="arrow" opacity="0.5"/>
+
+  <!-- 정보 박스 -->
+  <rect x="50" y="680" width="800" height="15" class="version-badge" rx="3"/>
+  <text x="450" y="691" class="text-small" text-anchor="middle" fill="#2E7D32" font-weight="bold">
+    ✅ v1.0 완성: 모든 기본 하드웨어 인터페이스 구현 완료 (GPIO, UART, TIM, RTC, Motor)
+  </text>
+</svg>

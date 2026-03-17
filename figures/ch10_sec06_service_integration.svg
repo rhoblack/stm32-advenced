@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1000 550" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .driver-bg { fill: #E8F5E9; stroke: #34A853; stroke-width: 2; }
+      .service-bg { fill: #FFF8E1; stroke: #FBBC04; stroke-width: 2; }
+      .app-bg { fill: #FFEBEE; stroke: #EA4335; stroke-width: 2; }
+      .text-title { font-size: 14px; font-weight: bold; }
+      .text-normal { font-size: 11px; }
+      .text-small { font-size: 9px; }
+      .arrow { stroke: #333; stroke-width: 2; marker-end: url(#arrowhead); }
+      .code-box { fill: #1E1E2E; stroke: #666; stroke-width: 1; }
+      .code-text { font-size: 9px; font-family: monospace; fill: #CDD6F4; }
+      .highlight { stroke: #FF6D00; stroke-width: 3; fill: none; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333" />
+    </marker>
+  </defs>
+
+  <!-- 제목 -->
+  <text x="500" y="30" class="text-title" text-anchor="middle" fill="#1A1A2E">
+    Clock Service 아키텍처: RTC + Motor 조율 (Service 레이어)
+  </text>
+  <text x="500" y="50" class="text-small" text-anchor="middle" fill="#666">
+    Service 레이어가 여러 Driver를 조율하여 완전한 응용(스마트 시계) 제공
+  </text>
+
+  <!-- Driver 레이어 (상단) -->
+  <rect x="80" y="80" width="350" height="100" class="driver-bg" rx="8"/>
+  <text x="255" y="105" class="text-title" text-anchor="middle" fill="#34A853">Driver Layer</text>
+
+  <!-- RTC Driver -->
+  <rect x="100" y="120" width="140" height="50" fill="#E8F5E9" stroke="#34A853" stroke-width="1" rx="4"/>
+  <text x="170" y="135" class="text-normal" text-anchor="middle" font-weight="bold">rtc_driver.c</text>
+  <text x="170" y="150" class="text-small" text-anchor="middle" fill="#666">(Ch09)</text>
+
+  <!-- Stepper Driver -->
+  <rect x="270" y="120" width="140" height="50" fill="#E8F5E9" stroke="#34A853" stroke-width="1" rx="4"/>
+  <text x="340" y="135" class="text-normal" text-anchor="middle" font-weight="bold">stepper_driver.c</text>
+  <text x="340" y="150" class="text-small" text-anchor="middle" fill="#666">(Ch10)</text>
+
+  <!-- Service 레이어 (중단) -->
+  <rect x="50" y="220" width="410" height="130" class="service-bg" rx="8"/>
+  <rect x="50" y="220" width="410" height="130" class="highlight"/>
+  <text x="255" y="245" class="text-title" text-anchor="middle" fill="#FBBC04">Clock Service (Service 레이어)</text>
+  <text x="255" y="262" class="text-small" text-anchor="middle" fill="#666">⭐ Ch10에서 새로 추가</text>
+
+  <!-- Clock Service 구성 -->
+  <rect x="70" y="280" width="170" height="60" fill="#FFF8E1" stroke="#FBBC04" stroke-width="1" rx="4"/>
+  <text x="155" y="300" class="text-normal" text-anchor="middle" font-weight="bold">상태 관리</text>
+  <text x="155" y="316" class="text-small" text-anchor="middle" fill="#666">FSM: IDLE,</text>
+  <text x="155" y="328" class="text-small" text-anchor="middle" fill="#666">SYNCING</text>
+
+  <rect x="270" y="280" width="170" height="60" fill="#FFF8E1" stroke="#FBBC04" stroke-width="1" rx="4"/>
+  <text x="355" y="300" class="text-normal" text-anchor="middle" font-weight="bold">조율 로직</text>
+  <text x="355" y="316" class="text-small" text-anchor="middle" fill="#666">RTC 시각</text>
+  <text x="355" y="328" class="text-small" text-anchor="middle" fill="#666">→ Motor 스텝</text>
+
+  <!-- 화살표: Driver → Service -->
+  <path d="M 170 170 L 170 220" class="arrow"/>
+  <path d="M 340 170 L 340 220" class="arrow"/>
+  <text x="180" y="190" class="text-small" fill="#666">사용</text>
+
+  <!-- App 레이어 (하단) -->
+  <rect x="50" y="400" width="410" height="100" class="app-bg" rx="8"/>
+  <text x="255" y="425" class="text-title" text-anchor="middle" fill="#EA4335">Application Layer</text>
+  <text x="255" y="445" class="text-normal" text-anchor="middle">main() / Smart Clock App</text>
+
+  <rect x="70" y="460" width="370" height="30" class="code-box" rx="3"/>
+  <text x="75" y="478" class="code-text">clock_service_init();  clock_service_on_rtc_tick();</text>
+
+  <!-- 화살표: Service → App -->
+  <path d="M 255 350 L 255 400" class="arrow"/>
+  <text x="270" y="375" class="text-small" fill="#666">제공</text>
+
+  <!-- 우측: 동작 흐름 -->
+  <rect x="550" y="80" width="400" height="420" fill="#F5F5F5" stroke="#999" stroke-width="1" rx="8"/>
+
+  <text x="750" y="105" class="text-normal" text-anchor="middle" font-weight="bold" fill="#1A1A2E">Clock Service의 동작:</text>
+
+  <!-- 동작 1 -->
+  <rect x="570" y="130" width="360" height="60" fill="#FFFFFF" stroke="#999" stroke-width="1" rx="4"/>
+  <text x="580" y="150" class="text-small" font-weight="bold">① 초기화 (clock_service_init)</text>
+  <text x="580" y="165" class="text-small" fill="#666">• Motor 초기화</text>
+  <text x="580" y="177" class="text-small" fill="#666">• RTC에서 현재 시각 읽기 → 시침 위치 설정</text>
+
+  <!-- 동작 2 -->
+  <rect x="570" y="210" width="360" height="80" fill="#FFFFFF" stroke="#999" stroke-width="1" rx="4"/>
+  <text x="580" y="230" class="text-small" font-weight="bold">② 매초 호출 (clock_service_on_rtc_tick)</text>
+  <text x="580" y="245" class="text-small" fill="#666">• RTC에서 현재 시각 읽기</text>
+  <text x="580" y="257" class="text-small" fill="#666">• 분이 변경되었는가? → 시침 위치 계산</text>
+  <text x="580" y="269" class="text-small" fill="#666">• Motor에 이동 명령 (stepper_move_steps)</text>
+  <text x="580" y="281" class="text-small" fill="#666">• 위치 갱신 → 완료</text>
+
+  <!-- 동작 3 -->
+  <rect x="570" y="310" width="360" height="60" fill="#FFFFFF" stroke="#999" stroke-width="1" rx="4"/>
+  <text x="580" y="330" class="text-small" font-weight="bold">③ 상태 추적</text>
+  <text x="580" y="345" class="text-small" fill="#666">• IDLE (정상) / SYNCING (이동 중) / ERROR</text>
+  <text x="580" y="357" class="text-small" fill="#666">• App은 상태를 조회하여 UI 업데이트</text>
+
+  <!-- 동작 4 -->
+  <rect x="570" y="390" width="360" height="60" fill="#FFFFFF" stroke="#999" stroke-width="1" rx="4"/>
+  <text x="580" y="410" class="text-small" font-weight="bold">④ 최종 결과</text>
+  <text x="580" y="425" class="text-small" fill="#666">• RTC 시각과 정확히 일치하는 시침 위치</text>
+  <text x="580" y="437" class="text-small" fill="#666">• 손목시계처럼 자동으로 움직임</text>
+</svg>

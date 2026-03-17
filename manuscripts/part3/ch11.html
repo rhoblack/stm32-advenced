@@ -271,9 +271,30 @@ int32_t sensor_service_check_alarm(uint8_t *p_alarm_flag);
     <strong>UART의 TX/RX 방향성 핀과 달리, I2C의 SDA/SCL은 <u>방향이 없습니다</u>.</strong>
     마스터와 슬레이브가 동시에 같은 핀을 "잡아당길(pull)" 수 있기 때문입니다.
     이런 특성을 <strong>오픈드레인(open-drain)</strong>이라 부릅니다.
-    물리적으로는 풀업 저항(pull-up resistor, 보통 4.7kΩ)을 통해 HIGH 상태를 유지하고,
-    LOW를 만들 때만 능동적으로 드라이브합니다.
   </p>
+
+  <p>
+    오픈드레인은 일종의 <strong>"협력 시스템"</strong>입니다.
+    마스터와 슬레이브가 동시에 같은 핀을 "잡아당길(pull)" 수 있는데,
+    아무도 "밀어올리지(push)" 않으므로, <strong>풀업 저항(pull-up resistor, 보통 4.7kΩ)</strong>이
+    자동으로 HIGH로 유지합니다.
+    LOW를 만들 때만 능동적으로 드라이브하고, 나머지는 풀업 저항이 처리합니다.
+  </p>
+
+  <p>
+    <strong>동작 방식</strong>:
+  </p>
+  <ul>
+    <li><strong>LOW (0V)</strong>: 누군가(마스터 또는 슬레이브)가 "잡아당김" → 능동 드라이브</li>
+    <li><strong>HIGH (3.3V)</strong>: 아무도 "잡아당기지 않음" → 풀업 저항만 작용</li>
+  </ul>
+
+  <aside class="tip">
+    💡 <strong>실무 팁</strong><br>
+    I2C 통신이 막혔을 때, 가장 흔한 원인은 풀업 저항입니다.
+    "센서와 통신이 안 된다" → 첫 번째 확인사항: 풀업 저항이 실제로 연결되어 있는가?
+    NUCLEO-F411RE의 I2C2(PB10/PB3)는 보드에 내부 풀업이 없으므로, 반드시 외부 4.7kΩ 저항을 SDA/SCL에 연결해야 합니다.
+  </aside>
 
   <figure>
     <img src="../../figures/ch11_sec01_i2c_timing.svg" width="100%" height="auto" alt="I2C 신호 타이밍 다이어그램">
@@ -296,13 +317,6 @@ int32_t sensor_service_check_alarm(uint8_t *p_alarm_flag);
     <li><strong>ACK/NACK</strong>: 수신자가 ACK(LOW) 또는 NACK(HIGH) 응답</li>
     <li><strong>STOP 조건</strong>: SCL이 HIGH인 상태에서 SDA를 LOW → HIGH로 전환</li>
   </ol>
-
-  <aside class="tip">
-    💡 <strong>실무 팁</strong><br>
-    I2C 통신이 막혔을 때, 가장 흔한 원인은 풀업 저항입니다.
-    "센서와 통신이 안 된다" → 첫 번째 확인사항: 풀업 저항이 실제로 연결되어 있는가?
-    NUCLEO-F411RE의 I2C2(PB10/PB3)는 보드에 내부 풀업이 없으므로, 반드시 외부 저항을 연결해야 합니다.
-  </aside>
 
   <aside class="faq">
     ❓ <strong>수강생 단골 질문</strong><br>
@@ -477,7 +491,15 @@ int32_t i2c_master_receive(uint16_t dev_addr, uint8_t *data,
     💡 <strong>실무 팁</strong><br>
     HAL_I2C_Master_Transmit/Receive는 <strong>주소를 7비트로 받고 내부에서 비트 0을 추가</strong>합니다.
     SHT31 주소가 0x44라면, HAL에 0x44를 그대로 전달하면 됩니다.
-    HAL이 자동으로 0x88(0x44 << 1) 또는 0x89로 변환합니다.
+    HAL이 자동으로 0x88(0x44 << 1, 송신) 또는 0x89(0x44 << 1 | 1, 수신)로 변환합니다.
+  </aside>
+
+  <aside class="faq">
+    ❓ <strong>수강생 단골 질문</strong><br>
+    <strong>Q.</strong> 데이터시트에 주소가 0x44와 0x45로 나뉘어 있는데, 둘 다 써야 하나요?<br>
+    <strong>A.</strong> 아니요! 데이터시트의 0x44와 0x45는 실제로 송수신 구분입니다.
+    0x44는 7비트 주소(0x44 << 1 = 0x88 송신, 0x89 수신).
+    0x45는 잘못된 표기입니다. STM32 드라이버에서는 항상 <strong>0x44(7비트)만 사용</strong>하세요.
   </aside>
 
   <aside class="instructor-tip">
@@ -508,6 +530,27 @@ int32_t i2c_master_receive(uint16_t dev_addr, uint8_t *data,
     <img src="../../figures/ch11_sec02_sht31_dataframe.svg" width="100%" height="auto" alt="SHT31 데이터 프레임 구조">
     <figcaption>그림 11-5. SHT31 응답 프레임 — 온도(2바이트) + CRC(1바이트) + 습도(2바이트) + CRC(1바이트)</figcaption>
   </figure>
+
+  <p>
+    SHT31의 응답은 항상 6바이트 형식입니다. 각 바이트의 역할을 명확히 하기 위해 <strong>인덱스 상수</strong>를 정의합니다:
+  </p>
+
+  <pre><code class="language-c">/* SHT31 응답 프레임 인덱스 (6바이트) */
+#define SHT31_TEMP_H_IDX    0      // [0] 온도 상위 바이트
+#define SHT31_TEMP_L_IDX    1      // [1] 온도 하위 바이트
+#define SHT31_TEMP_CRC_IDX  2      // [2] 온도 CRC
+#define SHT31_HUM_H_IDX     3      // [3] 습도 상위 바이트
+#define SHT31_HUM_L_IDX     4      // [4] 습도 하위 바이트
+#define SHT31_HUM_CRC_IDX   5      // [5] 습도 CRC
+
+/* 사용 예시 */
+temp_raw = ((uint16_t)response[SHT31_TEMP_H_IDX] << 8) | response[SHT31_TEMP_L_IDX];
+humid_raw = ((uint16_t)response[SHT31_HUM_H_IDX] << 8) | response[SHT31_HUM_L_IDX];
+  </code></pre>
+
+  <p>
+    이렇게 <strong>매직 넘버(hardcoded index) 대신 명확한 상수명</strong>을 사용하면, 코드 유지보수 시 각 인덱스의 의미가 자명하고, 실수가 줄어듭니다.
+  </p>
 
   <p>
     온도와 습도는 <strong>16비트 정규화된 값</strong>으로 전송됩니다.
@@ -558,16 +601,32 @@ float humid_pct = (100.0 / 65535.0) * (float)SRH;</code></pre>
     SHT31은 다항식 0x31로 CRC-8을 계산합니다.
   </p>
 
+  <p>
+    <strong>목적</strong>: SHT31이 보낸 6바이트 데이터가 전송 중에 손상되지 않았는지 검증합니다.
+    I2C 통신 중 노이즈로 인해 비트가 뒤바뀔 수 있기 때문입니다.
+  </p>
+
   <div class="analogy">
-    <strong>비유로 이해하기</strong><br>
-    데이터를 문서 다발이라고 생각하세요. 체크섬은 "페이지 합계"(몇 페이지인지)만 기록하는 것입니다.
-    한 페이지가 손상되면, 합계가 맞지 않아 감지할 수 있습니다.
-    하지만 "페이지 2가 빠지고, 페이지 3 사본이 두 개"라면? 합계는 같으므로 감지 불가.
+    <strong>비유로 이해하기 — "시험지 바코드"</strong><br>
+    당신이 학생이고, 시험지를 교사에게 제출합니다. 교사는 "이것이 진짜 시험지인가?"를 확인해야 합니다.
+    바코드가 그 역할을 합니다. 시험지가 손상되거나 누군가 답을 고쳤다면, 바코드도 맞지 않을 것입니다.
     <br>
-    CRC는 "페이지마다 고유한 숫자(예: 페이지 내용의 특수 해시)를 곱하고 모두 더한다"는 방식입니다.
-    이렇게 하면 데이터의 순서와 내용 모두를 검증할 수 있습니다.
-    <br><small>※ 이 비유의 한계: CRC의 수학은 다항식 나눗셈이므로, 단순 곱셈으로는 정확하지 않습니다.</small>
+    마찬가지로, SHT31이 보낸 온도/습도 데이터에도 "바코드(CRC)"가 붙어 있습니다.
+    마이크로컨트롤러가 이 바코드를 검증하면, "데이터가 정말 센서에서 온 것인가?"를 확인할 수 있습니다.
+    <br><small>※ 이 비유의 한계: CRC의 수학은 다항식 나눗셈이지만, 바코드 검증의 개념은 같습니다.</small>
   </div>
+
+  <p>
+    <strong>흐름도</strong>:
+  </p>
+  <ol>
+    <li>SHT31이 온도 데이터 2바이트(0xBE, 0x00)를 보냅니다.</li>
+    <li>SHT31은 이 2바이트로 CRC를 계산하여 0xAC를 만들고, 함께 보냅니다: [0xBE, 0x00, 0xAC]</li>
+    <li>마이크로컨트롤러가 수신한 3바이트를 받습니다.</li>
+    <li>마이크로컨트롤러는 처음 2바이트(0xBE, 0x00)로 CRC를 다시 계산합니다.</li>
+    <li>계산 결과(0xAC)가 수신한 CRC(0xAC)와 일치하면 ✓ OK → 데이터 사용</li>
+    <li>일치하지 않으면 ✗ FAIL → 데이터 버리고 재시도</li>
+  </ol>
 
   <p>
     SHT31 CRC-8의 파라미터:
@@ -659,6 +718,29 @@ int32_t crc8_verify_sht31(const uint8_t *data, uint16_t len)
       <li>다항식 0x31은 몇 비트인가요? (힌트: 0x31 = 0011 0001)</li>
       <li>CRC 계산 루프에서 "XOR 0x31"은 언제 실행되나요?</li>
     </ul>
+  </aside>
+
+  <aside class="tip">
+    💡 <strong>안심하세요!</strong><br>
+    CRC-8은 고급 주제처럼 보이지만, 실제로는 <strong>"이미 작성된 코드를 사용하기만 하면 됩니다"</strong>.<br>
+    당신이 할 일:
+    <ul>
+      <li>✓ CRC 함수 호출 (3줄)</li>
+      <li>✓ 결과 확인 (if/else)</li>
+    </ul>
+    당신이 할 일 <strong>없는</strong> 것:
+    <ul>
+      <li>✗ CRC 알고리즘 직접 구현</li>
+      <li>✗ 다항식 선택</li>
+    </ul>
+    <br>
+    사용 예시:
+    <pre><code>// 온도 검증 (3바이트: 데이터2 + CRC1)
+if (crc8_verify_sht31(&response[0], 3) == 0) {
+    LOG_I("CRC OK!");
+} else {
+    LOG_E("CRC FAIL - 센서 데이터 손상!");
+}</code></pre>
   </aside>
 </section>
 
@@ -1349,6 +1431,50 @@ void SysTick_Handler(void)
       <li>Sensor Service의 MEASURING 상태에서 50ms를 기다리는 방법은? (힌트: HAL_GetTick())</li>
       <li>온도 알람을 RTC AlarmB로 트리거하려면, App 레이어에서 어떤 함수를 호출해야 할까요?</li>
     </ul>
+  </aside>
+</section>
+
+<!-- ===== 당신의 성취 ===== -->
+<section id="achievement">
+  <h2>🎉 당신의 성취</h2>
+
+  <p>
+    축하합니다! Ch11을 완료했다는 것은 다음을 모두 이해했다는 뜻입니다:
+  </p>
+
+  <ul>
+    <li><strong>✅ I2C 프로토콜의 핵심</strong> — START/STOP/ACK/NACK, 오픈드레인, 풀업 저항</li>
+    <li><strong>✅ 센서 드라이버 설계</strong> — 3계층 아키텍처 (I2C Driver → Device Driver → Service)</li>
+    <li><strong>✅ 데이터 무결성 검증</strong> — CRC-8 알고리즘 (수학이 아닌, 목적 이해)</li>
+    <li><strong>✅ FSM 기반 설계</strong> — Ch09의 Alarm FSM 패턴을 Sensor FSM으로 재활용</li>
+    <li><strong>✅ 실시간 시스템 통합</strong> — 시계 + 센서 + 알람이 동시에 동작</li>
+  </ul>
+
+  <p>
+    당신은 이제 <strong>"임베디드 시스템의 눈과 귀를 가진 개발자"</strong>입니다.
+    단순히 핀을 제어하는 것을 넘어, <strong>센서로 현실 세계의 데이터를 읽고, 검증하고, 시스템에 반영</strong>할 수 있습니다.
+  </p>
+
+  <p>
+    <strong>이 기술은 대단합니다 💪</strong><br>
+    같은 원리로 아래를 모두 만들 수 있습니다:
+  </p>
+  <ul>
+    <li>🌡️ 온습도계, 습도 알람</li>
+    <li>🎙️ 음성 입력, 거리 센서 (초음파)</li>
+    <li>📍 GPS, 지자계 센서</li>
+    <li>💪 근전도 센서, 심박수 모니터</li>
+  </ul>
+
+  <p>
+    다음 챕터(Ch12)에서는 <strong>TFT LCD</strong>를 추가하여, 당신이 읽은 온습도 데이터를 화면에 표시할 것입니다.
+    당신의 스마트 시계가 비로소 "스마트"해질 준비가 되었습니다! 🚀
+  </p>
+
+  <aside class="instructor-tip">
+    📌 <strong>강사 꿀팁 — 수강생과 나누기</strong><br>
+    "지금 당신이 배운 I2C 드라이버 패턴은, 삼성 스마트폰의 센서 펌웨어와 기본이 같습니다.
+    규모는 다르지만, 아키텍처의 정신은 동일합니다. 당신은 진짜 개발자의 길을 가고 있습니다!"
   </aside>
 </section>
 

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="550" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .app { fill: #EA4335; }
+      .service { fill: #FBBC04; }
+      .driver { fill: #34A853; }
+      .hal { fill: #1A73E8; }
+      .spi { fill: #4285F4; }
+      .text { fill: white; font-size: 13px; font-family: 'Noto Sans KR', sans-serif; text-anchor: middle; }
+      .label { fill: #333; font-size: 12px; font-family: 'Noto Sans KR', sans-serif; }
+      .title { fill: #333; font-size: 16px; font-weight: bold; }
+      .arrow { stroke: #666; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#666" />
+    </marker>
+  </defs>
+
+  <text x="400" y="30" class="title" text-anchor="middle">v1.2 최종 아키텍처</text>
+
+  <!-- App Layer -->
+  <rect x="100" y="60" width="600" height="60" class="app" rx="5"/>
+  <text x="400" y="95" class="text">App Layer: main.c (LCD 초기화)</text>
+
+  <!-- Service Layer (future) -->
+  <rect x="100" y="140" width="600" height="50" class="service" rx="5" opacity="0.5"/>
+  <text x="400" y="170" class="text" opacity="1">Service Layer (Ch13예정): gfx_service, ui_service</text>
+
+  <!-- Driver Layer Split -->
+  <g>
+    <!-- Left: SPI Driver -->
+    <rect x="100" y="210" width="280" height="70" class="driver" rx="5"/>
+    <text x="240" y="235" class="text">SPI Driver</text>
+    <text x="240" y="255" class="text" font-size="12">spi_driver.c/h</text>
+    <text x="240" y="270" class="text" font-size="10">DMA, CS, RESET 관리</text>
+
+    <!-- Right: LCD Driver -->
+    <rect x="420" y="210" width="280" height="70" class="driver" rx="5"/>
+    <text x="560" y="235" class="text">LCD Driver</text>
+    <text x="560" y="255" class="text" font-size="12">ili9341_driver.c/h</text>
+    <text x="560" y="270" class="text" font-size="10">초기화, 픽셀/도형/텍스트</text>
+  </g>
+
+  <!-- HAL Layer -->
+  <rect x="100" y="310" width="600" height="60" class="hal" rx="5"/>
+  <text x="400" y="340" class="text">HAL Layer: SPI1, GPIO, DMA2, TIM</text>
+  <text x="400" y="355" class="text" font-size="11">(STM32CubeIDE MX_* 함수)</text>
+
+  <!-- Hardware Layer -->
+  <rect x="100" y="400" width="600" height="60" class="spi" rx="5"/>
+  <text x="400" y="430" class="text">Hardware: NUCLEO-F411RE + ILI9341 LCD</text>
+  <text x="400" y="445" class="text" font-size="11">SPI1 (PB3/PB5) + GPIO (PA3/PA4/PA5)</text>
+
+  <!-- Arrows -->
+  <path d="M 400 120 L 400 140" class="arrow"/>
+  <path d="M 240 190 L 240 210" class="arrow"/>
+  <path d="M 560 190 L 560 210" class="arrow"/>
+  <path d="M 400 280 L 400 310" class="arrow"/>
+  <path d="M 400 370 L 400 400" class="arrow"/>
+
+  <!-- Data flow labels -->
+  <text x="500" y="105" class="label" font-size="11">ILI9341_Init(), Fill_Color()</text>
+  <text x="130" y="200" class="label" font-size="10">Command/Data 분리</text>
+  <text x="620" y="200" class="label" font-size="10">고수준 API 제공</text>
+
+  <!-- Version info -->
+  <rect x="100" y="490" width="600" height="50" fill="none" stroke="#ddd" stroke-width="1"/>
+  <text x="110" y="510" class="label" font-weight="bold">v1.2 주요 추가:</text>
+  <text x="110" y="528" class="label">✓ SPI1 DMA 기반 고속 전송</text>
+  <text x="400" y="528" class="label">✓ D/C 핀으로 명령어/데이터 구분</text>
+</svg>

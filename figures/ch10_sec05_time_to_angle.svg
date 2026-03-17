@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1000 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .box { fill: #E8F5E9; stroke: #34A853; stroke-width: 2; }
+      .arrow { stroke: #333; stroke-width: 2.5; marker-end: url(#arrowhead); }
+      .text-title { font-size: 14px; font-weight: bold; }
+      .text-normal { font-size: 12px; }
+      .text-small { font-size: 10px; }
+      .value { font-size: 16px; font-weight: bold; fill: #2E7D32; }
+      .formula { font-size: 11px; fill: #666; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333" />
+    </marker>
+  </defs>
+
+  <!-- 제목 -->
+  <text x="500" y="30" class="text-title" text-anchor="middle" fill="#1A1A2E">
+    누적 성장! RTC 시각 → 시침 각도 → 모터 스텝 변환 (Ch09 + Ch10 통합)
+  </text>
+
+  <!-- 1. RTC 시각 입력 -->
+  <rect x="50" y="80" width="120" height="80" class="box" rx="8"/>
+  <text x="110" y="105" class="text-normal" text-anchor="middle" font-weight="bold">RTC 시각</text>
+  <text x="110" y="128" class="value" text-anchor="middle">14:30</text>
+  <text x="110" y="148" class="text-small" text-anchor="middle" fill="#666">(시:분)</text>
+
+  <!-- 화살표 -->
+  <path d="M 170 120 L 220 120" class="arrow"/>
+  <text x="190" y="110" class="text-small" fill="#666">Step 1:</text>
+  <text x="190" y="125" class="text-small" fill="#666">12시간 형식</text>
+
+  <!-- 2. 시침 각도 계산 -->
+  <rect x="220" y="80" width="160" height="80" class="box" rx="8"/>
+  <text x="300" y="105" class="text-normal" text-anchor="middle" font-weight="bold">시침 각도</text>
+  <text x="300" y="128" class="value" text-anchor="middle">75°</text>
+  <text x="300" y="145" class="formula" text-anchor="middle">(2×30) + (30×0.5)</text>
+  <text x="300" y="158" class="text-small" text-anchor="middle" fill="#666">(도)</text>
+
+  <!-- 화살표 -->
+  <path d="M 380 120 L 430 120" class="arrow"/>
+  <text x="405" y="110" class="text-small" fill="#666">Step 2:</text>
+  <text x="405" y="125" class="text-small" fill="#666">도 → 스텝</text>
+
+  <!-- 3. 모터 스텝 변환 -->
+  <rect x="430" y="80" width="130" height="80" class="box" rx="8"/>
+  <text x="495" y="105" class="text-normal" text-anchor="middle" font-weight="bold">모터 스텝</text>
+  <text x="495" y="128" class="value" text-anchor="middle">1024</text>
+  <text x="495" y="145" class="formula" text-anchor="middle">(75×1024)/90</text>
+  <text x="495" y="158" class="text-small" text-anchor="middle" fill="#666">(스텝)</text>
+
+  <!-- 화살표 -->
+  <path d="M 560 120 L 610 120" class="arrow"/>
+  <text x="585" y="110" class="text-small" fill="#666">Step 3:</text>
+  <text x="585" y="125" class="text-small" fill="#666">현재 위치 비교</text>
+
+  <!-- 4. 이동할 스텝 수 -->
+  <rect x="610" y="80" width="150" height="80" class="box" rx="8"/>
+  <text x="685" y="105" class="text-normal" text-anchor="middle" font-weight="bold">이동 스텝</text>
+  <text x="685" y="128" class="value" text-anchor="middle">1024 - current</text>
+  <text x="685" y="145" class="formula" text-anchor="middle">= Δ (delta)</text>
+  <text x="685" y="158" class="text-small" text-anchor="middle" fill="#666">(현재에서 상대)</text>
+
+  <!-- 화살표 -->
+  <path d="M 760 120 L 810 120" class="arrow"/>
+  <text x="785" y="110" class="text-small" fill="#666">Step 4:</text>
+  <text x="785" y="125" class="text-small" fill="#666">모터 구동</text>
+
+  <!-- 5. 모터 회전 -->
+  <rect x="810" y="80" width="130" height="80" class="box" rx="8"/>
+  <text x="875" y="105" class="text-normal" text-anchor="middle" font-weight="bold">모터 회전</text>
+  <text x="875" y="128" class="value" text-anchor="middle">회전</text>
+  <text x="875" y="148" class="text-small" text-anchor="middle" fill="#666">(정확한 위치)</text>
+
+  <!-- 상세 계산 박스 -->
+  <rect x="50" y="200" width="900" height="180" fill="#F0F4FF" stroke="#1A73E8" stroke-width="2" rx="5"/>
+
+  <text x="70" y="225" class="text-normal" font-weight="bold" fill="#1A1A2E">📐 상세 계산 공식:</text>
+
+  <!-- Step 1 -->
+  <text x="70" y="250" class="text-small" font-weight="bold" fill="#34A853">Step 1: 12시간 형식 변환</text>
+  <text x="90" y="265" class="formula">hour_12 = hour % 12  (24시간 → 12시간)</text>
+  <text x="90" y="278" class="formula">예: 14:30 → 14 % 12 = 2 → 2:30</text>
+
+  <!-- Step 2 -->
+  <text x="70" y="305" class="text-small" font-weight="bold" fill="#34A853">Step 2: 시침 각도 (0~360도)</text>
+  <text x="90" y="320" class="formula">angle = (hour_12 × 30) + (minute × 0.5)</text>
+  <text x="90" y="333" class="formula">예: (2 × 30) + (30 × 0.5) = 60 + 15 = 75°</text>
+
+  <!-- Step 3 -->
+  <text x="70" y="360" class="text-small" font-weight="bold" fill="#34A853">Step 3: 모터 스텝 (0~4096 스텝 = 360도)</text>
+  <text x="90" y="375" class="formula">steps = (angle × 1024) / 90  (정수 연산)</text>
+  <text x="90" y="388" class="formula">또는: steps = (angle × 4096) / 360</text>
+
+  <!-- 범례 -->
+  <rect x="50" y="385" width="900" height="1" fill="#CCC"/>
+
+  <!-- 최종 정보 -->
+  <text x="50" y="410" class="text-small" fill="#1A1A2E">
+    💡 핵심: 시각 → 각도 → 스텝으로 변환하여, 모터가 정확한 위치에 멈추도록 제어합니다. 매초 RTC 인터럽트에서 이 계산을 반복합니다.
+  </text>
+</svg>
